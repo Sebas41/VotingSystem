@@ -1,0 +1,23 @@
+slice {
+    java {
+        files = [file("../Service.ice")]
+    }
+}
+repositories {
+    mavenCentral()
+}
+
+dependencies{
+    implementation 'com.zeroc:ice:3.7.2'
+
+    implementation project(':reliableServer')
+}
+
+jar {
+        manifest {
+            attributes(
+                "Main-Class": project.name.capitalize(),
+                "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
+            )
+        }
+    }
