@@ -34,6 +34,9 @@ public interface ServerControllerInterface {
     void showVotesPerCandidateByMachine(int electionId);
     void exportVotesPerMachineCSV(int electionId, String path);
     void exportElectionResultsCSV(int electionId, String path);
+    String getTotalVotesPerCandidate(int electionId);
+    String getVotesPerCandidateByMachine(int electionId);
+
 
 
 

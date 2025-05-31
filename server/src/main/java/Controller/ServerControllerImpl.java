@@ -161,6 +161,26 @@ public class ServerControllerImpl implements ServerControllerInterface {
         System.out.println("Resultados de elecciones exportados en: " + file.getAbsolutePath());
     }
 
+    @Override
+    public String getTotalVotesPerCandidate(int electionId) {
+        var result = reports.getTotalVotesPerCandidate(electionId);
+        StringBuilder sb = new StringBuilder("=== Total de votos por candidato ===\n");
+        result.forEach((candidate, votes) -> sb.append(candidate).append(": ").append(votes).append("\n"));
+        return sb.toString();
+    }
+
+    @Override
+    public String getVotesPerCandidateByMachine(int electionId) {
+        var result = reports.getVotesPerCandidateByMachine(electionId);
+        StringBuilder sb = new StringBuilder("=== Votos por candidato por máquina ===\n");
+        result.forEach((machineId, map) -> {
+            sb.append("Máquina: ").append(machineId).append("\n");
+            map.forEach((candidate, votes) -> sb.append("  ").append(candidate).append(": ").append(votes).append("\n"));
+        });
+        return sb.toString();
+    }
+
+
 
 
 
