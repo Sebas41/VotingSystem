@@ -6,6 +6,7 @@ import Elections.ElectionInterface;
 import Elections.models.Candidate;
 import Elections.models.Vote;
 import Elections.models.ELECTION_STATUS;
+import ServerUI.ServerUI;
 import model.ReliableMessage;
 
 import java.text.SimpleDateFormat;
@@ -60,14 +61,16 @@ public class ServerControllerImpl implements ServerControllerInterface {
             election.addVoteToCandidate(candidateId, vote);
             System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
 
-
-            ServerUI.getInstance().showVoteInfo("Voto recibido para candidato ID: " + candidateId);
+            // Verifica que la UI esté inicializada antes de actualizar
+            ServerUI ui = ServerUI.getInstance();
+            if (ui != null) {
+                ui.showVoteInfo("Voto recibido para candidato ID: " + candidateId);
+            }
 
         } catch (Exception e) {
             System.err.println("Error al registrar el voto: " + e.getMessage());
         }
     }
-
 
     @Override
     public String getElectionInfo() {
