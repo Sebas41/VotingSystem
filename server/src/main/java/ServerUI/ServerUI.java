@@ -170,6 +170,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         statusLabel.setText("Estado: " + status);
     }
 
+
     private JPanel createReportsPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -243,16 +244,24 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         JButton btnClear = new JButton("Limpiar resultados");
         btnClear.addActionListener(e -> resultsArea.setText(""));
 
-        // Añadir elementos al panel
+        // Componentes UI
         int row = 0;
-        gbc.gridx = 0; gbc.gridy = row; panel.add(new JLabel("ID Elección:"), gbc);
-        gbc.gridx = 1; panel.add(electionIdField, gbc); row++;
+
+        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 1;
+        panel.add(new JLabel("ID Elección:"), gbc);
+        gbc.gridx = 1;
+        panel.add(electionIdField, gbc);
+        row++;
 
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
         panel.add(btnShowVotes, gbc); row++;
+        gbc.gridy = row;
         panel.add(btnShowByMachine, gbc); row++;
+        gbc.gridy = row;
         panel.add(btnExportMachine, gbc); row++;
+        gbc.gridy = row;
         panel.add(btnExportGlobal, gbc); row++;
+        gbc.gridy = row;
         panel.add(btnClear, gbc); row++;
 
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
@@ -261,6 +270,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
         return panel;
     }
+
 
 
 
