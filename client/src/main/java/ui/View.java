@@ -56,26 +56,13 @@ public class View {
      * @return El nombre del candidato seleccionado (puede cambiarse a ID si lo prefieres).
      */
     public String showCandidatesAndGetChoice(List<Candidate> candidates) {
-        while (true) {
-            System.out.println("\nSeleccione su candidato:");
-            for (Candidate c : candidates) {
-                System.out.println(c.getId() + ") " + c.getName() + " - " + c.getPoliticalParty());
-            }
-            System.out.print("Ingrese el ID del candidato: ");
-            String choice = scanner.nextLine().trim();
-
-            try {
-                int selectedId = Integer.parseInt(choice);
-                for (Candidate c : candidates) {
-                    if (c.getId() == selectedId) {
-                        return String.valueOf(selectedId); // O puedes retornar `c.getName()` si prefieres
-                    }
-                }
-                System.out.println("ID no encontrado. Intente de nuevo.");
-            } catch (NumberFormatException e) {
-                System.out.println("Entrada inválida. Ingrese un número.");
-            }
+        System.out.println("=== Candidatos Disponibles ===");
+        for (Candidate c : candidates) {
+            System.out.println("ID: " + c.getId() + " - " + c.getName() + " (" + c.getParty() + ")");
         }
+        System.out.print("Ingrese el ID del candidato por el que desea votar: ");
+        Scanner scanner = new Scanner(System.in);
+        return scanner.nextLine().trim();  // Retorna el ID como string
     }
 
     /**

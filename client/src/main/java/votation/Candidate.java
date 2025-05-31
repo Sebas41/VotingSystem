@@ -37,4 +37,8 @@ public class Candidate {
     public String toString() {
         return "[" + id + "] " + name + " (" + politicalParty + ")";
     }
+
+    public String getParty() {
+        return this.politicalParty;
+    }
 }
