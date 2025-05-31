@@ -7,7 +7,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.List;
 
-public class VotingMachineUI extends JFrame {
+public class VotingMachineUI extends JFrame implements VotingMachineUIinterface{
 
     private CardLayout cardLayout;
     private JPanel mainPanel;
@@ -84,6 +84,7 @@ public class VotingMachineUI extends JFrame {
     }
 
     // Métodos de control
+
     public void showLoginPanel() {
         clearLoginFields();
         loginMessage.setText(" ");
@@ -103,6 +104,8 @@ public class VotingMachineUI extends JFrame {
         return new String(passwordField.getPassword());
     }
 
+
+    @Override
     public void setCandidates(List<Candidate> candidates) {
         candidateCombo.removeAllItems();
         for (Candidate c : candidates) {
@@ -115,11 +118,14 @@ public class VotingMachineUI extends JFrame {
         return selected != null ? String.valueOf(selected.getId()) : null;
     }
 
+    @Override
     public void showLoginMessage(String msg, boolean isError) {
         loginMessage.setText(msg);
         loginMessage.setForeground(isError ? Color.RED : Color.BLUE);
     }
 
+
+    @Override
     public void showVoteMessage(String msg, boolean isError) {
         voteMessage.setText(msg);
         voteMessage.setForeground(isError ? Color.RED : Color.BLUE);
@@ -133,6 +139,8 @@ public class VotingMachineUI extends JFrame {
         voteButton.addActionListener(listener);
     }
 
+
+    @Override
     public void resetToLoginAfterVote() {
         // Llamado desde el controller cuando termina el voto
         JOptionPane.showMessageDialog(this, "Gracias por votar. Será redirigido a la pantalla de inicio.");
