@@ -2,11 +2,10 @@ package ConnectionDB;
 
 import Elections.models.Vote;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ConnectionDB implements ConnectionDBinterface {
 
@@ -55,6 +54,69 @@ public class ConnectionDB implements ConnectionDBinterface {
             System.err.println("Error guardando el candidato: " + e.getMessage());
         }
     }
+
+    @Override
+    public Map<Integer, Integer> getVotesPerCandidate(int electionId) {
+        Map<Integer, Integer> result = new HashMap<>();
+        String sql = "SELECT candidato_id, COUNT(*) AS total_votos " +
+                "FROM votos WHERE election_id = ? GROUP BY candidato_id";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, electionId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    int candidateId = rs.getInt("candidato_id");
+                    int totalVotes = rs.getInt("total_votos");
+                    result.put(candidateId, totalVotes);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error obteniendo votos por candidato: " + e.getMessage());
+        }
+        return result;
+    }
+
+    @Override
+    public Map<String, Map<Integer, Integer>> getVotesPerCandidateGroupedByMachine(int electionId) {
+        Map<String, Map<Integer, Integer>> result = new HashMap<>();
+        String sql = "SELECT machine_id, candidato_id, COUNT(*) AS total_votos " +
+                "FROM votos WHERE election_id = ? GROUP BY machine_id, candidato_id";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, electionId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String machineId = rs.getString("machine_id");
+                    int candidateId = rs.getInt("candidato_id");
+                    int totalVotes = rs.getInt("total_votos");
+
+                    result.putIfAbsent(machineId, new HashMap<>());
+                    result.get(machineId).put(candidateId, totalVotes);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error obteniendo votos por candidato y máquina: " + e.getMessage());
+        }
+        return result;
+    }
+
+    @Override
+    public String getCandidateNameById(Integer key) {
+        String sql = "SELECT nombre FROM candidatos WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, key);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("nombre");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error obteniendo nombre del candidato con ID " + key + ": " + e.getMessage());
+        }
+        return "Candidato desconocido (ID: " + key + ")";
+    }
+
+
 
     @Override
     public void storeVote(Vote vote) {
