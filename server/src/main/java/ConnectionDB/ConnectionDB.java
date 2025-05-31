@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
+import java.util.Date;
 
 public class ConnectionDB implements ConnectionDBinterface {
 
@@ -25,12 +26,42 @@ public class ConnectionDB implements ConnectionDBinterface {
     }
 
     @Override
-    public void storeVote(Vote vote) {
-        String sql = "INSERT INTO votos (machine_id, voto, fecha, election_id) VALUES (?, ?, ?, ?)";
+    public void storeElection(int id, String name, Date start, Date end, String status) {
+        String sql = "INSERT INTO elecciones (id, nombre, fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?, ?, ?) " +
+                "ON CONFLICT (id) DO NOTHING";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setString(2, name);
+            stmt.setTimestamp(3, new Timestamp(start.getTime()));
+            stmt.setTimestamp(4, new Timestamp(end.getTime()));
+            stmt.setString(5, status);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("Error guardando la elección: " + e.getMessage());
+        }
+    }
 
+    @Override
+    public void storeCandidate(int id, String name, String party, int electionId) {
+        String sql = "INSERT INTO candidatos (id, nombre, partido, eleccion_id) VALUES (?, ?, ?, ?) " +
+                "ON CONFLICT (id) DO NOTHING";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setString(2, name);
+            stmt.setString(3, party);
+            stmt.setInt(4, electionId);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("Error guardando el candidato: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void storeVote(Vote vote) {
+        String sql = "INSERT INTO votos (machine_id, candidato_id, fecha, election_id) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, vote.getmachineId());
-            stmt.setString(2, vote.getVote());
+            stmt.setInt(2, Integer.parseInt(vote.getVote()));  // FK al candidato
             stmt.setTimestamp(3, new Timestamp(vote.getDate().getTimeInMillis()));
             stmt.setInt(4, vote.getElection());
             stmt.executeUpdate();
@@ -38,4 +69,5 @@ public class ConnectionDB implements ConnectionDBinterface {
             System.err.println("Error al guardar el voto en la base de datos: " + e.getMessage());
         }
     }
+
 }

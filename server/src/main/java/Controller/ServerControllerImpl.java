@@ -81,6 +81,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
     @Override
     public void createElection(int id, String name, Date start, Date end) {
         election.registerElection(id, name, start, end);
+        connectionDB.storeElection(id, name, start, end, ELECTION_STATUS.PRE.name());
         System.out.println("Elección creada correctamente: " + name);
     }
 
@@ -93,6 +94,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
     @Override
     public void addCandidate(int id, String name, String party) {
         election.addCandidate(id, name, party);
+        connectionDB.storeCandidate(id, name, party, election.getElectionId());
         System.out.println("Candidato añadido: " + name);
     }
 
