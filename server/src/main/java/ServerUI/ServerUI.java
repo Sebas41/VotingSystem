@@ -183,7 +183,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         resultsArea.setBorder(BorderFactory.createTitledBorder("Resultados"));
         JScrollPane scroll = new JScrollPane(resultsArea);
 
-        // Mostrar votos por candidato
+        // Botón: Mostrar votos por candidato
         JButton btnShowVotes = new JButton("Mostrar votos por candidato");
         btnShowVotes.addActionListener(e -> {
             try {
@@ -195,8 +195,8 @@ public class ServerUI extends JFrame implements ServerUIInterface {
             }
         });
 
-        // Mostrar votos por candidato por máquina
-        JButton btnShowByMachine = new JButton("Mostrar por máquina");
+        // Botón: Mostrar votos por máquina
+        JButton btnShowByMachine = new JButton("Mostrar votos por máquina");
         btnShowByMachine.addActionListener(e -> {
             try {
                 int electionId = Integer.parseInt(electionIdField.getText().trim());
@@ -207,8 +207,8 @@ public class ServerUI extends JFrame implements ServerUIInterface {
             }
         });
 
-        // Exportar por máquina
-        JButton btnExportMachine = new JButton("Exportar por máquina CSV");
+        // Botón: Exportar CSV por máquina
+        JButton btnExportMachine = new JButton("Exportar CSV por máquina");
         btnExportMachine.addActionListener(e -> {
             try {
                 int electionId = Integer.parseInt(electionIdField.getText().trim());
@@ -216,14 +216,14 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                 if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                     String path = fileChooser.getSelectedFile().getAbsolutePath();
                     controller.exportVotesPerMachineCSV(electionId, path);
-                    JOptionPane.showMessageDialog(this, "Reporte exportado a:\n" + path);
+                    JOptionPane.showMessageDialog(this, "Reporte exportado:\n" + path);
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error exportando: " + ex.getMessage());
             }
         });
 
-        // Exportar resultados globales
+        // Botón: Exportar resultados globales
         JButton btnExportGlobal = new JButton("Exportar resultados CSV");
         btnExportGlobal.addActionListener(e -> {
             try {
@@ -232,13 +232,18 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                 if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                     String path = fileChooser.getSelectedFile().getAbsolutePath();
                     controller.exportElectionResultsCSV(electionId, path);
-                    JOptionPane.showMessageDialog(this, "Resultados exportados a:\n" + path);
+                    JOptionPane.showMessageDialog(this, "Resultados exportados:\n" + path);
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error exportando: " + ex.getMessage());
             }
         });
 
+        // Botón: Limpiar resultados
+        JButton btnClear = new JButton("Limpiar resultados");
+        btnClear.addActionListener(e -> resultsArea.setText(""));
+
+        // Añadir elementos al panel
         int row = 0;
         gbc.gridx = 0; gbc.gridy = row; panel.add(new JLabel("ID Elección:"), gbc);
         gbc.gridx = 1; panel.add(electionIdField, gbc); row++;
@@ -248,6 +253,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         panel.add(btnShowByMachine, gbc); row++;
         panel.add(btnExportMachine, gbc); row++;
         panel.add(btnExportGlobal, gbc); row++;
+        panel.add(btnClear, gbc); row++;
 
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.BOTH;
@@ -255,6 +261,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
         return panel;
     }
+
 
 
 
