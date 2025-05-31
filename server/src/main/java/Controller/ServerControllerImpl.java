@@ -6,6 +6,7 @@ import Elections.ElectionInterface;
 import Elections.models.Candidate;
 import Elections.models.Vote;
 import Elections.models.ELECTION_STATUS;
+import Reports.ReportsInterface;
 import ServerUI.ServerUI;
 import model.ReliableMessage;
 
@@ -13,14 +14,20 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import Reports.ReportsImplementation;
+import Reports.ReportsInterface;
+
+
 public class ServerControllerImpl implements ServerControllerInterface {
 
     private ElectionInterface election;
     private ConnectionDB connectionDB;
+    private ReportsInterface reports;
 
     public ServerControllerImpl() {
         this.connectionDB = new ConnectionDB();
         this.election = new ElectionImpl(0, new Date(), new Date(), "");
+        this.reports = new ReportsImplementation(connectionDB);
         cargarDatosPrueba();  // Aquí inicializamos datos de ejemplo
     }
 
@@ -128,4 +135,34 @@ public class ServerControllerImpl implements ServerControllerInterface {
     public List<Candidate> getCandidates() {
         return election.getCandidates();
     }
+
+    public void showVotesPerCandidateReport(int electionId) {
+        var result = reports.getTotalVotesPerCandidate(electionId);
+        System.out.println("=== Total de votos por candidato ===");
+        result.forEach((candidate, votes) -> System.out.println(candidate + ": " + votes));
+    }
+
+    public void showVotesPerCandidateByMachine(int electionId) {
+        var result = reports.getVotesPerCandidateByMachine(electionId);
+        System.out.println("=== Votos por candidato por máquina ===");
+        result.forEach((machineId, map) -> {
+            System.out.println("Máquina: " + machineId);
+            map.forEach((candidate, votes) -> System.out.println("  " + candidate + ": " + votes));
+        });
+    }
+
+    public void exportVotesPerMachineCSV(int electionId, String path) {
+        var file = reports.exportVotesPerMachineCSV(electionId, path);
+        System.out.println("Reporte por mesa exportado en: " + file.getAbsolutePath());
+    }
+
+    public void exportElectionResultsCSV(int electionId, String path) {
+        var file = reports.exportElectionResultsCSV(electionId, path);
+        System.out.println("Resultados de elecciones exportados en: " + file.getAbsolutePath());
+    }
+
+
+
+
+
 }

@@ -45,6 +45,8 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         tabs.addTab("Votos Recibidos", createVoteLogPanel());
         tabs.addTab("Gestión de Elección", createElectionPanel());
         tabs.addTab("Gestión de Candidatos", createCandidatePanel());
+        tabs.addTab("Reportes", createReportsPanel());
+
 
         // Layout principal
         setLayout(new BorderLayout());
@@ -167,4 +169,77 @@ public class ServerUI extends JFrame implements ServerUIInterface {
     public void updateStatus(String status) {
         statusLabel.setText("Estado: " + status);
     }
+
+    private JPanel createReportsPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 6, 6, 6);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JTextField electionIdField = new JTextField("1", 10);
+        JTextField exportPathField = new JTextField("reporte.csv", 20);
+
+        JButton btnShowVotes = new JButton("Mostrar votos por candidato");
+        btnShowVotes.addActionListener(e -> {
+            try {
+                int electionId = Integer.parseInt(electionIdField.getText().trim());
+                controller.showVotesPerCandidateReport(electionId);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+            }
+        });
+
+        JButton btnShowByMachine = new JButton("Mostrar por máquina");
+        btnShowByMachine.addActionListener(e -> {
+            try {
+                int electionId = Integer.parseInt(electionIdField.getText().trim());
+                controller.showVotesPerCandidateByMachine(electionId);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+            }
+        });
+
+        JButton btnExportMachine = new JButton("Exportar por máquina");
+        btnExportMachine.addActionListener(e -> {
+            try {
+                int electionId = Integer.parseInt(electionIdField.getText().trim());
+                String path = exportPathField.getText().trim();
+                controller.exportVotesPerMachineCSV(electionId, path);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+            }
+        });
+
+        JButton btnExportGlobal = new JButton("Exportar resultados");
+        btnExportGlobal.addActionListener(e -> {
+            try {
+                int electionId = Integer.parseInt(electionIdField.getText().trim());
+                String path = exportPathField.getText().trim();
+                controller.exportElectionResultsCSV(electionId, path);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+            }
+        });
+
+        int row = 0;
+        gbc.gridx = 0; gbc.gridy = row; panel.add(new JLabel("ID Elección:"), gbc);
+        gbc.gridx = 1; panel.add(electionIdField, gbc);
+        row++;
+
+        gbc.gridx = 0; gbc.gridy = row; panel.add(new JLabel("Ruta exportación:"), gbc);
+        gbc.gridx = 1; panel.add(exportPathField, gbc);
+        row++;
+
+        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
+        panel.add(btnShowVotes, gbc); row++;
+        panel.add(btnShowByMachine, gbc); row++;
+        panel.add(btnExportMachine, gbc); row++;
+        panel.add(btnExportGlobal, gbc);
+
+        return panel;
+    }
+
+
+
 }
