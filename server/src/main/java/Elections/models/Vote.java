@@ -1,4 +1,4 @@
-package model;
+package Elections.models;
 
 import java.util.Calendar;
 

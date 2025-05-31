@@ -12,7 +12,7 @@ public class Vote {
     private String vote;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     private Calendar date;
-    private int election = 1;
+    private int electionId = 1;
 
     public Vote() {
     }
@@ -22,11 +22,11 @@ public class Vote {
             @JsonProperty("machineId") String machineId,
             @JsonProperty("vote") String vote,
             @JsonProperty("date") Calendar date,
-            @JsonProperty("election") int election) {
+            @JsonProperty("electionId") int electionId) {
         this.machineId = machineId;
         this.vote = vote;
         this.date = date;
-        this.election = election;
+        this.electionId = electionId;
     }
 
     public Vote(String machineId, String vote) {
@@ -49,7 +49,7 @@ public class Vote {
     }
 
     public int getElection() {
-        return election;
+        return electionId;
     }
 
     @Override
@@ -58,7 +58,7 @@ public class Vote {
                 "machineId='" + machineId + '\'' +
                 ", vote='" + vote + '\'' +
                 ", date=" + date.getTime() +
-                ", election=" + election +
+                ", electionId=" + electionId +
                 '}';
     }
 }
