@@ -1,5 +1,8 @@
 package ui;
 
+import votation.Candidate;
+
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -47,22 +50,31 @@ public class View {
     }
 
     /**
-     * Muestra el menú de candidatos fijos (A, B, C) y pide al usuario que elija.
-     * Devuelve la opción (en mayúscula) si es válida: "A", "B" o "C".
-     * Si se ingresa algo distinto, vuelve a preguntar.
+     * Muestra dinámicamente los candidatos y permite seleccionar uno por ID.
+     *
+     * @param candidates Lista de candidatos cargados desde el archivo JSON.
+     * @return El nombre del candidato seleccionado (puede cambiarse a ID si lo prefieres).
      */
-    public String showCandidatesAndGetChoice() {
+    public String showCandidatesAndGetChoice(List<Candidate> candidates) {
         while (true) {
             System.out.println("\nSeleccione su candidato:");
-            System.out.println("A) Candidato A");
-            System.out.println("B) Candidato B");
-            System.out.println("C) Candidato C");
-            System.out.print("Opción [A/B/C]: ");
-            String choice = scanner.nextLine().trim().toUpperCase();
-            if (choice.equals("A") || choice.equals("B") || choice.equals("C")) {
-                return choice;
+            for (Candidate c : candidates) {
+                System.out.println(c.getId() + ") " + c.getName() + " - " + c.getPoliticalParty());
             }
-            System.out.println("Ingrese A, B o C. Intente de nuevo.");
+            System.out.print("Ingrese el ID del candidato: ");
+            String choice = scanner.nextLine().trim();
+
+            try {
+                int selectedId = Integer.parseInt(choice);
+                for (Candidate c : candidates) {
+                    if (c.getId() == selectedId) {
+                        return String.valueOf(selectedId); // O puedes retornar `c.getName()` si prefieres
+                    }
+                }
+                System.out.println("ID no encontrado. Intente de nuevo.");
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada inválida. Ingrese un número.");
+            }
         }
     }
 

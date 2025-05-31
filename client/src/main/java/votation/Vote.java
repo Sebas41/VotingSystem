@@ -61,4 +61,8 @@ public class Vote {
                 ", electionId=" + electionId +
                 '}';
     }
+
+    public void setElectionId(int electionId) {
+        this.electionId = electionId;
+    }
 }

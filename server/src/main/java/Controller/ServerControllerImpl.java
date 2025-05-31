@@ -5,8 +5,10 @@ import Elections.ElectionImpl;
 import Elections.ElectionInterface;
 import Elections.models.Candidate;
 import Elections.models.Vote;
+import Elections.models.ELECTION_STATUS;
 import model.ReliableMessage;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -16,8 +18,30 @@ public class ServerControllerImpl implements ServerControllerInterface {
     private ConnectionDB connectionDB;
 
     public ServerControllerImpl() {
-        this.election = new ElectionImpl(0, new Date(), new Date(), "");
         this.connectionDB = new ConnectionDB();
+        this.election = new ElectionImpl(0, new Date(), new Date(), "");
+        cargarDatosPrueba();  // Aquí inicializamos datos de ejemplo
+    }
+
+    private void cargarDatosPrueba() {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm");
+            Date start = sdf.parse("30-05-2025 00:00");
+            Date end = sdf.parse("31-12-2025 23:59");
+
+            // Crear elección de prueba
+            createElection(1, "Elección de Prueba", start, end);
+            changeElectionStatus(ELECTION_STATUS.DURING);
+
+            // Agregar candidatos
+            addCandidate(1, "Candidato A", "Partido A");
+            addCandidate(2, "Candidato B", "Partido B");
+            addCandidate(3, "Candidato C", "Partido C");
+
+            System.out.println("=== Datos de prueba cargados exitosamente ===");
+        } catch (Exception e) {
+            System.err.println("Error cargando datos de prueba: " + e.getMessage());
+        }
     }
 
     @Override
@@ -36,32 +60,39 @@ public class ServerControllerImpl implements ServerControllerInterface {
             election.addVoteToCandidate(candidateId, vote);
             System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
 
+
+            ServerUI.getInstance().showVoteInfo("Voto recibido para candidato ID: " + candidateId);
+
         } catch (Exception e) {
             System.err.println("Error al registrar el voto: " + e.getMessage());
         }
     }
+
 
     @Override
     public String getElectionInfo() {
         return election.getElectionInfo();
     }
 
-
+    @Override
     public void createElection(int id, String name, Date start, Date end) {
         election.registerElection(id, name, start, end);
         System.out.println("Elección creada correctamente: " + name);
     }
 
-    public void changeElectionStatus(Elections.models.ELECTION_STATUS status) {
+    @Override
+    public void changeElectionStatus(ELECTION_STATUS status) {
         election.changeElectionStatus(status);
         System.out.println("Estado de la elección cambiado a: " + status);
     }
 
+    @Override
     public void addCandidate(int id, String name, String party) {
         election.addCandidate(id, name, party);
         System.out.println("Candidato añadido: " + name);
     }
 
+    @Override
     public void editCandidate(int id, String newName, String newParty) {
         boolean success = election.editCandidate(id, newName, newParty);
         if (success) {
@@ -71,6 +102,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
+    @Override
     public void removeCandidate(int id) {
         boolean success = election.removeCandidate(id);
         if (success) {
@@ -80,15 +112,13 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
+    @Override
     public void loadCandidatesFromCSV(String filepath) {
         election.loadCandidatesFromCSV(filepath);
         System.out.println("Candidatos cargados desde: " + filepath);
     }
 
-    public String showElectionInfo() {
-        return election.getElectionInfo();
-    }
-
+    @Override
     public List<Candidate> getCandidates() {
         return election.getCandidates();
     }
