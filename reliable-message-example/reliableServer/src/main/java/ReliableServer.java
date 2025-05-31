@@ -1,3 +1,4 @@
+
 import com.zeroc.Ice.Communicator;
 import com.zeroc.Ice.ObjectAdapter;
 import com.zeroc.Ice.ObjectPrx;
@@ -10,12 +11,21 @@ import services.RMSender;
 import threads.RMJob;
 
 public class ReliableServer {
+
+    private static RMJob job;
+    private static Communicator communicator;
     
     public static void main(String[] args) {
-        Communicator communicator = Util.initialize(args, "rmservice.config");
+        startBroker(args);
+        communicator.waitForShutdown();
+    }
 
+
+    public static void startBroker(String[] iceArgs){
+
+        communicator = Util.initialize(iceArgs, "rmservice.config");
         Notification notification = new Notification();
-        RMJob job = new RMJob(notification);
+        job = new RMJob(notification);
         RMReciever rec = new RMReciever(job);
         RMSender sender = new RMSender(job, notification);
 
@@ -25,12 +35,12 @@ public class ReliableServer {
         notification.setAckService(ACKServicePrx.checkedCast(prx));
         adapter.activate();
         job.start();
-
-        communicator.waitForShutdown();
-
-
         
     }
 
-    
+    public static void stopBroker() {
+        if (job != null) {
+            communicator.shutdown();
+          }
+    }
 }

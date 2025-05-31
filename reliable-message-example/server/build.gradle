@@ -9,6 +9,7 @@ repositories {
 
 dependencies{
     implementation 'com.zeroc:ice:3.7.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0' // o usa Gson si prefieres
 
     implementation project(':reliableServer')
 }

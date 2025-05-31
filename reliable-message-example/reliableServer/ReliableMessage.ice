@@ -5,7 +5,11 @@ module reliableMessage{
     ["java:serializable:model.Message"]
     sequence<byte> Message;
 
-
+    struct Vote {
+        string id;
+        string vote;
+    };
+    
     interface ACKService{
         void ack(string messageId);
     }

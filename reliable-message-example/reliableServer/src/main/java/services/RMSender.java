@@ -24,6 +24,7 @@ public class RMSender implements RMSource{
     public void sendMessage(Message msg, Current current) {
         jobM.add(msg);
     }
+    
     @Override
     public void setServerProxy(RMDestinationPrx destination, Current current){
         notification.setService(destination);
