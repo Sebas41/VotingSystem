@@ -29,14 +29,13 @@ public class VotingReceiverImp implements  RMDestination{
         
         try {
             Vote vote = mapper.readValue(payload, Vote.class);
-            System.out.println("Received vote: " + vote);
             controller.registerVote(rmessage);
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             System.err.println("Error processing JSON: " + e.getMessage());
             return;
         }
         
-        System.out.println(rmessage.getMessage().message);
+
         prx.ack(rmessage.getUuid());
 
     }

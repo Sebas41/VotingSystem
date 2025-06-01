@@ -24,11 +24,13 @@ public class ServerControllerImpl implements ServerControllerInterface {
     private ConnectionDB connectionDB;
     private ReportsInterface reports;
 
+
     public ServerControllerImpl() {
         this.connectionDB = new ConnectionDB();
         this.election = new ElectionImpl(0, new Date(), new Date(), "");
         this.reports = new ReportsImplementation(connectionDB);
         cargarDatosPrueba();  // Aquí inicializamos datos de ejemplo
+
     }
 
     private void cargarDatosPrueba() {
@@ -65,10 +67,10 @@ public class ServerControllerImpl implements ServerControllerInterface {
                 return;
             }
 
+
+
             election.addVoteToCandidate(candidateId, vote);
             connectionDB.storeVote(vote);
-            System.out.printf("VOTO GURADADO CON ID"+newVote.getUuid());
-            System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
 
             // Verifica que la UI esté inicializada antes de actualizar
             ServerUI ui = ServerUI.getInstance();

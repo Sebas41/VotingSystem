@@ -16,9 +16,9 @@ public class Server {
             ServerControllerInterface controller = new ServerControllerImpl();
 
             // Lanzar la UI en otro hilo para que no bloquee ICE
-            SwingUtilities.invokeLater(() -> {
-                ServerUI.launchUI(controller);
-            });
+//            SwingUtilities.invokeLater(() -> {
+//                ServerUI.launchUI(controller);
+//            });
 
             // Inicializar Ice y vincular VotingReceiver
             Communicator com = Util.initialize();

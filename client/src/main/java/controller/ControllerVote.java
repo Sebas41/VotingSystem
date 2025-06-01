@@ -90,7 +90,6 @@ public class ControllerVote {
         msg.message = payload;
         rm.sendMessage(msg);
 
-        System.out.println("sended");
         view.showInfo("Gracias por votar. Su elección (" + opcion + ") ha sido registrada.");
     }
 }

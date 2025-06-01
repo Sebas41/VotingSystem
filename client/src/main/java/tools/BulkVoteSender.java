@@ -17,7 +17,6 @@ import java.net.InetAddress;
 public class BulkVoteSender {
 
     public static void runTest() throws Exception {
-        System.out.println("[BulkVoteSender] Iniciando prueba automática de envío de votos...");
 
         // Registrar tiempo de inicio
         long startTime = System.currentTimeMillis();
@@ -33,7 +32,7 @@ public class BulkVoteSender {
 
         String machineIp = InetAddress.getLocalHost().getHostAddress();
 
-        for (int i = 1; i <= 10000; i++) {
+        for (int i = 1; i <= 1000000; i++) {
             int candidateId = (i % 3) + 1; // Alterna entre 1, 2, 3
             Vote vote = new Vote(machineIp, String.valueOf(candidateId));
             vote.setElectionId(1);
@@ -46,7 +45,6 @@ public class BulkVoteSender {
             msg.message = mapper.writeValueAsString(vote);
             rm.sendMessage(msg);
 
-            System.out.println("[BulkVoteSender] Voto #" + i + " enviado para candidato ID: " + candidateId);
             Thread.sleep(50); // Pausa leve para simular latencia
         }
 
