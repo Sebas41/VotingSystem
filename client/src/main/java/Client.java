@@ -5,14 +5,6 @@ public class Client {
 
     public static void main(String[] args) throws Exception {
 
-        // Inicia el servidor confiable
-        new Thread(() -> {
-            ReliableServer.main(new String[0]);
-        }).start();
-
-        // Esperar a que inicie el servidor
-        Thread.sleep(3000);
-
         // Ejecutar prueba automática de votos
         BulkVoteSender.runTest();
 
@@ -26,10 +18,6 @@ public class Client {
 //            }
 //        });
 
-        // Hook para detener servidor al cerrar cliente
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            ReliableServer.stopBroker();
-        }));
     }
 }
 

@@ -29,14 +29,14 @@ public class BulkVoteSender {
 
         String machineIp = InetAddress.getLocalHost().getHostAddress();
 
-        for (int i = 1; i <= 100; i++) {
+        for (int i = 1; i <= 10000; i++) {
             int candidateId = 1;
             long timestamp = System.currentTimeMillis();
             Vote vote = new Vote(machineIp, String.valueOf(candidateId),timestamp, candidateId);
 
             rm.sendMessage(vote);
-            repo.save(vote);
-            
+            //repo.save(vote);
+
         }
 
         communicator.shutdown();

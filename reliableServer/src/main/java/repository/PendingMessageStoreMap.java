@@ -68,16 +68,26 @@ public class PendingMessageStoreMap {
     }
 
 
-    @SuppressWarnings("unchecked")
-    private void loadFromDisk() {
-        if (!file.exists()) return;
-        try (Input input = new Input(new FileInputStream(file))) {
-            Object read = kryo.readObject(input, ConcurrentHashMap.class);
-            if (read instanceof ConcurrentHashMap) {
-                store.putAll((ConcurrentHashMap<String, ReliableMessage>) read);
-            }
-        } catch (IOException e) {
-            System.err.println("Error cargando mensajes con Kryo: " + e.getMessage());
+@SuppressWarnings("unchecked")
+private void loadFromDisk() {
+    
+    if (!file.exists()) return;
+
+    if (file.length() == 0) return;
+
+    try (Input input = new Input(new FileInputStream(file))) {
+        Object read = kryo.readObject(input, ConcurrentHashMap.class);
+        if (read instanceof ConcurrentHashMap) {
+            store.putAll((ConcurrentHashMap<String, ReliableMessage>) read);
         }
+    } catch (com.esotericsoftware.kryo.KryoException ke) {
+
+        System.err.println("El fichero de mensajes está corrupto o no tiene el formato esperado. " +
+                           "Se inicializa store vacío. Detalle: " + ke.getMessage());
+
+    } catch (IOException e) {
+        System.err.println("Error de I/O al cargar mensajes con Kryo: " + e.getMessage());
     }
+}
+
 }
