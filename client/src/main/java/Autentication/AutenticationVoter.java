@@ -28,8 +28,6 @@ public class AutenticationVoter implements AutenticationVoterInterface{
         }
         return  opt.get().isAlreadyVote();
     }
-
-
     
     @Override
     public void markAsVoted(String id) {

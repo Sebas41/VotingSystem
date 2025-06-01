@@ -17,8 +17,6 @@ import java.awt.event.ActionListener;
 import java.net.InetAddress;
 
 public class ControllerVoteUI {
-
-
     private VotationInterface voteRepo;
     private AutenticationVoterInterface authVoter;
 

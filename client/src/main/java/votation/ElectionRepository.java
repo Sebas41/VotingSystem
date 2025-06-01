@@ -32,4 +32,6 @@ public class ElectionRepository implements ElectionInterface {
     public Election getElection() {
         return election;
     }
+
+
 }
