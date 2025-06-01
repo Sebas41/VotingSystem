@@ -5,8 +5,8 @@ import java.util.Optional;
 public class AutenticationVoter implements AutenticationVoterInterface{
     private VoterRepository voterRepo;
 
-    public AutenticationVoter(VoterRepository voterRepo) {
-        this.voterRepo = voterRepo;
+    public AutenticationVoter() {
+        this.voterRepo = new VoterRepository();
     }
 
     @Override

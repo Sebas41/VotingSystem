@@ -1,6 +1,7 @@
 package controller;
 
 import Autentication.AutenticationVoter;
+import Autentication.AutenticationVoterInterface;
 import Autentication.VoterRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zeroc.Ice.Communicator;
@@ -17,11 +18,11 @@ import java.net.InetAddress;
 
 public class ControllerVoteUI {
 
-    private VoterRepository voterRepo;
-    private VoteRepository voteRepo;
-    private AutenticationVoter authVoter;
 
-    private ElectionRepository electionRepo;
+    private VotationInterface voteRepo;
+    private AutenticationVoterInterface authVoter;
+
+    private ElectionInterface electionRepo;
     private Election election;
 
     private Communicator com;
@@ -34,9 +35,9 @@ public class ControllerVoteUI {
     private String currentVoterId;
 
     public ControllerVoteUI() throws Exception {
-        voterRepo = new VoterRepository();
+
         voteRepo = new VoteRepository();
-        authVoter = new AutenticationVoter(voterRepo);
+        authVoter = new AutenticationVoter();
 
         electionRepo = new ElectionRepository();
         election = electionRepo.getElection();

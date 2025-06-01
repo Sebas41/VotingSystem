@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class VoteRepository {
+public class VoteRepository  implements VotationInterface {
     private static final String FILE_PATH = "client/data/votes.json";
     private List<Vote> votes;
     private ObjectMapper mapper;
@@ -48,7 +48,7 @@ public class VoteRepository {
     public List<Vote> findAll() {
         return new ArrayList<>(votes);
     }
-
+    @Override
     public void save(Vote vote) {
         votes.add(vote);
         saveAll();
