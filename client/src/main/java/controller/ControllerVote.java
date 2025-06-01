@@ -87,7 +87,6 @@ public class ControllerVote {
         rm.sendMessage(nuevoVote);
         voteRepo.save(nuevoVote);
 
-        System.out.println("sended");
         view.showInfo("Gracias por votar. Su elección (" + opcion + ") ha sido registrada.");
     }
 }

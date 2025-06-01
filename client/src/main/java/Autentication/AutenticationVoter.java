@@ -22,7 +22,6 @@ public class AutenticationVoter implements AutenticationVoterInterface{
     @Override
     public boolean hasAlreadyVoted(String id) {
         Optional<Voter> opt = voterRepo.findById(id);
-        System.out.println("Se encontro el vontante: "+ (opt !=null));
         if (!opt.isPresent()) {
             return false; 
         }

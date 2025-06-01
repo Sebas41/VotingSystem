@@ -1,56 +1,75 @@
 package votation;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import model.Vote;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import model.Vote;
 
-public class VoteRepository  implements VotationInterface {
-    private static final String FILE_PATH = "client/data/votes.db";
-    private List<Vote> votes;
-    private ObjectMapper mapper;
+/**
+ * VoteRepository que mantiene un ArrayList<Vote> en memoria
+ * y lo persiste entero en un archivo binario usando Kryo.
+ */
+public class VoteRepository implements VotationInterface {
+    private static final String FILE_PATH = "client/data/votes_list.kryo";
+    private final File file = new File(FILE_PATH);
+
+    // Lista en memoria que guarda todos los Vote en orden de inserción
+    private final List<Vote> votes = new ArrayList<>();
+
+    private final Kryo kryo = new Kryo();
 
     public VoteRepository() {
-        mapper = new ObjectMapper();
-        loadOrInitialize();
+        kryo.register(ArrayList.class);
+        kryo.register(Vote.class);
+        loadFromDisk();
     }
 
-    private void loadOrInitialize() {
-        File file = new File(FILE_PATH);
-        if (!file.exists() || file.length() == 0) {
-            
-            votes = new ArrayList<>();
-            saveAll();
-        } else {
-            
-            try {
-                votes = mapper.readValue(file, new TypeReference<List<Vote>>() {});
-            } catch (IOException e) {
-                e.printStackTrace();
-                votes = new ArrayList<>();
-                saveAll();
+    @SuppressWarnings("unchecked")
+    private void loadFromDisk() {
+        // Asegurarse de que la carpeta padre exista
+        file.getParentFile().mkdirs();
+
+        if (!file.exists()) {
+            // No existe el archivo aún => nada que cargar
+            return;
+        }
+
+        try (Input input = new Input(new FileInputStream(file))) {
+            Object obj = kryo.readObject(input, ArrayList.class);
+            if (obj instanceof ArrayList) {
+                votes.clear();
+                votes.addAll((ArrayList<Vote>) obj);
             }
+        } catch (IOException e) {
+            System.err.println("Error cargando votos con Kryo: " + e.getMessage());
         }
     }
 
-    private void saveAll() {
-        try {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(FILE_PATH), votes);
+
+    private  void saveToDisk() {
+        try (Output output = new Output(new FileOutputStream(file))) {
+            kryo.writeObject(output, votes);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error guardando votos con Kryo: " + e.getMessage());
         }
     }
 
     public List<Vote> findAll() {
-        return new ArrayList<>(votes);
+        synchronized (votes) {
+            return new ArrayList<>(votes);
+        }
     }
+
     @Override
     public void save(Vote vote) {
-        votes.add(vote);
-        saveAll();
+            votes.add(vote);
+            saveToDisk();
     }
 }
