@@ -65,4 +65,8 @@ public class Vote {
     public void setElectionId(int electionId) {
         this.electionId = electionId;
     }
+
+    public void setDate(Calendar instance) {
+        this.date = instance;
+    }
 }

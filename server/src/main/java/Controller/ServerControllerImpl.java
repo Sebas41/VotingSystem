@@ -67,6 +67,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
             election.addVoteToCandidate(candidateId, vote);
             connectionDB.storeVote(vote);
+            System.out.printf("VOTO GURADADO CON ID"+newVote.getUuid());
             System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
 
             // Verifica que la UI esté inicializada antes de actualizar

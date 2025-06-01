@@ -1,28 +1,34 @@
 import controller.ControllerVoteUI;
+import tools.BulkVoteSender;
 
 public class Client {
 
     public static void main(String[] args) throws Exception {
 
+        // Inicia el servidor confiable
         new Thread(() -> {
             System.out.println("Iniciando ReliableServer...");
             ReliableServer.main(new String[0]);
         }).start();
 
-        Thread.sleep(3000); // Espera a que inicie el servidor confiable
+        // Esperar a que inicie el servidor
+        Thread.sleep(3000);
 
-        System.out.println("Iniciando estación de votación...");
+        // Ejecutar prueba automática de votos
+        System.out.println("Ejecutando prueba automática de envío de votos...");
+        BulkVoteSender.runTest();
 
-        // Lanza la interfaz gráfica en el hilo de Swing
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            try {
-                new ControllerVoteUI();  // Crea y muestra la UI
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+        // Iniciar la estación de votación (UI)
+        //System.out.println("Iniciando estación de votación...");
+//        javax.swing.SwingUtilities.invokeLater(() -> {
+//            try {
+//                new ControllerVoteUI();  // UI real
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        });
 
-        // Hook para detener servidor cuando se cierre
+        // Hook para detener servidor al cerrar cliente
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Deteniendo ReliableServer...");
             ReliableServer.stopBroker();
