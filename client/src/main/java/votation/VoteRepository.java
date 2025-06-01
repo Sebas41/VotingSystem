@@ -7,10 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import model.Vote;
 
-
-public class VoteRepository {
-    private static final String FILE_PATH = "client/data/votes.json";
+public class VoteRepository  implements VotationInterface {
+    private static final String FILE_PATH = "client/data/votes.db";
     private List<Vote> votes;
     private ObjectMapper mapper;
 
@@ -48,7 +48,7 @@ public class VoteRepository {
     public List<Vote> findAll() {
         return new ArrayList<>(votes);
     }
-
+    @Override
     public void save(Vote vote) {
         votes.add(vote);
         saveAll();

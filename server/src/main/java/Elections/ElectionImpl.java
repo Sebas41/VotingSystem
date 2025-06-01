@@ -2,8 +2,8 @@ package Elections;
 
 import Elections.models.Candidate;
 import Elections.models.ELECTION_STATUS;
-import Elections.models.Vote;
-
+//import Elections.models.Vote;
+import model.Vote;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -154,9 +154,14 @@ public class ElectionImpl implements ElectionInterface {
 
     @Override
     public void addVoteToCandidate(int candidateId, Vote vote) {
-
-        this.candidates.get(candidateId).addVote(vote);
-
+        for (Candidate c : candidates) {
+            if (c.getId() == candidateId) {
+                c.addVote(vote);
+                return;
+            }
+        }
+        System.err.println("Candidato con ID " + candidateId + " no encontrado.");
     }
+
 
 }

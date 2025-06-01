@@ -2,14 +2,14 @@ package Autentication;
 
 import java.util.Optional;
 
-public class AutenticationVoter {
+public class AutenticationVoter implements AutenticationVoterInterface{
     private VoterRepository voterRepo;
 
-    public AutenticationVoter(VoterRepository voterRepo) {
-        this.voterRepo = voterRepo;
+    public AutenticationVoter() {
+        this.voterRepo = new VoterRepository();
     }
 
-    
+    @Override
     public boolean authenticate(String id, String password) {
         Optional<Voter> opt = voterRepo.findById(id);
         if (!opt.isPresent()) {
@@ -19,7 +19,7 @@ public class AutenticationVoter {
         return v.getPassword().equals(password);
     }
 
-
+    @Override
     public boolean hasAlreadyVoted(String id) {
         Optional<Voter> opt = voterRepo.findById(id);
         System.out.println("Se encontro el vontante: "+ (opt !=null));
@@ -28,10 +28,8 @@ public class AutenticationVoter {
         }
         return  opt.get().isAlreadyVote();
     }
-
-
     
-
+    @Override
     public void markAsVoted(String id) {
         Optional<Voter> opt = voterRepo.findById(id);
         if (opt.isPresent()) {

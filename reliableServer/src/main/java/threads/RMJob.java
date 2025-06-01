@@ -5,7 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import communication.Notification;
-import model.Message;
+import model.Vote;
 import model.ReliableMessage;
 import repository.PendingMessageRepository;
 public class RMJob extends Thread{
@@ -37,7 +37,7 @@ public class RMJob extends Thread{
         }
     }
 
-    public void add(Message message){
+    public void add(Vote message){
         synchronized (lock) {
             ReliableMessage mes = new ReliableMessage(UUID.randomUUID().toString(), sequenceNumber++, PENDING, message);
             messagesPendig.put(mes.getUuid(),mes);

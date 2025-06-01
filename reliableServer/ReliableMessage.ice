@@ -5,11 +5,9 @@ module reliableMessage{
     ["java:serializable:model.Message"]
     sequence<byte> Message;
 
-    struct Vote {
-        string id;
-        string vote;
-    };
-    
+    ["java:serializable:model.Vote"]
+    sequence<byte> Vote;
+
     interface ACKService{
         void ack(string messageId);
     }
@@ -18,7 +16,12 @@ module reliableMessage{
     }
     interface RMSource{
         void setServerProxy(RMDestination* destination);
-        void sendMessage(Message msg);
+        void sendMessage(Vote msg);
+    }
+
+
+    interface SendVote{
+        void receiveVote(Vote vote);
     }
 
 }

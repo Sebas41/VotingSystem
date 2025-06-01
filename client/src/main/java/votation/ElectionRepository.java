@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 
-public class ElectionRepository {
+public class ElectionRepository implements ElectionInterface {
 
     private static final String FILE_PATH = "client/data/election.json";
     private Election election;
@@ -27,7 +27,11 @@ public class ElectionRepository {
         }
     }
 
+
+    @Override
     public Election getElection() {
         return election;
     }
+
+
 }

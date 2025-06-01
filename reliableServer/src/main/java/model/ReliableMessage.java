@@ -8,11 +8,11 @@ public class ReliableMessage implements Serializable{
     private long numberMessage;
     private String state;
 
-    private Message message;
+    private Vote message;
 
     public ReliableMessage() {
     }
-    public ReliableMessage(String uuid, long numberMessage, String state, Message message) {
+    public ReliableMessage(String uuid, long numberMessage, String state, Vote message) {
         this.uuid = uuid;
         this.numberMessage = numberMessage;
         this.state = state;
@@ -43,11 +43,11 @@ public class ReliableMessage implements Serializable{
         this.state = state;
     }
 
-    public Message getMessage() {
+    public Vote getMessage() {
         return message;
     }
 
-    public void setMessage(Message message) {
+    public void setMessage(Vote message) {
         this.message = message;
     }
     

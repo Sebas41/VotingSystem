@@ -22,4 +22,4 @@ jar {
                 "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
             )
         }
-    }
+}

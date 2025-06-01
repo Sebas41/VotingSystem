@@ -4,8 +4,9 @@ import ConnectionDB.ConnectionDB;
 import Elections.ElectionImpl;
 import Elections.ElectionInterface;
 import Elections.models.Candidate;
-import Elections.models.Vote;
+//import Elections.models.Vote;
 import Elections.models.ELECTION_STATUS;
+import Reports.ReportsInterface;
 import ServerUI.ServerUI;
 import model.ReliableMessage;
 
@@ -13,14 +14,21 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import Reports.ReportsImplementation;
+import Reports.ReportsInterface;
+import model.Vote;
+
+
 public class ServerControllerImpl implements ServerControllerInterface {
 
     private ElectionInterface election;
     private ConnectionDB connectionDB;
+    private ReportsInterface reports;
 
     public ServerControllerImpl() {
         this.connectionDB = new ConnectionDB();
         this.election = new ElectionImpl(0, new Date(), new Date(), "");
+        this.reports = new ReportsImplementation(connectionDB);
         cargarDatosPrueba();  // Aquí inicializamos datos de ejemplo
     }
 
@@ -48,23 +56,27 @@ public class ServerControllerImpl implements ServerControllerInterface {
     @Override
     public void registerVote(ReliableMessage newVote) {
         try {
-            String jsonPayload = newVote.getMessage().message;
-            Vote vote = new com.fasterxml.jackson.databind.ObjectMapper().readValue(jsonPayload, Vote.class);
-
-            int candidateId = Integer.parseInt(vote.getVote());
-
+            Vote vote = newVote.getMessage();
+            //String jsonPayload = newVote.getMessage().message;
+            //Vote vote = new com.fasterxml.jackson.databind.ObjectMapper().readValue(jsonPayload, Vote.class);
+            
+            //int candidateId = Integer.parseInt(vote.getVote());
+            int candidateId = Integer.parseInt(vote.vote);
             if (!election.isElectionActive()) {
                 System.out.println("La elección no está activa. No se puede registrar el voto.");
                 return;
             }
 
+
             election.addVoteToCandidate(candidateId, vote);
+            connectionDB.storeVote(vote);
             System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
+            //System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
 
             // Verifica que la UI esté inicializada antes de actualizar
             ServerUI ui = ServerUI.getInstance();
             if (ui != null) {
-                ui.showVoteInfo("Voto recibido para candidato ID: " + candidateId);
+                //ui.showVoteInfo("Voto recibido para candidato ID: " + candidateId);
             }
 
         } catch (Exception e) {
@@ -80,6 +92,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
     @Override
     public void createElection(int id, String name, Date start, Date end) {
         election.registerElection(id, name, start, end);
+        connectionDB.storeElection(id, name, start, end, ELECTION_STATUS.PRE.name());
         System.out.println("Elección creada correctamente: " + name);
     }
 
@@ -92,6 +105,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
     @Override
     public void addCandidate(int id, String name, String party) {
         election.addCandidate(id, name, party);
+        connectionDB.storeCandidate(id, name, party, election.getElectionId());
         System.out.println("Candidato añadido: " + name);
     }
 
@@ -125,4 +139,54 @@ public class ServerControllerImpl implements ServerControllerInterface {
     public List<Candidate> getCandidates() {
         return election.getCandidates();
     }
+
+    public void showVotesPerCandidateReport(int electionId) {
+        var result = reports.getTotalVotesPerCandidate(electionId);
+        System.out.println("=== Total de votos por candidato ===");
+        result.forEach((candidate, votes) -> System.out.println(candidate + ": " + votes));
+    }
+
+    public void showVotesPerCandidateByMachine(int electionId) {
+        var result = reports.getVotesPerCandidateByMachine(electionId);
+        System.out.println("=== Votos por candidato por máquina ===");
+        result.forEach((machineId, map) -> {
+            System.out.println("Máquina: " + machineId);
+            map.forEach((candidate, votes) -> System.out.println("  " + candidate + ": " + votes));
+        });
+    }
+
+    public void exportVotesPerMachineCSV(int electionId, String path) {
+        var file = reports.exportVotesPerMachineCSV(electionId, path);
+        System.out.println("Reporte por mesa exportado en: " + file.getAbsolutePath());
+    }
+
+    public void exportElectionResultsCSV(int electionId, String path) {
+        var file = reports.exportElectionResultsCSV(electionId, path);
+        System.out.println("Resultados de elecciones exportados en: " + file.getAbsolutePath());
+    }
+
+    @Override
+    public String getTotalVotesPerCandidate(int electionId) {
+        var result = reports.getTotalVotesPerCandidate(electionId);
+        StringBuilder sb = new StringBuilder("=== Total de votos por candidato ===\n");
+        result.forEach((candidate, votes) -> sb.append(candidate).append(": ").append(votes).append("\n"));
+        return sb.toString();
+    }
+
+    @Override
+    public String getVotesPerCandidateByMachine(int electionId) {
+        var result = reports.getVotesPerCandidateByMachine(electionId);
+        StringBuilder sb = new StringBuilder("=== Votos por candidato por máquina ===\n");
+        result.forEach((machineId, map) -> {
+            sb.append("Máquina: ").append(machineId).append("\n");
+            map.forEach((candidate, votes) -> sb.append("  ").append(candidate).append(": ").append(votes).append("\n"));
+        });
+        return sb.toString();
+    }
+
+
+
+
+
+
 }
