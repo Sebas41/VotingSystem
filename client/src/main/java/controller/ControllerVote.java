@@ -1,3 +1,4 @@
+
 package controller;
 
 import java.net.InetAddress;
@@ -14,6 +15,7 @@ import reliableMessage.RMDestinationPrx;
 import reliableMessage.RMSourcePrx;
 import ui.View;
 import votation.*;
+import model.Vote;
 
 public class ControllerVote {
 
@@ -80,15 +82,11 @@ public class ControllerVote {
 
     public void voting() throws Exception {
         String opcion = view.showCandidatesAndGetChoice(election.getCandidates());
-        Vote nuevoVote = new Vote(ip.getHostAddress(), opcion);
-        nuevoVote.setElectionId(election.getElectionId());
-
-        voteRepo.save(nuevoVote);
-        String payload = mapper.writeValueAsString(nuevoVote);
+        long timestamp = System.currentTimeMillis();
+        Vote nuevoVote = new Vote(ip.getHostAddress(), opcion,timestamp, election.getElectionId());
         rm.setServerProxy(dest);
-        Message msg = new Message();
-        msg.message = payload;
-        rm.sendMessage(msg);
+        rm.sendMessage(nuevoVote);
+        voteRepo.save(nuevoVote);
 
         view.showInfo("Gracias por votar. Su elección (" + opcion + ") ha sido registrada.");
     }

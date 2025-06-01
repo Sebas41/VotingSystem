@@ -10,6 +10,9 @@ public class Election {
     private int electionId;
     private List<Candidate> candidates;
 
+    public Election() {
+    }
+
     @JsonCreator
     public Election(
             @JsonProperty("electionId") int electionId,

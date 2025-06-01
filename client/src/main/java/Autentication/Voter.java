@@ -45,7 +45,6 @@ public class Voter {
 
 
     public boolean isAlreadyVote() {
-        System.out.println("Votante " + name + " ya votó: " + alreadyVote);
         return alreadyVote == Autentication.AlreadyVote.YES;
     }
 

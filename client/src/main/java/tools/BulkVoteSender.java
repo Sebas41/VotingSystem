@@ -1,10 +1,8 @@
 package tools;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import model.Message;
+import model.Vote;
 import reliableMessage.RMDestinationPrx;
 import reliableMessage.RMSourcePrx;
-import votation.Vote;
 import votation.VoteRepository;
 
 import java.net.InetAddress;
@@ -22,7 +20,6 @@ public class BulkVoteSender {
         long startTime = System.currentTimeMillis();
 
         VoteRepository repo = new VoteRepository();
-        ObjectMapper mapper = new ObjectMapper();
 
         // Inicializa los proxies
         com.zeroc.Ice.Communicator communicator = com.zeroc.Ice.Util.initialize();
@@ -32,20 +29,14 @@ public class BulkVoteSender {
 
         String machineIp = InetAddress.getLocalHost().getHostAddress();
 
-        for (int i = 1; i <= 1000000; i++) {
-            int candidateId = (i % 3) + 1; // Alterna entre 1, 2, 3
-            Vote vote = new Vote(machineIp, String.valueOf(candidateId));
-            vote.setElectionId(1);
+        for (int i = 1; i <= 100; i++) {
+            int candidateId = 1;
+            long timestamp = System.currentTimeMillis();
+            Vote vote = new Vote(machineIp, String.valueOf(candidateId),timestamp, candidateId);
 
-            // Guardar localmente
+            rm.sendMessage(vote);
             repo.save(vote);
-
-            // Enviar por ICE
-            Message msg = new Message();
-            msg.message = mapper.writeValueAsString(vote);
-            rm.sendMessage(msg);
-
-            Thread.sleep(50); // Pausa leve para simular latencia
+            
         }
 
         communicator.shutdown();

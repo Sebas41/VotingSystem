@@ -1,10 +1,11 @@
+
 package Controller;
 
 import ConnectionDB.ConnectionDB;
 import Elections.ElectionImpl;
 import Elections.ElectionInterface;
 import Elections.models.Candidate;
-import Elections.models.Vote;
+//import Elections.models.Vote;
 import Elections.models.ELECTION_STATUS;
 import Reports.ReportsInterface;
 import ServerUI.ServerUI;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import Reports.ReportsImplementation;
 import Reports.ReportsInterface;
+import model.Vote;
 
 
 public class ServerControllerImpl implements ServerControllerInterface {
@@ -24,13 +26,11 @@ public class ServerControllerImpl implements ServerControllerInterface {
     private ConnectionDB connectionDB;
     private ReportsInterface reports;
 
-
     public ServerControllerImpl() {
         this.connectionDB = new ConnectionDB();
         this.election = new ElectionImpl(0, new Date(), new Date(), "");
         this.reports = new ReportsImplementation(connectionDB);
         cargarDatosPrueba();  // Aquí inicializamos datos de ejemplo
-
     }
 
     private void cargarDatosPrueba() {
@@ -57,25 +57,26 @@ public class ServerControllerImpl implements ServerControllerInterface {
     @Override
     public void registerVote(ReliableMessage newVote) {
         try {
-            String jsonPayload = newVote.getMessage().message;
-            Vote vote = new com.fasterxml.jackson.databind.ObjectMapper().readValue(jsonPayload, Vote.class);
-
-            int candidateId = Integer.parseInt(vote.getVote());
-
+            Vote vote = newVote.getMessage();
+            //String jsonPayload = newVote.getMessage().message;
+            //Vote vote = new com.fasterxml.jackson.databind.ObjectMapper().readValue(jsonPayload, Vote.class);
+            
+            //int candidateId = Integer.parseInt(vote.getVote());
+            int candidateId = Integer.parseInt(vote.vote);
             if (!election.isElectionActive()) {
                 System.out.println("La elección no está activa. No se puede registrar el voto.");
                 return;
             }
 
 
-
             election.addVoteToCandidate(candidateId, vote);
             connectionDB.storeVote(vote);
+            //System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
 
             // Verifica que la UI esté inicializada antes de actualizar
             ServerUI ui = ServerUI.getInstance();
             if (ui != null) {
-                ui.showVoteInfo("Voto recibido para candidato ID: " + candidateId);
+                //ui.showVoteInfo("Voto recibido para candidato ID: " + candidateId);
             }
 
         } catch (Exception e) {

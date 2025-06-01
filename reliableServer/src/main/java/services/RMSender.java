@@ -7,7 +7,7 @@ import model.Message;
 import reliableMessage.RMDestinationPrx;
 import reliableMessage.RMSource;
 import threads.RMJob;
-
+import model.Vote;
 public class RMSender implements RMSource{
 
     private RMJob jobM;
@@ -21,7 +21,7 @@ public class RMSender implements RMSource{
 
 
     @Override
-    public void sendMessage(Message msg, Current current) {
+    public void sendMessage(Vote msg, Current current) {
         jobM.add(msg);
     }
     

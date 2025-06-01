@@ -2,8 +2,8 @@ package Elections;
 
 import Elections.models.Candidate;
 import Elections.models.ELECTION_STATUS;
-import Elections.models.Vote;
-
+//import Elections.models.Vote;
+import model.Vote;
 import java.util.Date;
 import java.util.List;
 

@@ -1,52 +1,61 @@
 package threads;
 
+import communication.Notification;
+import model.ReliableMessage;
+import model.Vote;
+import repository.PendingMessageStoreMap;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import communication.Notification;
-import model.Message;
-import model.ReliableMessage;
-import repository.PendingMessageRepository;
-public class RMJob extends Thread{
+public class RMJob extends Thread {
 
     public static final String PENDING = "Pending";
-    public static final String SENDED = "Sended";
-    private  PendingMessageRepository repository;
+    public static final String SENDED  = "Sended";
 
-    private Map<String,ReliableMessage> messagesPendig = new ConcurrentHashMap<>();
-    private Map<String,ReliableMessage> forConfirm = new ConcurrentHashMap<>();
+    private final PendingMessageStoreMap store;
 
+    private final Map<String, ReliableMessage> forConfirm = new ConcurrentHashMap<>();
 
-    private Long sequenceNumber = 0l;
-    private Object lock = new Object();
+    private long sequenceNumber = 0L;
+    private final Object lock = new Object();
     private boolean enable = true;
-    private Notification notification;
+    private final Notification notification;
 
     public RMJob(Notification notification) {
         this.notification = notification;
-        this.repository = new PendingMessageRepository();
-        if(repository.findAll().size()>0 ) {
-            long maxSeq = repository.findAll().values().stream()
-                         .mapToLong(ReliableMessage::getNumberMessage)
-                         .max()
-                         .orElse(-1L);
+        this.store = new PendingMessageStoreMap();
+
+        if (!store.findAll().isEmpty()) {
+            long maxSeq = store.findAll().values().stream()
+                               .mapToLong(ReliableMessage::getNumberMessage)
+                               .max()
+                               .orElse(-1L);
             this.sequenceNumber = maxSeq + 1;
-            this.messagesPendig= new ConcurrentHashMap<>(repository.findAll());
-
         }
     }
 
-    public void add(Message message){
+
+    public void add(Vote message) {
         synchronized (lock) {
-            ReliableMessage mes = new ReliableMessage(UUID.randomUUID().toString(), sequenceNumber++, PENDING, message);
-            messagesPendig.put(mes.getUuid(),mes);
-            repository.add(mes);
+            ReliableMessage rm = new ReliableMessage(
+                UUID.randomUUID().toString(),
+                sequenceNumber++,
+                PENDING,
+                message
+            );
+            store.add(rm);
         }
     }
 
-    public void confirmMessage(String uid){
-        forConfirm.remove(uid);
+
+    public void confirmMessage(String uuid) {
+        ReliableMessage removed = store.findById(uuid);
+        if (removed != null) {
+            store.remove(uuid);
+            forConfirm.put(uuid, removed);
+        }
     }
 
     public void setEnable(boolean enable) {
@@ -54,25 +63,20 @@ public class RMJob extends Thread{
     }
 
     @Override
-    public void run(){
+    public void run() {
         while (enable) {
-            
-            for(Map.Entry<String,ReliableMessage> rm: messagesPendig.entrySet()){
+            for (Map.Entry<String, ReliableMessage> entry : store.findAll().entrySet()) {
+                String uuid = entry.getKey();
+                ReliableMessage rm = entry.getValue();
+
                 try {
-                    notification.sendMessage(rm.getValue());
-                    messagesPendig.remove(rm.getKey());
-                    forConfirm.put(rm.getKey(), rm.getValue());
-                    repository.remove(rm.getKey());
-                } catch (com.zeroc.Ice.Exception e) {
-                    //e.printStackTrace();
-                } catch (Exception e) {
-                    // System.err.println("Error sending message: " + e.getMessage());
+                    notification.sendMessage(rm);
+                    store.remove(uuid);
+                    forConfirm.put(uuid, rm);
+
+                } catch (com.zeroc.Ice.Exception iceEx) {
+                } catch (Exception ex) {
                 }
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
     }

@@ -1,7 +1,7 @@
 package ConnectionDB;
 
-import Elections.models.Vote;
-
+//import Elections.models.Vote;
+import model.Vote;
 import java.sql.*;
 import java.util.Date;
 import java.util.HashMap;
@@ -122,10 +122,10 @@ public class ConnectionDB implements ConnectionDBinterface {
     public void storeVote(Vote vote) {
         String sql = "INSERT INTO votos (machine_id, candidato_id, fecha, election_id) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, vote.getmachineId());
-            stmt.setInt(2, Integer.parseInt(vote.getVote()));  // FK al candidato
-            stmt.setTimestamp(3, new Timestamp(vote.getDate().getTimeInMillis()));
-            stmt.setInt(4, vote.getElection());
+            stmt.setString(1, vote.machineId);
+            stmt.setInt(2, Integer.parseInt(vote.vote));  // FK al candidato
+            stmt.setTimestamp(3, new Timestamp(vote.date));
+            stmt.setInt(4, vote.electionId);
             stmt.executeUpdate();
         } catch (Exception e) {
             System.err.println("Error al guardar el voto en la base de datos: " + e.getMessage());

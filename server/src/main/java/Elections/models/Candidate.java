@@ -2,7 +2,7 @@ package Elections.models;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import model.Vote;
 public class Candidate {
 
     private int id;

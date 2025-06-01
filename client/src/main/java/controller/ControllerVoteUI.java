@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zeroc.Ice.Communicator;
 import com.zeroc.Ice.Util;
 import model.Message;
+import model.Vote;
 import reliableMessage.RMDestinationPrx;
 import reliableMessage.RMSourcePrx;
 import ui.VotingMachineUI;
@@ -17,8 +18,6 @@ import java.awt.event.ActionListener;
 import java.net.InetAddress;
 
 public class ControllerVoteUI {
-
-
     private VotationInterface voteRepo;
     private AutenticationVoterInterface authVoter;
 
@@ -88,21 +87,14 @@ public class ControllerVoteUI {
                         ui.showVoteMessage("Seleccione un candidato válido.", true);
                         return;
                     }
-
-                    Vote vote = new Vote(ip.getHostAddress(), candidateId);
-                    vote.setElectionId(election.getElectionId());
-                    voteRepo.save(vote);
-
-                    String payload = mapper.writeValueAsString(vote);
+                    long timestamp = System.currentTimeMillis();
+                    Vote vote = new Vote(ip.getHostAddress(), candidateId, timestamp, election.getElectionId());
                     rm.setServerProxy(dest);
-                    Message msg = new Message();
-                    msg.message = payload;
-                    rm.sendMessage(msg);
-
+                    rm.sendMessage(vote);
+                    voteRepo.save(vote);
                     authVoter.markAsVoted(currentVoterId);
                     ui.showVoteMessage("Gracias por votar. Su elección ha sido registrada.", false);
 
-                    // Regreso al login
                     ui.resetToLoginAfterVote();
 
                 } catch (Exception ex) {

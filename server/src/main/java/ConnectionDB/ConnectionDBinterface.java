@@ -1,8 +1,8 @@
 package ConnectionDB;
 
 import Elections.models.Candidate;
-import Elections.models.Vote;
-
+//import Elections.models.Vote;
+import model.Vote;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
