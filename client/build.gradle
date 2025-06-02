@@ -1,0 +1,26 @@
+slice {
+    java {
+        files = [file("../Service.ice")]
+    }
+}
+repositories {
+    mavenCentral()
+}
+
+dependencies{
+    implementation 'com.zeroc:ice:3.7.2'
+    implementation project(':reliableServer')
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0' 
+    implementation files('../reliableServer/build/libs/reliableServer.jar') 
+    implementation 'com.esotericsoftware:kryo:5.5.0'
+
+}
+
+jar {
+        manifest {
+            attributes(
+                "Main-Class": project.name.capitalize(),
+                "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
+            )
+        }
+    }
