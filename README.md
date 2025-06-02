@@ -84,6 +84,12 @@ Para compilar el proyecto usa el siguiente comando:
 ```bash
 ./gradlew clean build
 ```
+ó con:
+```bash
+gradle build
+```
+
+
 
 Despues de compilar el proyecto ejecuta el server para recibir y validar los votos:
 
