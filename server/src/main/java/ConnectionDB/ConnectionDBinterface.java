@@ -27,4 +27,9 @@ public interface ConnectionDBinterface {
     String getPoolStats();
     boolean isHealthy();
     Map<String, Object> getPerformanceMetrics();
+    List<Map<String, Object>> getAllDepartments();
+    List<Map<String, Object>> getMunicipalitiesByDepartment(int departmentId);
+    List<Map<String, Object>> getPuestosByMunicipality(int municipalityId);
+    Map<String, Object> getElectionConfigurationStats(int electionId);
+    boolean validateElectionDataCompleteness(int electionId);
 }

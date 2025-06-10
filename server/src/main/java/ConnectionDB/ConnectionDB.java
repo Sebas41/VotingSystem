@@ -39,14 +39,12 @@ public class ConnectionDB implements ConnectionDBinterface {
             config.setMaxLifetime(1800000);
             config.setLeakDetectionThreshold(60000);
 
-
             config.addDataSourceProperty("cachePrepStmts", "true");
             config.addDataSourceProperty("prepStmtCacheSize", "250");
             config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
             config.addDataSourceProperty("useServerPrepStmts", "true");
             config.addDataSourceProperty("reWriteBatchedInserts", "true");
             config.addDataSourceProperty("defaultRowFetchSize", "1000");
-
 
             config.setConnectionTestQuery("SELECT 1");
             config.setValidationTimeout(5000);
@@ -92,7 +90,6 @@ public class ConnectionDB implements ConnectionDBinterface {
 
         } catch (SQLException e) {
             logger.error("Error storing election: {}", name, e);
-            // Keep original behavior - don't throw exception, just log
             System.err.println("Error guardando la elección: " + e.getMessage());
         }
     }
@@ -115,7 +112,6 @@ public class ConnectionDB implements ConnectionDBinterface {
 
         } catch (SQLException e) {
             logger.error("Error storing candidate: {}", name, e);
-            // Keep original behavior - don't throw exception, just log
             System.err.println("Error guardando el candidato: " + e.getMessage());
         }
     }
@@ -143,7 +139,6 @@ public class ConnectionDB implements ConnectionDBinterface {
 
         } catch (SQLException e) {
             logger.error("Error getting votes per candidate for election: {}", electionId, e);
-            // Keep original behavior - don't throw exception, just log
             System.err.println("Error obteniendo votos por candidato: " + e.getMessage());
         }
 
@@ -176,7 +171,6 @@ public class ConnectionDB implements ConnectionDBinterface {
 
         } catch (SQLException e) {
             logger.error("Error getting votes per candidate grouped by machine for election: {}", electionId, e);
-            // Keep original behavior - don't throw exception, just log
             System.err.println("Error obteniendo votos por candidato y máquina: " + e.getMessage());
         }
 
@@ -200,7 +194,6 @@ public class ConnectionDB implements ConnectionDBinterface {
 
         } catch (SQLException e) {
             logger.error("Error getting candidate name for ID: {}", key, e);
-            // Keep original behavior - don't throw exception, just log
             System.err.println("Error obteniendo nombre del candidato con ID " + key + ": " + e.getMessage());
         }
 
@@ -215,7 +208,7 @@ public class ConnectionDB implements ConnectionDBinterface {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, vote.machineId);
-            stmt.setInt(2, Integer.parseInt(vote.vote));  // FK al candidato
+            stmt.setInt(2, Integer.parseInt(vote.vote));
             stmt.setTimestamp(3, new Timestamp(vote.date));
             stmt.setInt(4, vote.electionId);
 
@@ -224,7 +217,6 @@ public class ConnectionDB implements ConnectionDBinterface {
 
         } catch (SQLException e) {
             logger.error("Error storing vote for machine: {}", vote.machineId, e);
-            // Keep original behavior - don't throw exception, just log
             System.err.println("Error al guardar el voto en la base de datos: " + e.getMessage());
         }
     }
@@ -307,7 +299,6 @@ public class ConnectionDB implements ConnectionDBinterface {
 
         Map<Integer, List<Map<String, Object>>> result = new ConcurrentHashMap<>();
 
-        // Initialize empty lists for all mesa IDs
         for (Integer mesaId : mesaIds) {
             result.put(mesaId, new ArrayList<>());
         }
@@ -461,6 +452,229 @@ public class ConnectionDB implements ConnectionDBinterface {
         }
 
         return candidates;
+    }
+
+    @Override
+    public List<Map<String, Object>> getAllDepartments() {
+        List<Map<String, Object>> departments = new ArrayList<>();
+        String sql = "SELECT id, nombre FROM departamento ORDER BY nombre";
+
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Map<String, Object> department = new HashMap<>();
+                department.put("id", rs.getInt("id"));
+                department.put("nombre", rs.getString("nombre"));
+                departments.add(department);
+            }
+
+            logger.info("Retrieved {} departments", departments.size());
+
+        } catch (SQLException e) {
+            logger.error("Error getting all departments", e);
+            System.err.println("Error obteniendo departamentos: " + e.getMessage());
+        }
+
+        return departments;
+    }
+
+    @Override
+    public List<Map<String, Object>> getMunicipalitiesByDepartment(int departmentId) {
+        List<Map<String, Object>> municipalities = new ArrayList<>();
+        String sql = "SELECT id, nombre FROM municipio WHERE departamento_id = ? ORDER BY nombre";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, departmentId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> municipality = new HashMap<>();
+                    municipality.put("id", rs.getInt("id"));
+                    municipality.put("nombre", rs.getString("nombre"));
+                    municipality.put("departamento_id", departmentId);
+                    municipalities.add(municipality);
+                }
+            }
+
+            logger.info("Retrieved {} municipalities for department {}", municipalities.size(), departmentId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting municipalities for department: {}", departmentId, e);
+            System.err.println("Error obteniendo municipios para departamento " + departmentId + ": " + e.getMessage());
+        }
+
+        return municipalities;
+    }
+
+    @Override
+    public List<Map<String, Object>> getPuestosByMunicipality(int municipalityId) {
+        List<Map<String, Object>> puestos = new ArrayList<>();
+        String sql = "SELECT id, nombre, direccion, consecutive FROM puesto_votacion WHERE municipio_id = ? ORDER BY consecutive";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, municipalityId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> puesto = new HashMap<>();
+                    puesto.put("id", rs.getInt("id"));
+                    puesto.put("nombre", rs.getString("nombre"));
+                    puesto.put("direccion", rs.getString("direccion"));
+                    puesto.put("consecutive", rs.getInt("consecutive"));
+                    puesto.put("municipio_id", municipalityId);
+                    puestos.add(puesto);
+                }
+            }
+
+            logger.info("Retrieved {} puestos for municipality {}", puestos.size(), municipalityId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting puestos for municipality: {}", municipalityId, e);
+            System.err.println("Error obteniendo puestos para municipio " + municipalityId + ": " + e.getMessage());
+        }
+
+        return puestos;
+    }
+
+    @Override
+    public Map<String, Object> getElectionConfigurationStats(int electionId) {
+        Map<String, Object> stats = new HashMap<>();
+
+        try (Connection conn = getConnection()) {
+
+            // Get election info
+            Map<String, Object> electionInfo = getElectionInfo(electionId);
+            if (electionInfo != null) {
+                stats.put("electionName", electionInfo.get("nombre"));
+                stats.put("electionStatus", electionInfo.get("estado"));
+                stats.put("fechaInicio", electionInfo.get("fecha_inicio"));
+                stats.put("fechaFin", electionInfo.get("fecha_fin"));
+            }
+
+            // Get candidate count
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) as count FROM candidatos WHERE eleccion_id = ?")) {
+                stmt.setInt(1, electionId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        stats.put("totalCandidates", rs.getInt("count"));
+                    }
+                }
+            }
+
+            // Get total mesas
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) as count FROM mesa_votacion")) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        stats.put("totalMesas", rs.getInt("count"));
+                    }
+                }
+            }
+
+            // Get total citizens
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) as count FROM ciudadano")) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        stats.put("totalCitizens", rs.getLong("count"));
+                    }
+                }
+            }
+
+            // Get average citizens per mesa
+            try (PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT AVG(citizen_count) as avg_citizens FROM (" +
+                            "SELECT mesa_id, COUNT(*) as citizen_count FROM ciudadano GROUP BY mesa_id" +
+                            ") as mesa_stats")) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        stats.put("avgCitizensPerMesa", rs.getDouble("avg_citizens"));
+                    }
+                }
+            }
+
+            // Add timestamp
+            stats.put("timestamp", new Date());
+
+            logger.info("Election configuration stats generated for election {}", electionId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting election configuration stats for election: {}", electionId, e);
+            stats.put("error", "Failed to collect stats: " + e.getMessage());
+        }
+
+        return stats;
+    }
+
+    @Override
+    public boolean validateElectionDataCompleteness(int electionId) {
+        try (Connection conn = getConnection()) {
+
+            // Check if election exists
+            Map<String, Object> electionInfo = getElectionInfo(electionId);
+            if (electionInfo == null) {
+                logger.warn("Election {} not found", electionId);
+                return false;
+            }
+
+            // Check if election has candidates
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) as count FROM candidatos WHERE eleccion_id = ?")) {
+                stmt.setInt(1, electionId);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        int candidateCount = rs.getInt("count");
+                        if (candidateCount == 0) {
+                            logger.warn("Election {} has no candidates", electionId);
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            // Check if there are voting tables (mesas)
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) as count FROM mesa_votacion")) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        int mesaCount = rs.getInt("count");
+                        if (mesaCount == 0) {
+                            logger.warn("No voting tables (mesas) found in system");
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            // Check if there are citizens assigned to mesas
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) as count FROM ciudadano")) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        long citizenCount = rs.getLong("count");
+                        if (citizenCount == 0) {
+                            logger.warn("No citizens found in system");
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            // Check election status
+            String status = (String) electionInfo.get("estado");
+            if (status == null) {
+                logger.warn("Election {} has null status", electionId);
+                return false;
+            }
+
+            logger.info("Election {} data completeness validation passed", electionId);
+            return true;
+
+        } catch (SQLException e) {
+            logger.error("Error validating election data completeness for election: {}", electionId, e);
+            return false;
+        }
     }
 
     // =================== MONITORING AND PERFORMANCE METHODS ===================
