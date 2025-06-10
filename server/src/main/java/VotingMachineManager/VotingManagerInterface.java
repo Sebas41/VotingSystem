@@ -36,5 +36,4 @@ public interface VotingManagerInterface {
 
     Map<Integer, Map<String, Object>> generatePuestoConfigurations(int puestoId, int electionId);
 
-
 }

@@ -40,4 +40,8 @@ public interface ServerControllerInterface {
     String getMesaConfiguration(int mesaId, int electionId);
     String validateAllConfigurations(int electionId);
     void shutdown();
+
+    void exportVotesPerMachineCSV(int electionId, String path);
+
+    void exportElectionResultsCSV(int electionId, String path);
 }

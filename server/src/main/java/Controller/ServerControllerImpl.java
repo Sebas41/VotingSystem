@@ -32,8 +32,9 @@ public class ServerControllerImpl implements ServerControllerInterface {
     private VotingManagerInterface votingManager;
 
     // Configuration storage paths
-    private static final String CONFIG_BASE_PATH = "voting_configurations";
-    private static final String DEPLOYMENT_LOGS_PATH = "deployment_logs";
+    // Configuration storage paths
+    private static final String CONFIG_BASE_PATH = "server/src/main/java/VotingMachineManager/data/voting_configurations";
+    private static final String DEPLOYMENT_LOGS_PATH = "server/src/main/java/VotingMachineManager/data/deployment_logs";
 
     // Threading for parallel processing
     private ExecutorService configExecutor;
@@ -230,34 +231,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         });
     }
 
-    /**
-     * Generate configuration for a specific puesto de votación
-     */
-    public void generatePuestoConfiguration(int puestoId, int electionId, String testName) {
-        try {
-            System.out.println("=== Generating Configuration for Puesto " + puestoId + " ===");
 
-            // Get all mesas in this puesto
-            List<Map<String, Object>> mesasInPuesto = getMesasByPuesto(puestoId);
-            List<Integer> mesaIds = mesasInPuesto.stream()
-                    .map(mesa -> (Integer) mesa.get("mesa_id"))
-                    .collect(Collectors.toList());
-
-            if (mesaIds.isEmpty()) {
-                System.out.println("No mesas found in puesto " + puestoId);
-                return;
-            }
-
-            // Get puesto information for better naming
-            String puestoName = mesasInPuesto.get(0).get("puesto_nombre").toString();
-            String enhancedTestName = testName + "_Puesto_" + puestoId + "_" + sanitizeFileName(puestoName);
-
-            generateSelectiveMesaConfigurations(mesaIds, electionId, enhancedTestName);
-
-        } catch (Exception e) {
-            System.err.println("Error generating puesto configuration: " + e.getMessage());
-        }
-    }
 
     /**
      * Generate configuration for specific mesas in a department (for testing sample)
@@ -923,7 +897,6 @@ public class ServerControllerImpl implements ServerControllerInterface {
         });
     }
 
-// =================== ADD THESE HELPER METHODS TO YOUR ServerControllerImpl.java ===================
 
     private void generatePuestoTestSummary(int electionId, int puestoId, String puestoName, String puestoAddress,
                                            Map<Integer, Map<String, Object>> configs, String testName,

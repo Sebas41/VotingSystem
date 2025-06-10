@@ -374,13 +374,12 @@ public class VotingManagerImpl implements VotingManagerInterface {
 
             logger.info("Found {} mesas in puesto {}", mesaIds.size(), puestoId);
 
-            // Use batch generation for efficiency - reuses existing optimized code
+            // Use batch generation for efficiency
             Map<Integer, Map<String, Object>> puestoConfigurations = generateBatchMachineConfigurations(mesaIds, electionId);
 
-            // Add puesto-level metadata to each configuration
+            // Add puesto-level metadata
             for (Map<String, Object> config : puestoConfigurations.values()) {
                 if (config != null) {
-                    // Add puesto identification to summary
                     Map<String, Object> summary = (Map<String, Object>) config.get("summary");
                     if (summary != null) {
                         summary.put("puestoId", puestoId);
