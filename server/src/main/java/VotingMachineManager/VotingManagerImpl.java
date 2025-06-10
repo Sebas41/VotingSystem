@@ -341,4 +341,64 @@ public class VotingManagerImpl implements VotingManagerInterface {
             return false;
         }
     }
+
+    // =================== ADD THIS METHOD TO YOUR VotingManagerImpl.java ===================
+
+    /**
+     * Generate configurations for all mesas in a specific puesto de votación
+     * This provides an optimized way to configure entire voting locations
+     */
+    @Override
+    public Map<Integer, Map<String, Object>> generatePuestoConfigurations(int puestoId, int electionId) {
+        logger.info("Generating configurations for puesto {} and election {}", puestoId, electionId);
+
+        try {
+            // Get all mesa IDs for this puesto
+            List<Integer> mesaIds = new ArrayList<>();
+
+            // Get all mesas and filter by puesto_id
+            List<Integer> allMesaIds = connectionDB.getAllMesaIds();
+
+            // Filter mesas that belong to this puesto
+            for (Integer mesaId : allMesaIds) {
+                Map<String, Object> mesaConfig = connectionDB.getMesaConfiguration(mesaId);
+                if (mesaConfig != null && puestoId == (Integer) mesaConfig.get("puesto_id")) {
+                    mesaIds.add(mesaId);
+                }
+            }
+
+            if (mesaIds.isEmpty()) {
+                logger.warn("No mesas found for puesto {}", puestoId);
+                return new HashMap<>();
+            }
+
+            logger.info("Found {} mesas in puesto {}", mesaIds.size(), puestoId);
+
+            // Use batch generation for efficiency - reuses existing optimized code
+            Map<Integer, Map<String, Object>> puestoConfigurations = generateBatchMachineConfigurations(mesaIds, electionId);
+
+            // Add puesto-level metadata to each configuration
+            for (Map<String, Object> config : puestoConfigurations.values()) {
+                if (config != null) {
+                    // Add puesto identification to summary
+                    Map<String, Object> summary = (Map<String, Object>) config.get("summary");
+                    if (summary != null) {
+                        summary.put("puestoId", puestoId);
+                        summary.put("configurationType", "PUESTO_LEVEL");
+                    }
+                }
+            }
+
+            logger.info("Generated {} configurations for puesto {}", puestoConfigurations.size(), puestoId);
+            return puestoConfigurations;
+
+        } catch (Exception e) {
+            logger.error("Error generating puesto configurations for puesto {} and election {}",
+                    puestoId, electionId, e);
+            return new HashMap<>();
+        }
+    }
+
+
+
 }

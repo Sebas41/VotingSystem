@@ -33,4 +33,8 @@ public interface VotingManagerInterface {
 
 
     boolean isElectionReadyForConfiguration(int electionId);
+
+    Map<Integer, Map<String, Object>> generatePuestoConfigurations(int puestoId, int electionId);
+
+
 }
