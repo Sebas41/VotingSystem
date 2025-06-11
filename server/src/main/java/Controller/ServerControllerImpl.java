@@ -10,6 +10,7 @@ import Reports.ReportsImplementation;
 import ServerUI.ServerUI;
 import VotingMachineManager.VotingManagerInterface;
 import VotingMachineManager.VotingManagerImpl;
+import VotingSystem.VotingConfiguration;
 import model.ReliableMessage;
 import model.Vote;
 
@@ -29,7 +30,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
     private ElectionInterface election;
     private ConnectionDB connectionDB;
     private ReportsInterface reports;
-    private VotingManagerInterface votingManager;
+    private VotingManagerImpl votingManager;
 
     // Configuration storage paths
     // Configuration storage paths
@@ -201,7 +202,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                 long startTime = System.currentTimeMillis();
 
                 // Generate configurations for selected mesas
-                Map<Integer, Map<String, Object>> configs =
+                Map<Integer, VotingConfiguration> configs =
                         votingManager.generateBatchMachineConfigurations(mesaIds, electionId);
 
                 // Save configurations to files
@@ -339,19 +340,16 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    // =================== HELPER METHODS ===================
 
-    private void displayMesaDetails(Map<Integer, Map<String, Object>> configs) {
+
+    private void displayMesaDetails(Map<Integer, VotingConfiguration> configs) {
         System.out.println("\n=== Generated Configuration Details ===");
         configs.forEach((mesaId, config) -> {
-            Map<String, Object> summary = (Map<String, Object>) config.get("summary");
-            Map<String, Object> mesaInfo = (Map<String, Object>) config.get("mesaInfo");
-
-            if (summary != null && mesaInfo != null) {
+            if (config != null && config.mesaInfo != null && config.citizens != null) {
                 System.out.printf("Mesa %d: %d citizens, Location: %s%n",
                         mesaId,
-                        summary.get("totalAssignedCitizens"),
-                        mesaInfo.get("puesto_nombre")
+                        config.citizens.length,
+                        config.mesaInfo.puestoNombre
                 );
             }
         });
@@ -395,14 +393,19 @@ public class ServerControllerImpl implements ServerControllerInterface {
         return fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
-    private void saveConfigurationsToFiles(Map<Integer, Map<String, Object>> configs, String basePath) {
+    private void saveConfigurationsToFiles(Map<Integer, VotingConfiguration> configs, String basePath) {
         configs.forEach((mesaId, config) -> {
             try {
-                String fileName = String.format("mesa_%d_config.json", mesaId);
-                Path filePath = Paths.get(basePath, fileName);
+                // Save as Ice binary file
+                String iceFileName = String.format("mesa_%d_config.ice", mesaId);
+                Path iceFilePath = Paths.get(basePath, iceFileName);
+                votingManager.saveConfigurationToFile(config, iceFilePath.toString());
 
+                // Also save as JSON for debugging/inspection
+                String jsonFileName = String.format("mesa_%d_config.json", mesaId);
+                Path jsonFilePath = Paths.get(basePath, jsonFileName);
                 String jsonContent = votingManager.exportConfigurationToJson(config);
-                Files.writeString(filePath, jsonContent, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                Files.writeString(jsonFilePath, jsonContent, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
                 configProgress.incrementAndGet();
 
@@ -497,7 +500,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                 System.out.println("=== Generating Configurations for Department " + departmentId + " ===");
 
                 long startTime = System.currentTimeMillis();
-                Map<Integer, Map<String, Object>> configs = votingManager.generateDepartmentConfigurations(departmentId, electionId);
+                Map<Integer, VotingConfiguration> configs = votingManager.generateDepartmentConfigurations(departmentId, electionId);
                 long endTime = System.currentTimeMillis();
 
                 // Save configurations to files
@@ -564,7 +567,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
      */
     public String getMesaConfiguration(int mesaId, int electionId) {
         try {
-            Map<String, Object> config = votingManager.generateMachineConfiguration(mesaId, electionId);
+            VotingConfiguration config = votingManager.generateMachineConfiguration(mesaId, electionId);
             if (config != null) {
                 return votingManager.exportConfigurationToJson(config);
             }
@@ -577,6 +580,9 @@ public class ServerControllerImpl implements ServerControllerInterface {
     /**
      * Validate all generated configurations
      */
+    /**
+     * Validate all generated configurations for an election
+     */
     public String validateAllConfigurations(int electionId) {
         try {
             String electionConfigPath = CONFIG_BASE_PATH + "/election_" + electionId;
@@ -586,32 +592,127 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
             AtomicInteger validConfigs = new AtomicInteger(0);
             AtomicInteger totalConfigs = new AtomicInteger(0);
+            AtomicInteger iceConfigs = new AtomicInteger(0);
+            AtomicInteger jsonConfigs = new AtomicInteger(0);
+            List<String> validationErrors = new ArrayList<>();
 
+            // Validate Ice files (primary format)
+            Files.walk(Paths.get(electionConfigPath))
+                    .filter(path -> path.toString().endsWith(".ice"))
+                    .forEach(configFile -> {
+                        try {
+                            totalConfigs.incrementAndGet();
+                            iceConfigs.incrementAndGet();
+
+                            // Load Ice configuration
+                            VotingConfiguration config = votingManager.loadConfigurationFromFile(configFile.toString());
+
+                            if (votingManager.validateConfiguration(config)) {
+                                validConfigs.incrementAndGet();
+                            } else {
+                                String fileName = configFile.getFileName().toString();
+                                validationErrors.add("Ice validation failed: " + fileName);
+                            }
+                        } catch (Exception e) {
+                            String fileName = configFile.getFileName().toString();
+                            String error = "Error validating Ice file " + fileName + ": " + e.getMessage();
+                            System.err.println(error);
+                            validationErrors.add(error);
+                        }
+                    });
+
+            // Also validate JSON files (secondary format) for completeness
             Files.walk(Paths.get(electionConfigPath))
                     .filter(path -> path.toString().endsWith(".json"))
                     .forEach(configFile -> {
                         try {
-                            totalConfigs.incrementAndGet();
+                            jsonConfigs.incrementAndGet();
                             String content = Files.readString(configFile);
-                            Map<String, Object> config = jsonMapper.readValue(content, Map.class);
 
-                            if (votingManager.validateConfiguration(config)) {
-                                validConfigs.incrementAndGet();
+                            // Basic JSON structure validation
+                            Map<String, Object> configMap = jsonMapper.readValue(content, Map.class);
+
+                            // Check for required fields in JSON
+                            if (configMap.containsKey("mesaInfo") &&
+                                    configMap.containsKey("citizens") &&
+                                    configMap.containsKey("candidates")) {
+                                // JSON structure is valid
+                            } else {
+                                String fileName = configFile.getFileName().toString();
+                                validationErrors.add("JSON structure validation failed: " + fileName + " - missing required fields");
                             }
+
                         } catch (Exception e) {
-                            System.err.println("Error validating " + configFile + ": " + e.getMessage());
+                            String fileName = configFile.getFileName().toString();
+                            String error = "Error validating JSON file " + fileName + ": " + e.getMessage();
+                            System.err.println(error);
+                            validationErrors.add(error);
                         }
                     });
 
-            return String.format("Configuration Validation: %d/%d valid (%.1f%%)",
-                    validConfigs.get(), totalConfigs.get(),
-                    totalConfigs.get() > 0 ? (validConfigs.get() * 100.0 / totalConfigs.get()) : 0);
+            // Build comprehensive validation report
+            StringBuilder report = new StringBuilder();
+            report.append("=== Configuration Validation Report ===\n");
+            report.append("Election ID: ").append(electionId).append("\n");
+            report.append("Validation Date: ").append(new Date()).append("\n");
+            report.append("\n=== File Count Summary ===\n");
+            report.append("Total Ice Files: ").append(iceConfigs.get()).append("\n");
+            report.append("Total JSON Files: ").append(jsonConfigs.get()).append("\n");
+            report.append("Total Configurations: ").append(totalConfigs.get()).append(" (based on Ice files)\n");
+
+            report.append("\n=== Validation Results ===\n");
+            if (totalConfigs.get() > 0) {
+                double validationPercent = (validConfigs.get() * 100.0 / totalConfigs.get());
+                report.append("Valid Configurations: ").append(validConfigs.get()).append("/").append(totalConfigs.get())
+                        .append(" (").append(String.format("%.1f%%", validationPercent)).append(")\n");
+
+                if (validationPercent == 100.0) {
+                    report.append("Status: ✓ ALL CONFIGURATIONS VALID\n");
+                } else if (validationPercent >= 95.0) {
+                    report.append("Status: ⚠ MOSTLY VALID (some issues detected)\n");
+                } else {
+                    report.append("Status: ✗ VALIDATION ISSUES DETECTED\n");
+                }
+            } else {
+                report.append("Status: ✗ NO CONFIGURATIONS FOUND\n");
+            }
+
+            // Add detailed error information if any
+            if (!validationErrors.isEmpty()) {
+                report.append("\n=== Validation Errors (").append(validationErrors.size()).append(" total) ===\n");
+                validationErrors.stream()
+                        .limit(10) // Show first 10 errors to avoid overwhelming output
+                        .forEach(error -> report.append("• ").append(error).append("\n"));
+
+                if (validationErrors.size() > 10) {
+                    report.append("... and ").append(validationErrors.size() - 10).append(" more errors\n");
+                }
+            }
+
+            // Add performance information
+            report.append("\n=== Format Performance Notes ===\n");
+            report.append("• Ice files: Binary format, optimized for production use\n");
+            report.append("• JSON files: Text format, for debugging and inspection\n");
+            report.append("• Primary validation based on Ice files\n");
+
+            String finalReport = report.toString();
+
+            // Save detailed validation report
+            try {
+                String reportPath = DEPLOYMENT_LOGS_PATH + "/validation_report_election_" + electionId + "_" +
+                        System.currentTimeMillis() + ".txt";
+                Files.writeString(Paths.get(reportPath), finalReport);
+                System.out.println("Detailed validation report saved to: " + reportPath);
+            } catch (Exception e) {
+                System.err.println("Could not save validation report: " + e.getMessage());
+            }
+
+            return finalReport;
 
         } catch (Exception e) {
             return "Error during validation: " + e.getMessage();
         }
     }
-
 
     private List<List<Integer>> createBatches(List<Integer> items, int batchSize) {
         List<List<Integer>> batches = new ArrayList<>();
@@ -623,7 +724,8 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
     private void processBatch(List<Integer> mesaIds, int electionId, String basePath, int batchIndex) {
         try {
-            Map<Integer, Map<String, Object>> batchConfigs =
+
+            Map<Integer, VotingConfiguration> batchConfigs =
                     votingManager.generateBatchMachineConfigurations(mesaIds, electionId);
 
             saveConfigurationsToFiles(batchConfigs, basePath);
@@ -824,6 +926,9 @@ public class ServerControllerImpl implements ServerControllerInterface {
     /**
      * Generate configuration for a specific puesto de votación (OPTIMIZED VERSION)
      */
+    /**
+     * Generate configuration for a specific puesto de votación (OPTIMIZED VERSION)
+     */
     public void generatePuestoConfiguration(int puestoId, int electionId, String testName) {
         if (isGeneratingConfigs) {
             System.out.println("Configuration generation already in progress...");
@@ -846,7 +951,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                 long startTime = System.currentTimeMillis();
 
                 // Use the new optimized method
-                Map<Integer, Map<String, Object>> configs =
+                Map<Integer, VotingConfiguration> configs =
                         votingManager.generatePuestoConfigurations(puestoId, electionId);
 
                 if (configs.isEmpty()) {
@@ -856,11 +961,13 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
                 totalConfigsToGenerate = configs.size();
 
-                // Get puesto information for better naming
+                // Get puesto information for better naming - CORRECTED
                 Integer firstMesaId = configs.keySet().iterator().next();
-                Map<String, Object> mesaInfo = (Map<String, Object>) configs.get(firstMesaId).get("mesaInfo");
-                String puestoName = mesaInfo != null ? (String) mesaInfo.get("puesto_nombre") : "Unknown";
-                String puestoAddress = mesaInfo != null ? (String) mesaInfo.get("puesto_direccion") : "";
+                VotingConfiguration firstConfig = configs.get(firstMesaId);
+                String puestoName = firstConfig != null && firstConfig.mesaInfo != null ?
+                        firstConfig.mesaInfo.puestoNombre : "Unknown";
+                String puestoAddress = firstConfig != null && firstConfig.mesaInfo != null ?
+                        firstConfig.mesaInfo.puestoDireccion : "";
 
                 String enhancedTestName = testName + "_Puesto_" + puestoId + "_" + sanitizeFileName(puestoName);
 
@@ -899,7 +1006,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
 
     private void generatePuestoTestSummary(int electionId, int puestoId, String puestoName, String puestoAddress,
-                                           Map<Integer, Map<String, Object>> configs, String testName,
+                                           Map<Integer, VotingConfiguration> configs, String testName,
                                            double timeSeconds, String configPath) {
         try {
             String summaryPath = DEPLOYMENT_LOGS_PATH + "/puesto_test_" + sanitizeFileName(testName) + ".txt";
@@ -920,11 +1027,10 @@ public class ServerControllerImpl implements ServerControllerInterface {
             // Add mesa details
             summary.append("\n=== Mesa Details ===\n");
             int totalCitizens = 0;
-            for (Map.Entry<Integer, Map<String, Object>> entry : configs.entrySet()) {
-                Map<String, Object> config = entry.getValue();
-                Map<String, Object> summaryInfo = (Map<String, Object>) config.get("summary");
-                if (summaryInfo != null) {
-                    int citizens = (Integer) summaryInfo.get("totalAssignedCitizens");
+            for (Map.Entry<Integer, VotingConfiguration> entry : configs.entrySet()) {
+                VotingConfiguration config = entry.getValue();
+                if (config != null && config.citizens != null) {
+                    int citizens = config.citizens.length;
                     totalCitizens += citizens;
                     summary.append("Mesa ").append(entry.getKey()).append(": ").append(citizens).append(" citizens\n");
                 }
@@ -933,6 +1039,12 @@ public class ServerControllerImpl implements ServerControllerInterface {
             summary.append("\nTotal Citizens in Puesto: ").append(totalCitizens).append("\n");
             summary.append("Average Citizens per Mesa: ").append(String.format("%.1f", (double) totalCitizens / configs.size())).append("\n");
 
+            // Add Ice-specific information
+            summary.append("\n=== Configuration Format Details ===\n");
+            summary.append("Primary Format: Ice Binary (.ice files)\n");
+            summary.append("Secondary Format: JSON (.json files for debugging)\n");
+            summary.append("Ice Serialization: Optimized for performance and size\n");
+
             Files.writeString(Paths.get(summaryPath), summary.toString());
 
         } catch (Exception e) {
@@ -940,47 +1052,40 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    private void displayPuestoDetails(Map<Integer, Map<String, Object>> configs, String puestoName, String puestoAddress) {
-        System.out.println("\n=== Puesto Configuration Details ===");
-        System.out.println("Puesto: " + puestoName);
-        System.out.println("Address: " + puestoAddress);
-        System.out.println("Total Mesas: " + configs.size());
+private void displayPuestoDetails(Map<Integer, VotingConfiguration> configs, String puestoName, String puestoAddress) {
+    System.out.println("\n=== Puesto Configuration Details ===");
+    System.out.println("Puesto: " + puestoName);
+    System.out.println("Address: " + puestoAddress);
+    System.out.println("Total Mesas: " + configs.size());
 
-        int totalCitizens = 0;
-        List<Integer> mesaIds = new ArrayList<>(configs.keySet());
-        Collections.sort(mesaIds);
+    int totalCitizens = 0;
+    List<Integer> mesaIds = new ArrayList<>(configs.keySet());
+    Collections.sort(mesaIds);
 
-        System.out.println("\nMesa Summary:");
-        for (Integer mesaId : mesaIds.subList(0, Math.min(5, mesaIds.size()))) {
-            Map<String, Object> config = configs.get(mesaId);
-            Map<String, Object> summary = (Map<String, Object>) config.get("summary");
-            if (summary != null) {
-                int citizens = (Integer) summary.get("totalAssignedCitizens");
-                totalCitizens += citizens;
-                System.out.printf("  Mesa %d: %d citizens%n", mesaId, citizens);
-            }
+    System.out.println("\nMesa Summary:");
+    for (Integer mesaId : mesaIds.subList(0, Math.min(5, mesaIds.size()))) {
+        VotingConfiguration config = configs.get(mesaId);
+        if (config != null && config.citizens != null) {
+            int citizens = config.citizens.length;
+            totalCitizens += citizens;
+            System.out.printf("  Mesa %d: %d citizens%n", mesaId, citizens);
         }
-
-        if (configs.size() > 5) {
-            // Calculate total for remaining mesas
-            for (Integer mesaId : mesaIds.subList(5, mesaIds.size())) {
-                Map<String, Object> config = configs.get(mesaId);
-                Map<String, Object> summary = (Map<String, Object>) config.get("summary");
-                if (summary != null) {
-                    totalCitizens += (Integer) summary.get("totalAssignedCitizens");
-                }
-            }
-            System.out.println("  ... and " + (configs.size() - 5) + " more mesas");
-        }
-
-        System.out.println("Total Citizens: " + totalCitizens);
-        System.out.println("Average Citizens per Mesa: " + String.format("%.1f", (double) totalCitizens / configs.size()));
     }
 
+    if (configs.size() > 5) {
+        // Calculate total for remaining mesas
+        for (Integer mesaId : mesaIds.subList(5, mesaIds.size())) {
+            VotingConfiguration config = configs.get(mesaId);
+            if (config != null && config.citizens != null) {
+                totalCitizens += config.citizens.length;
+            }
+        }
+        System.out.println("  ... and " + (configs.size() - 5) + " more mesas");
+    }
 
-
-
-
+    System.out.println("Total Citizens: " + totalCitizens);
+    System.out.println("Average Citizens per Mesa: " + String.format("%.1f", (double) totalCitizens / configs.size()));
+}
 
 
 

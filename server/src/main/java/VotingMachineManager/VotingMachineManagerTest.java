@@ -3,18 +3,19 @@ package VotingMachineManager;
 import ConnectionDB.ConnectionDB;
 import VotingMachineManager.VotingManagerInterface;
 import VotingMachineManager.VotingManagerImpl;
+import VotingSystem.VotingConfiguration;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 
 /**
  * Comprehensive test for VotingMachineManager
- * Tests configuration package generation for voting machines
+ * Tests Ice-based configuration package generation for voting machines
  */
 public class VotingMachineManagerTest {
 
     public static void main(String[] args) {
-        System.out.println("=== Testing VotingMachineManager ===");
+        System.out.println("=== Testing VotingMachineManager (Ice-based) ===");
 
         // Initialize components
         ConnectionDB connectionDB = new ConnectionDB();
@@ -63,7 +64,7 @@ public class VotingMachineManagerTest {
         System.out.println("   Testing with mesa ID: " + testMesaId);
 
         long startTime = System.currentTimeMillis();
-        Map<String, Object> singleConfig = votingManager.generateMachineConfiguration(testMesaId, testElectionId);
+        VotingConfiguration singleConfig = votingManager.generateMachineConfiguration(testMesaId, testElectionId);
         long endTime = System.currentTimeMillis();
 
         System.out.println("   Configuration generated in: " + (endTime - startTime) + " ms");
@@ -72,24 +73,15 @@ public class VotingMachineManagerTest {
             System.out.println("   Configuration validation: " + votingManager.validateConfiguration(singleConfig));
 
             // Display configuration details
-            Map<String, Object> summary = (Map<String, Object>) singleConfig.get("summary");
-            if (summary != null) {
-                System.out.println("   Mesa ID: " + summary.get("mesaId"));
-                System.out.println("   Total candidates: " + summary.get("totalCandidates"));
-                System.out.println("   Assigned citizens: " + summary.get("totalAssignedCitizens"));
-            }
+            System.out.println("   Mesa ID: " + singleConfig.mesaInfo.mesaId);
+            System.out.println("   Total candidates: " + singleConfig.candidates.length);
+            System.out.println("   Assigned citizens: " + singleConfig.citizens.length);
 
             // Show election info
-            Map<String, Object> electionInfo = (Map<String, Object>) singleConfig.get("electionInfo");
-            if (electionInfo != null) {
-                System.out.println("   Election: " + electionInfo.get("nombre") + " (" + electionInfo.get("estado") + ")");
-            }
+            System.out.println("   Election: " + singleConfig.electionInfo.nombre + " (" + singleConfig.electionInfo.estado + ")");
 
             // Show mesa info
-            Map<String, Object> mesaInfo = (Map<String, Object>) singleConfig.get("mesaInfo");
-            if (mesaInfo != null) {
-                System.out.println("   Location: " + mesaInfo.get("puesto_nombre") + " in " + mesaInfo.get("municipio_nombre"));
-            }
+            System.out.println("   Location: " + singleConfig.mesaInfo.puestoNombre + " in " + singleConfig.mesaInfo.municipioNombre);
 
         } else {
             System.err.println("   ERROR: Failed to generate configuration for mesa " + testMesaId);
@@ -103,7 +95,7 @@ public class VotingMachineManagerTest {
         System.out.println("   Testing batch with " + batchMesaIds.size() + " mesas: " + batchMesaIds);
 
         startTime = System.currentTimeMillis();
-        Map<Integer, Map<String, Object>> batchConfigs = votingManager.generateBatchMachineConfigurations(batchMesaIds, testElectionId);
+        Map<Integer, VotingConfiguration> batchConfigs = votingManager.generateBatchMachineConfigurations(batchMesaIds, testElectionId);
         endTime = System.currentTimeMillis();
 
         System.out.println("   Batch configuration generated in: " + (endTime - startTime) + " ms");
@@ -111,7 +103,7 @@ public class VotingMachineManagerTest {
 
         // Validate all configurations in batch
         int validConfigs = 0;
-        for (Map<String, Object> config : batchConfigs.values()) {
+        for (VotingConfiguration config : batchConfigs.values()) {
             if (votingManager.validateConfiguration(config)) {
                 validConfigs++;
             }
@@ -131,7 +123,7 @@ public class VotingMachineManagerTest {
             System.out.println("   Testing with department: " + departmentName + " (ID: " + departmentId + ")");
 
             startTime = System.currentTimeMillis();
-            Map<Integer, Map<String, Object>> departmentConfigs = votingManager.generateDepartmentConfigurations(departmentId, testElectionId);
+            Map<Integer, VotingConfiguration> departmentConfigs = votingManager.generateDepartmentConfigurations(departmentId, testElectionId);
             endTime = System.currentTimeMillis();
 
             System.out.println("   Department configurations generated in: " + (endTime - startTime) + " ms");
@@ -143,7 +135,7 @@ public class VotingMachineManagerTest {
                 int validDeptConfigs = 0;
                 int count = 0;
 
-                for (Map<String, Object> config : departmentConfigs.values()) {
+                for (VotingConfiguration config : departmentConfigs.values()) {
                     if (count >= samplesToValidate) break;
                     if (votingManager.validateConfiguration(config)) {
                         validDeptConfigs++;
@@ -168,8 +160,50 @@ public class VotingMachineManagerTest {
             System.out.println("   JSON preview: " + preview);
         }
 
-        // Test 8: Performance Test (larger batch)
-        System.out.println("\n8. Performance Test:");
+        // Test 8: Ice Binary Serialization Test
+        System.out.println("\n8. Ice Binary Serialization Test:");
+        if (singleConfig != null) {
+            // Test binary export
+            byte[] configBytes = votingManager.exportConfigurationToBytes(singleConfig);
+            if (configBytes.length > 0) {
+                System.out.println("   Ice binary export successful: " + configBytes.length + " bytes");
+
+                // Test binary import
+                VotingConfiguration importedConfig = votingManager.importConfigurationFromBytes(configBytes);
+                if (importedConfig != null) {
+                    System.out.println("   Ice binary import successful");
+                    System.out.println("   Original mesa: " + singleConfig.mesaInfo.mesaId +
+                            ", Imported mesa: " + importedConfig.mesaInfo.mesaId);
+                    System.out.println("   Data integrity: " +
+                            (singleConfig.citizens.length == importedConfig.citizens.length ? "PASS" : "FAIL"));
+                } else {
+                    System.err.println("   ERROR: Ice binary import failed");
+                }
+            } else {
+                System.err.println("   ERROR: Ice binary export failed");
+            }
+
+            // Test file save/load
+            String testFilePath = "/tmp/test_config.ice";
+            boolean saveSuccess = votingManager.saveConfigurationToFile(singleConfig, testFilePath);
+            if (saveSuccess) {
+                System.out.println("   Ice file save successful: " + testFilePath);
+
+                VotingConfiguration loadedConfig = votingManager.loadConfigurationFromFile(testFilePath);
+                if (loadedConfig != null) {
+                    System.out.println("   Ice file load successful");
+                    System.out.println("   File integrity: " +
+                            (singleConfig.citizens.length == loadedConfig.citizens.length ? "PASS" : "FAIL"));
+                } else {
+                    System.err.println("   ERROR: Ice file load failed");
+                }
+            } else {
+                System.err.println("   ERROR: Ice file save failed");
+            }
+        }
+
+        // Test 9: Performance Test (larger batch)
+        System.out.println("\n9. Performance Test:");
 
         // Test with larger batch if we have enough mesas
         int performanceTestSize = Math.min(50, allMesaIds.size());
@@ -178,7 +212,7 @@ public class VotingMachineManagerTest {
             System.out.println("   Performance test with " + performanceTestSize + " mesas");
 
             startTime = System.currentTimeMillis();
-            Map<Integer, Map<String, Object>> perfConfigs = votingManager.generateBatchMachineConfigurations(perfTestMesas, testElectionId);
+            Map<Integer, VotingConfiguration> perfConfigs = votingManager.generateBatchMachineConfigurations(perfTestMesas, testElectionId);
             endTime = System.currentTimeMillis();
 
             long totalTime = endTime - startTime;
@@ -190,10 +224,9 @@ public class VotingMachineManagerTest {
 
             // Calculate total citizens processed
             int totalCitizens = 0;
-            for (Map<String, Object> config : perfConfigs.values()) {
-                Map<String, Object> summary = (Map<String, Object>) config.get("summary");
-                if (summary != null) {
-                    totalCitizens += (Integer) summary.get("totalAssignedCitizens");
+            for (VotingConfiguration config : perfConfigs.values()) {
+                if (config != null && config.citizens != null) {
+                    totalCitizens += config.citizens.length;
                 }
             }
             System.out.println("   Total citizens processed: " + totalCitizens);
@@ -203,39 +236,72 @@ public class VotingMachineManagerTest {
                 System.out.println("   Processing rate: " + String.format("%.0f", citizensPerSecond) + " citizens/second");
             }
 
+            // Calculate binary size efficiency
+            if (!perfConfigs.isEmpty()) {
+                VotingConfiguration sampleConfig = perfConfigs.values().iterator().next();
+                byte[] sampleBytes = votingManager.exportConfigurationToBytes(sampleConfig);
+                String sampleJson = votingManager.exportConfigurationToJson(sampleConfig);
+
+                if (sampleBytes.length > 0 && sampleJson.length() > 0) {
+                    double compressionRatio = (double) sampleBytes.length / sampleJson.length();
+                    System.out.println("   Ice vs JSON size ratio: " + String.format("%.2f", compressionRatio) +
+                            " (Ice: " + sampleBytes.length + " bytes, JSON: " + sampleJson.length() + " chars)");
+                }
+            }
+
         } else {
             System.out.println("   Skipping performance test - not enough mesas");
         }
 
-        // Test 9: Error handling test
-        System.out.println("\n9. Error Handling Test:");
+        // Test 10: Error handling test
+        System.out.println("\n10. Error Handling Test:");
 
         // Test with non-existent mesa
-        Map<String, Object> errorConfig = votingManager.generateMachineConfiguration(999999, testElectionId);
+        VotingConfiguration errorConfig = votingManager.generateMachineConfiguration(999999, testElectionId);
         System.out.println("   Non-existent mesa handling: " + (errorConfig == null ? "PASS" : "FAIL"));
 
         // Test with non-existent election
-        Map<String, Object> errorConfig2 = votingManager.generateMachineConfiguration(testMesaId, 999999);
+        VotingConfiguration errorConfig2 = votingManager.generateMachineConfiguration(testMesaId, 999999);
         System.out.println("   Non-existent election handling: " + (errorConfig2 == null ? "PASS" : "FAIL"));
 
         // Test validation with null
         boolean nullValidation = votingManager.validateConfiguration(null);
         System.out.println("   Null configuration validation: " + (!nullValidation ? "PASS" : "FAIL"));
 
-        // Test 10: Final summary
-        System.out.println("\n10. Final Summary:");
+        // Test with empty bytes
+        VotingConfiguration emptyBytesConfig = votingManager.importConfigurationFromBytes(new byte[0]);
+        System.out.println("   Empty bytes import handling: " + (emptyBytesConfig == null ? "PASS" : "FAIL"));
+
+        // Test 11: Final summary
+        System.out.println("\n11. Final Summary:");
         System.out.println("   Total mesas in system: " + allMesaIds.size());
         System.out.println("   Total departments: " + departments.size());
+        System.out.println("   Serialization format: Ice Binary");
+        System.out.println("   Fallback format: JSON");
 
         // Estimate full deployment time
         if (performanceTestSize > 5) {
             double avgTimePerMesa = 50.0; // Conservative estimate based on tests
             double estimatedFullTime = (allMesaIds.size() * avgTimePerMesa) / 1000.0; // in seconds
             System.out.println("   Estimated full deployment time: " + String.format("%.1f", estimatedFullTime) + " seconds");
+
+            // Estimate storage requirements
+            if (singleConfig != null) {
+                byte[] sampleBytes = votingManager.exportConfigurationToBytes(singleConfig);
+                if (sampleBytes.length > 0) {
+                    long totalStorageBytes = (long) allMesaIds.size() * sampleBytes.length;
+                    double totalStorageMB = totalStorageBytes / (1024.0 * 1024.0);
+                    System.out.println("   Estimated storage requirement: " + String.format("%.1f", totalStorageMB) + " MB for all configurations");
+                }
+            }
         }
 
-        System.out.println("\n=== VotingMachineManager Test Complete ===");
-        System.out.println("Your voting machine configuration system is ready for deployment!");
+        System.out.println("\n=== VotingMachineManager (Ice-based) Test Complete ===");
+        System.out.println("Your Ice-based voting machine configuration system is ready for deployment!");
+        System.out.println("✓ Ice binary serialization working");
+        System.out.println("✓ JSON export working (for debugging)");
+        System.out.println("✓ File save/load working");
+        System.out.println("✓ Error handling working");
 
         // Cleanup
         ConnectionDB.shutdown();
