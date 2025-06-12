@@ -108,7 +108,7 @@ public class VotingManagerImpl implements VotingManagerInterface {
 
             List<Map<String, Object>> candidatesMap = connectionDB.getCandidatesByElection(electionId);
 
-            // Convert to Ice structs once
+            /* Convert to Ice structs once */
             ElectionInfo electionInfo = convertToElectionInfo(electionInfoMap);
             Candidate[] candidates = convertToCandidates(candidatesMap);
 

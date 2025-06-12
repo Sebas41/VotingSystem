@@ -189,8 +189,8 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         btnShowVotes.addActionListener(e -> {
             try {
                 int electionId = Integer.parseInt(electionIdField.getText().trim());
-                String report = controller.getTotalVotesPerCandidate(electionId);
-                resultsArea.setText(report);
+                //String report = controller.getTotalVotesPerCandidate(electionId);
+               // resultsArea.setText(report);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
             }
@@ -201,8 +201,8 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         btnShowByMachine.addActionListener(e -> {
             try {
                 int electionId = Integer.parseInt(electionIdField.getText().trim());
-                String report = controller.getVotesPerCandidateByMachine(electionId);
-                resultsArea.setText(report);
+               // String report = controller.getVotesPerCandidateByMachine(electionId);
+                //resultsArea.setText(report);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
             }
@@ -216,7 +216,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                 JFileChooser fileChooser = new JFileChooser();
                 if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                     String path = fileChooser.getSelectedFile().getAbsolutePath();
-                    controller.exportVotesPerMachineCSV(electionId, path);
+                  //  controller.exportVotesPerMachineCSV(electionId, path);
                     JOptionPane.showMessageDialog(this, "Reporte exportado:\n" + path);
                 }
             } catch (Exception ex) {
@@ -232,7 +232,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                 JFileChooser fileChooser = new JFileChooser();
                 if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                     String path = fileChooser.getSelectedFile().getAbsolutePath();
-                    controller.exportElectionResultsCSV(electionId, path);
+                    //controller.exportElectionResultsCSV(electionId, path);
                     JOptionPane.showMessageDialog(this, "Resultados exportados:\n" + path);
                 }
             } catch (Exception ex) {

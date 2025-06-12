@@ -5,10 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Complete interface for database operations including voting machine configuration
- * Optimized for handling 100M citizen records efficiently
- */
+
 public interface ConnectionDBinterface {
 
     void storeVote(Vote newVote);
@@ -32,4 +29,14 @@ public interface ConnectionDBinterface {
     List<Map<String, Object>> getPuestosByMunicipality(int municipalityId);
     Map<String, Object> getElectionConfigurationStats(int electionId);
     boolean validateElectionDataCompleteness(int electionId);
+    Map<String, Object> getCitizenVotingAssignment(String documento);
+    List<Map<String, Object>> searchCitizensByName(String nombre, String apellido, int limit);
+    List<Map<String, Object>> getMesasByPuesto(int puestoId);
+    Map<String, Object> getVotingStatsByDepartment(int electionId, int departmentId);
+    Map<String, Object> getVotingStatsByMunicipality(int electionId, int municipalityId);
+    Map<String, Object> getVotingStatsByPuesto(int electionId, int puestoId);
+    Map<String, Object> getElectionResultsSummary(int electionId);
+    List<Map<String, Object>> getAllActiveElections();
+    boolean validateCitizenDocument(String documento);
+    Map<String, Object> getLocationHierarchyByMesa(int mesaId);
 }

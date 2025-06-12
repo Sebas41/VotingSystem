@@ -759,4 +759,493 @@ public class ConnectionDB implements ConnectionDBinterface {
             logger.info("HikariCP connection pool closed");
         }
     }
+
+
+
+    // =================== NEW METHODS FOR REPORTS MODULE ===================
+// Add these methods to your ConnectionDB.java class
+
+    @Override
+    public Map<String, Object> getCitizenVotingAssignment(String documento) {
+        String sql = """
+        SELECT 
+            c.id as ciudadano_id,
+            c.documento,
+            c.nombre,
+            c.apellido,
+            c.mesa_id,
+            mv.consecutive as mesa_consecutive,
+            pv.id as puesto_id,
+            pv.nombre as puesto_nombre,
+            pv.direccion as puesto_direccion,
+            pv.consecutive as puesto_consecutive,
+            m.id as municipio_id,
+            m.nombre as municipio_nombre,
+            d.id as departamento_id,
+            d.nombre as departamento_nombre
+        FROM ciudadano c
+        JOIN mesa_votacion mv ON c.mesa_id = mv.id
+        JOIN puesto_votacion pv ON mv.puesto_id = pv.id
+        JOIN municipio m ON pv.municipio_id = m.id
+        JOIN departamento d ON m.departamento_id = d.id
+        WHERE c.documento = ?
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, documento);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> assignment = new HashMap<>();
+                    assignment.put("ciudadano_id", rs.getInt("ciudadano_id"));
+                    assignment.put("documento", rs.getString("documento"));
+                    assignment.put("nombre", rs.getString("nombre"));
+                    assignment.put("apellido", rs.getString("apellido"));
+                    assignment.put("mesa_id", rs.getInt("mesa_id"));
+                    assignment.put("mesa_consecutive", rs.getInt("mesa_consecutive"));
+                    assignment.put("puesto_id", rs.getInt("puesto_id"));
+                    assignment.put("puesto_nombre", rs.getString("puesto_nombre"));
+                    assignment.put("puesto_direccion", rs.getString("puesto_direccion"));
+                    assignment.put("puesto_consecutive", rs.getInt("puesto_consecutive"));
+                    assignment.put("municipio_id", rs.getInt("municipio_id"));
+                    assignment.put("municipio_nombre", rs.getString("municipio_nombre"));
+                    assignment.put("departamento_id", rs.getInt("departamento_id"));
+                    assignment.put("departamento_nombre", rs.getString("departamento_nombre"));
+
+                    logger.debug("Retrieved voting assignment for document: {}", documento);
+                    return assignment;
+                }
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error getting voting assignment for document: {}", documento, e);
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<Map<String, Object>> searchCitizensByName(String nombre, String apellido, int limit) {
+        List<Map<String, Object>> results = new ArrayList<>();
+
+        // Build dynamic query based on provided parameters
+        StringBuilder sqlBuilder = new StringBuilder("""
+        SELECT 
+            c.id as ciudadano_id,
+            c.documento,
+            c.nombre,
+            c.apellido,
+            c.mesa_id,
+            mv.consecutive as mesa_consecutive,
+            pv.nombre as puesto_nombre,
+            m.nombre as municipio_nombre,
+            d.nombre as departamento_nombre
+        FROM ciudadano c
+        JOIN mesa_votacion mv ON c.mesa_id = mv.id
+        JOIN puesto_votacion pv ON mv.puesto_id = pv.id
+        JOIN municipio m ON pv.municipio_id = m.id
+        JOIN departamento d ON m.departamento_id = d.id
+        WHERE 1=1
+        """);
+
+        List<Object> parameters = new ArrayList<>();
+
+        if (nombre != null && !nombre.trim().isEmpty()) {
+            sqlBuilder.append(" AND UPPER(c.nombre) LIKE UPPER(?)");
+            parameters.add("%" + nombre.trim() + "%");
+        }
+
+        if (apellido != null && !apellido.trim().isEmpty()) {
+            sqlBuilder.append(" AND UPPER(c.apellido) LIKE UPPER(?)");
+            parameters.add("%" + apellido.trim() + "%");
+        }
+
+        sqlBuilder.append(" ORDER BY c.apellido, c.nombre LIMIT ?");
+        parameters.add(limit);
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sqlBuilder.toString())) {
+
+            for (int i = 0; i < parameters.size(); i++) {
+                stmt.setObject(i + 1, parameters.get(i));
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> citizen = new HashMap<>();
+                    citizen.put("ciudadano_id", rs.getInt("ciudadano_id"));
+                    citizen.put("documento", rs.getString("documento"));
+                    citizen.put("nombre", rs.getString("nombre"));
+                    citizen.put("apellido", rs.getString("apellido"));
+                    citizen.put("mesa_id", rs.getInt("mesa_id"));
+                    citizen.put("mesa_consecutive", rs.getInt("mesa_consecutive"));
+                    citizen.put("puesto_nombre", rs.getString("puesto_nombre"));
+                    citizen.put("municipio_nombre", rs.getString("municipio_nombre"));
+                    citizen.put("departamento_nombre", rs.getString("departamento_nombre"));
+                    results.add(citizen);
+                }
+            }
+
+            logger.info("Found {} citizens matching name search: {} {}", results.size(), nombre, apellido);
+
+        } catch (SQLException e) {
+            logger.error("Error searching citizens by name: {} {}", nombre, apellido, e);
+        }
+
+        return results;
+    }
+
+    @Override
+    public List<Map<String, Object>> getMesasByPuesto(int puestoId) {
+        List<Map<String, Object>> mesas = new ArrayList<>();
+        String sql = """
+        SELECT 
+            mv.id as mesa_id,
+            mv.consecutive as mesa_consecutive,
+            COUNT(c.id) as total_ciudadanos
+        FROM mesa_votacion mv
+        LEFT JOIN ciudadano c ON mv.id = c.mesa_id
+        WHERE mv.puesto_id = ?
+        GROUP BY mv.id, mv.consecutive
+        ORDER BY mv.consecutive
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, puestoId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> mesa = new HashMap<>();
+                    mesa.put("mesa_id", rs.getInt("mesa_id"));
+                    mesa.put("mesa_consecutive", rs.getInt("mesa_consecutive"));
+                    mesa.put("total_ciudadanos", rs.getInt("total_ciudadanos"));
+                    mesa.put("puesto_id", puestoId);
+                    mesas.add(mesa);
+                }
+            }
+
+            logger.info("Retrieved {} mesas for puesto {}", mesas.size(), puestoId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting mesas for puesto: {}", puestoId, e);
+        }
+
+        return mesas;
+    }
+
+    @Override
+    public Map<String, Object> getVotingStatsByDepartment(int electionId, int departmentId) {
+        Map<String, Object> stats = new HashMap<>();
+
+        String sql = """
+        SELECT 
+            COUNT(DISTINCT mv.id) as total_mesas,
+            COUNT(DISTINCT pv.id) as total_puestos,
+            COUNT(DISTINCT m.id) as total_municipios,
+            COUNT(DISTINCT c.id) as total_ciudadanos,
+            COUNT(DISTINCT v.id) as total_votos
+        FROM departamento d
+        LEFT JOIN municipio m ON d.id = m.departamento_id
+        LEFT JOIN puesto_votacion pv ON m.id = pv.municipio_id
+        LEFT JOIN mesa_votacion mv ON pv.id = mv.puesto_id
+        LEFT JOIN ciudadano c ON mv.id = c.mesa_id
+        LEFT JOIN votos v ON mv.id::text = v.machine_id AND v.election_id = ?
+        WHERE d.id = ?
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, electionId);
+            stmt.setInt(2, departmentId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    stats.put("departamento_id", departmentId);
+                    stats.put("election_id", electionId);
+                    stats.put("total_mesas", rs.getInt("total_mesas"));
+                    stats.put("total_puestos", rs.getInt("total_puestos"));
+                    stats.put("total_municipios", rs.getInt("total_municipios"));
+                    stats.put("total_ciudadanos", rs.getLong("total_ciudadanos"));
+                    stats.put("total_votos", rs.getLong("total_votos"));
+
+                    long totalCitizens = rs.getLong("total_ciudadanos");
+                    long totalVotes = rs.getLong("total_votos");
+                    double participation = totalCitizens > 0 ? (double) totalVotes / totalCitizens * 100 : 0.0;
+                    stats.put("participation_percentage", participation);
+                }
+            }
+
+            logger.info("Retrieved voting stats for department {} and election {}", departmentId, electionId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting voting stats for department {} and election {}", departmentId, electionId, e);
+        }
+
+        return stats;
+    }
+
+    @Override
+    public Map<String, Object> getVotingStatsByMunicipality(int electionId, int municipalityId) {
+        Map<String, Object> stats = new HashMap<>();
+
+        String sql = """
+        SELECT 
+            COUNT(DISTINCT mv.id) as total_mesas,
+            COUNT(DISTINCT pv.id) as total_puestos,
+            COUNT(DISTINCT c.id) as total_ciudadanos,
+            COUNT(DISTINCT v.id) as total_votos
+        FROM municipio m
+        LEFT JOIN puesto_votacion pv ON m.id = pv.municipio_id
+        LEFT JOIN mesa_votacion mv ON pv.id = mv.puesto_id
+        LEFT JOIN ciudadano c ON mv.id = c.mesa_id
+        LEFT JOIN votos v ON mv.id::text = v.machine_id AND v.election_id = ?
+        WHERE m.id = ?
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, electionId);
+            stmt.setInt(2, municipalityId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    stats.put("municipio_id", municipalityId);
+                    stats.put("election_id", electionId);
+                    stats.put("total_mesas", rs.getInt("total_mesas"));
+                    stats.put("total_puestos", rs.getInt("total_puestos"));
+                    stats.put("total_ciudadanos", rs.getLong("total_ciudadanos"));
+                    stats.put("total_votos", rs.getLong("total_votos"));
+
+                    long totalCitizens = rs.getLong("total_ciudadanos");
+                    long totalVotes = rs.getLong("total_votos");
+                    double participation = totalCitizens > 0 ? (double) totalVotes / totalCitizens * 100 : 0.0;
+                    stats.put("participation_percentage", participation);
+                }
+            }
+
+            logger.info("Retrieved voting stats for municipality {} and election {}", municipalityId, electionId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting voting stats for municipality {} and election {}", municipalityId, electionId, e);
+        }
+
+        return stats;
+    }
+
+    @Override
+    public Map<String, Object> getVotingStatsByPuesto(int electionId, int puestoId) {
+        Map<String, Object> stats = new HashMap<>();
+
+        String sql = """
+        SELECT 
+            COUNT(DISTINCT mv.id) as total_mesas,
+            COUNT(DISTINCT c.id) as total_ciudadanos,
+            COUNT(DISTINCT v.id) as total_votos
+        FROM puesto_votacion pv
+        LEFT JOIN mesa_votacion mv ON pv.id = mv.puesto_id
+        LEFT JOIN ciudadano c ON mv.id = c.mesa_id
+        LEFT JOIN votos v ON mv.id::text = v.machine_id AND v.election_id = ?
+        WHERE pv.id = ?
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, electionId);
+            stmt.setInt(2, puestoId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    stats.put("puesto_id", puestoId);
+                    stats.put("election_id", electionId);
+                    stats.put("total_mesas", rs.getInt("total_mesas"));
+                    stats.put("total_ciudadanos", rs.getLong("total_ciudadanos"));
+                    stats.put("total_votos", rs.getLong("total_votos"));
+
+                    long totalCitizens = rs.getLong("total_ciudadanos");
+                    long totalVotes = rs.getLong("total_votos");
+                    double participation = totalCitizens > 0 ? (double) totalVotes / totalCitizens * 100 : 0.0;
+                    stats.put("participation_percentage", participation);
+                }
+            }
+
+            logger.info("Retrieved voting stats for puesto {} and election {}", puestoId, electionId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting voting stats for puesto {} and election {}", puestoId, electionId, e);
+        }
+
+        return stats;
+    }
+
+    @Override
+    public Map<String, Object> getElectionResultsSummary(int electionId) {
+        Map<String, Object> summary = new HashMap<>();
+
+        try (Connection conn = getConnection()) {
+
+            // Get election info
+            Map<String, Object> electionInfo = getElectionInfo(electionId);
+            if (electionInfo != null) {
+                summary.put("election_name", electionInfo.get("nombre"));
+                summary.put("election_status", electionInfo.get("estado"));
+                summary.put("fecha_inicio", electionInfo.get("fecha_inicio"));
+                summary.put("fecha_fin", electionInfo.get("fecha_fin"));
+            }
+
+            // Get candidate results
+            Map<Integer, Integer> votes = getVotesPerCandidate(electionId);
+            List<Map<String, Object>> candidateResults = new ArrayList<>();
+
+            for (Map.Entry<Integer, Integer> entry : votes.entrySet()) {
+                int candidateId = entry.getKey();
+                int voteCount = entry.getValue();
+                String candidateName = getCandidateNameById(candidateId);
+
+                Map<String, Object> candidateResult = new HashMap<>();
+                candidateResult.put("candidate_id", candidateId);
+                candidateResult.put("candidate_name", candidateName);
+                candidateResult.put("vote_count", voteCount);
+                candidateResults.add(candidateResult);
+            }
+
+            // Sort by vote count (descending)
+            candidateResults.sort((a, b) ->
+                    Integer.compare((Integer) b.get("vote_count"), (Integer) a.get("vote_count")));
+
+            summary.put("candidate_results", candidateResults);
+
+            // Calculate total votes
+            int totalVotes = votes.values().stream().mapToInt(Integer::intValue).sum();
+            summary.put("total_votes", totalVotes);
+
+            // Add percentages
+            for (Map<String, Object> result : candidateResults) {
+                int voteCount = (Integer) result.get("vote_count");
+                double percentage = totalVotes > 0 ? (double) voteCount / totalVotes * 100 : 0.0;
+                result.put("percentage", percentage);
+            }
+
+            summary.put("timestamp", new Date());
+
+            logger.info("Generated election results summary for election {}", electionId);
+
+        } catch (Exception e) {
+            logger.error("Error generating election results summary for election {}", electionId, e);
+            summary.put("error", "Failed to generate summary: " + e.getMessage());
+        }
+
+        return summary;
+    }
+
+    @Override
+    public List<Map<String, Object>> getAllActiveElections() {
+        List<Map<String, Object>> elections = new ArrayList<>();
+        String sql = "SELECT id, nombre, fecha_inicio, fecha_fin, estado FROM elecciones WHERE estado IN ('ACTIVE', 'OPEN', 'RUNNING') ORDER BY fecha_inicio DESC";
+
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Map<String, Object> election = new HashMap<>();
+                election.put("id", rs.getInt("id"));
+                election.put("nombre", rs.getString("nombre"));
+                election.put("fecha_inicio", rs.getTimestamp("fecha_inicio"));
+                election.put("fecha_fin", rs.getTimestamp("fecha_fin"));
+                election.put("estado", rs.getString("estado"));
+                elections.add(election);
+            }
+
+            logger.info("Retrieved {} active elections", elections.size());
+
+        } catch (SQLException e) {
+            logger.error("Error getting active elections", e);
+        }
+
+        return elections;
+    }
+
+    @Override
+    public boolean validateCitizenDocument(String documento) {
+        String sql = "SELECT 1 FROM ciudadano WHERE documento = ? AND mesa_id IS NOT NULL";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, documento);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                boolean exists = rs.next();
+                logger.debug("Document {} validation: {}", documento, exists ? "valid" : "invalid");
+                return exists;
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error validating document: {}", documento, e);
+            return false;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getLocationHierarchyByMesa(int mesaId) {
+        String sql = """
+        SELECT 
+            mv.id as mesa_id,
+            mv.consecutive as mesa_consecutive,
+            pv.id as puesto_id,
+            pv.nombre as puesto_nombre,
+            pv.direccion as puesto_direccion,
+            pv.consecutive as puesto_consecutive,
+            m.id as municipio_id,
+            m.nombre as municipio_nombre,
+            d.id as departamento_id,
+            d.nombre as departamento_nombre
+        FROM mesa_votacion mv
+        JOIN puesto_votacion pv ON mv.puesto_id = pv.id
+        JOIN municipio m ON pv.municipio_id = m.id
+        JOIN departamento d ON m.departamento_id = d.id
+        WHERE mv.id = ?
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, mesaId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> hierarchy = new HashMap<>();
+                    hierarchy.put("mesa_id", rs.getInt("mesa_id"));
+                    hierarchy.put("mesa_consecutive", rs.getInt("mesa_consecutive"));
+                    hierarchy.put("puesto_id", rs.getInt("puesto_id"));
+                    hierarchy.put("puesto_nombre", rs.getString("puesto_nombre"));
+                    hierarchy.put("puesto_direccion", rs.getString("puesto_direccion"));
+                    hierarchy.put("puesto_consecutive", rs.getInt("puesto_consecutive"));
+                    hierarchy.put("municipio_id", rs.getInt("municipio_id"));
+                    hierarchy.put("municipio_nombre", rs.getString("municipio_nombre"));
+                    hierarchy.put("departamento_id", rs.getInt("departamento_id"));
+                    hierarchy.put("departamento_nombre", rs.getString("departamento_nombre"));
+
+                    logger.debug("Retrieved location hierarchy for mesa {}", mesaId);
+                    return hierarchy;
+                }
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error getting location hierarchy for mesa: {}", mesaId, e);
+        }
+
+        return null;
+    }
+
+
+
+
 }

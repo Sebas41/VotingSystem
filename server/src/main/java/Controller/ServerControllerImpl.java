@@ -5,10 +5,11 @@ import Elections.ElectionImpl;
 import Elections.ElectionInterface;
 import Elections.models.Candidate;
 import Elections.models.ELECTION_STATUS;
-import Reports.ReportsInterface;
-import Reports.ReportsImplementation;
+import Reports.ReportsManagerImpl;
+import ReportsSystem.CitizenReportsConfiguration;
+import ReportsSystem.ElectionReportsConfiguration;
+import ReportsSystem.GeographicReportsConfiguration;
 import ServerUI.ServerUI;
-import VotingMachineManager.VotingManagerInterface;
 import VotingMachineManager.VotingManagerImpl;
 import VotingSystem.VotingConfiguration;
 import model.ReliableMessage;
@@ -29,28 +30,33 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
     private ElectionInterface election;
     private ConnectionDB connectionDB;
-    private ReportsInterface reports;
     private VotingManagerImpl votingManager;
+    private ReportsManagerImpl reportsManager;
 
     // Configuration storage paths
     // Configuration storage paths
     private static final String CONFIG_BASE_PATH = "server/src/main/java/VotingMachineManager/data/voting_configurations";
     private static final String DEPLOYMENT_LOGS_PATH = "server/src/main/java/VotingMachineManager/data/deployment_logs";
-
+    private static final String REPORTS_BASE_PATH = "server/src/main/java/Reports/data/reports";
     // Threading for parallel processing
     private ExecutorService configExecutor;
+    private ExecutorService reportsExecutor;
     private ObjectMapper jsonMapper;
 
     // Progress tracking
     private volatile boolean isGeneratingConfigs = false;
     private AtomicInteger configProgress = new AtomicInteger(0);
     private int totalConfigsToGenerate = 0;
+    private int totalReportsToGenerate = 0; // NEW: Reports count tracking
+
+
+
 
     public ServerControllerImpl() {
         this.connectionDB = new ConnectionDB();
         this.election = new ElectionImpl(0, new Date(), new Date(), "");
-        this.reports = new ReportsImplementation(connectionDB);
         this.votingManager = new VotingManagerImpl(connectionDB);
+        this.reportsManager = new ReportsManagerImpl(connectionDB);
 
         // Initialize JSON mapper
         this.jsonMapper = new ObjectMapper();
@@ -63,6 +69,8 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
         // Create necessary directories
         initializeDirectories();
+        performReportsSystemTest();
+
 
         cargarDatosPrueba();
     }
@@ -74,6 +82,27 @@ public class ServerControllerImpl implements ServerControllerInterface {
             System.out.println("Configuration directories initialized successfully");
         } catch (IOException e) {
             System.err.println("Error creating configuration directories: " + e.getMessage());
+        }
+    }
+
+    // NEW: Test reports system during startup
+    private void performReportsSystemTest() {
+        try {
+            System.out.println("=== Testing Reports System ===");
+            Map<String, Object> testResults = reportsManager.performSystemTest(1);
+
+            boolean allTestsPassed = (Boolean) testResults.getOrDefault("allTestsPassed", false);
+            if (allTestsPassed) {
+                System.out.println("✓ Reports system test PASSED - All systems ready");
+            } else {
+                System.out.println("⚠ Reports system test FAILED - Check configuration");
+                List<String> errors = (List<String>) testResults.get("errors");
+                if (errors != null) {
+                    errors.forEach(error -> System.out.println("  • " + error));
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error testing reports system: " + e.getMessage());
         }
     }
 
@@ -96,11 +125,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    // =================== SELECTIVE CONFIGURATION METHODS ===================
 
-    /**
-     * Get all available departments for selection
-     */
     public List<Map<String, Object>> getAvailableDepartments() {
         try {
             List<Map<String, Object>> departments = connectionDB.getAllDepartments();
@@ -112,9 +137,6 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * Get all municipalities in a specific department
-     */
     public List<Map<String, Object>> getMunicipalitiesByDepartment(int departmentId) {
         try {
             List<Map<String, Object>> municipalities = connectionDB.getMunicipalitiesByDepartment(departmentId);
@@ -126,9 +148,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * Get all puestos de votación in a specific municipality
-     */
+
     public List<Map<String, Object>> getPuestosByMunicipality(int municipalityId) {
         try {
             List<Map<String, Object>> puestos = connectionDB.getPuestosByMunicipality(municipalityId);
@@ -140,9 +160,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * Get all mesas in a specific puesto de votación
-     */
+
     public List<Map<String, Object>> getMesasByPuesto(int puestoId) {
         try {
             // We need to get mesa IDs and their info for a specific puesto
@@ -169,9 +187,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * Generate configuration for a specific list of mesas
-     */
+
     public void generateSelectiveMesaConfigurations(List<Integer> mesaIds, int electionId, String testName) {
         if (isGeneratingConfigs) {
             System.out.println("Configuration generation already in progress...");
@@ -232,11 +248,6 @@ public class ServerControllerImpl implements ServerControllerInterface {
         });
     }
 
-
-
-    /**
-     * Generate configuration for specific mesas in a department (for testing sample)
-     */
     public void generateDepartmentSampleConfiguration(int departmentId, int sampleSize, int electionId, String testName) {
         try {
             System.out.println("=== Generating Sample Configuration for Department " + departmentId + " ===");
@@ -264,9 +275,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * Get configuration details for a specific mesa (for preview before generation)
-     */
+
     public String previewMesaConfiguration(int mesaId) {
         try {
             Map<String, Object> mesaConfig = connectionDB.getMesaConfiguration(mesaId);
@@ -303,9 +312,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * List all previous selective tests
-     */
+
     public List<String> getSelectiveTestHistory() {
         try {
             String selectiveTestsPath = CONFIG_BASE_PATH + "/election_" + election.getElectionId() + "/selective_tests";
@@ -325,9 +332,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * Get summary of a specific selective test
-     */
+
     public String getSelectiveTestSummary(String testName) {
         try {
             String summaryPath = DEPLOYMENT_LOGS_PATH + "/selective_test_" + sanitizeFileName(testName) + ".txt";
@@ -491,9 +496,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         });
     }
 
-    /**
-     * Generate configurations for a specific department
-     */
+
     public void generateDepartmentConfigurations(int departmentId, int electionId) {
         CompletableFuture.runAsync(() -> {
             try {
@@ -519,9 +522,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         });
     }
 
-    /**
-     * Get configuration deployment status
-     */
+
     public String getConfigurationStatus() {
         if (!isGeneratingConfigs) {
             return "Configuration generation: IDLE";
@@ -535,9 +536,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                 progress, totalConfigsToGenerate, progressPercent);
     }
 
-    /**
-     * Get configuration statistics for an election
-     */
+
     public String getConfigurationStatistics(int electionId) {
         try {
             Map<String, Object> stats = votingManager.getConfigurationStatistics(electionId);
@@ -553,18 +552,14 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * Check if voting machine configurations exist for an election
-     */
+
     public boolean hasVotingMachineConfigurations(int electionId) {
         String electionConfigPath = CONFIG_BASE_PATH + "/election_" + electionId;
         return Files.exists(Paths.get(electionConfigPath)) &&
                 getConfigurationFileCount(electionConfigPath) > 0;
     }
 
-    /**
-     * Get configuration for a specific mesa (for debugging/testing)
-     */
+
     public String getMesaConfiguration(int mesaId, int electionId) {
         try {
             VotingConfiguration config = votingManager.generateMachineConfiguration(mesaId, electionId);
@@ -577,12 +572,8 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    /**
-     * Validate all generated configurations
-     */
-    /**
-     * Validate all generated configurations for an election
-     */
+
+
     public String validateAllConfigurations(int electionId) {
         try {
             String electionConfigPath = CONFIG_BASE_PATH + "/election_" + electionId;
@@ -861,49 +852,9 @@ public class ServerControllerImpl implements ServerControllerInterface {
         return election.getCandidates();
     }
 
-    public void showVotesPerCandidateReport(int electionId) {
-        var result = reports.getTotalVotesPerCandidate(electionId);
-        System.out.println("=== Total de votos por candidato ===");
-        result.forEach((candidate, votes) -> System.out.println(candidate + ": " + votes));
-    }
 
-    public void showVotesPerCandidateByMachine(int electionId) {
-        var result = reports.getVotesPerCandidateByMachine(electionId);
-        System.out.println("=== Votos por candidato por máquina ===");
-        result.forEach((machineId, map) -> {
-            System.out.println("Máquina: " + machineId);
-            map.forEach((candidate, votes) -> System.out.println("  " + candidate + ": " + votes));
-        });
-    }
 
-    public void exportVotesPerMachineCSV(int electionId, String path) {
-        var file = reports.exportVotesPerMachineCSV(electionId, path);
-        System.out.println("Reporte por mesa exportado en: " + file.getAbsolutePath());
-    }
 
-    public void exportElectionResultsCSV(int electionId, String path) {
-        var file = reports.exportElectionResultsCSV(electionId, path);
-        System.out.println("Resultados de elecciones exportados en: " + file.getAbsolutePath());
-    }
-
-    @Override
-    public String getTotalVotesPerCandidate(int electionId) {
-        var result = reports.getTotalVotesPerCandidate(electionId);
-        StringBuilder sb = new StringBuilder("=== Total de votos por candidato ===\n");
-        result.forEach((candidate, votes) -> sb.append(candidate).append(": ").append(votes).append("\n"));
-        return sb.toString();
-    }
-
-    @Override
-    public String getVotesPerCandidateByMachine(int electionId) {
-        var result = reports.getVotesPerCandidateByMachine(electionId);
-        StringBuilder sb = new StringBuilder("=== Votos por candidato por máquina ===\n");
-        result.forEach((machineId, map) -> {
-            sb.append("Máquina: ").append(machineId).append("\n");
-            map.forEach((candidate, votes) -> sb.append("  ").append(candidate).append(": ").append(votes).append("\n"));
-        });
-        return sb.toString();
-    }
 
     public void shutdown() {
         if (configExecutor != null && !configExecutor.isShutdown()) {
@@ -1086,6 +1037,293 @@ private void displayPuestoDetails(Map<Integer, VotingConfiguration> configs, Str
     System.out.println("Total Citizens: " + totalCitizens);
     System.out.println("Average Citizens per Mesa: " + String.format("%.1f", (double) totalCitizens / configs.size()));
 }
+
+    @Override
+    public String generateCitizenReport(String documento, int electionId) {
+        try {
+            CitizenReportsConfiguration config = reportsManager.generateCitizenReport(documento, electionId);
+            if (config != null) {
+                return reportsManager.exportConfigurationToJson(config);
+            }
+            return "No se encontró información para el documento: " + documento;
+        } catch (Exception e) {
+            return "Error generando reporte ciudadano: " + e.getMessage();
+        }
+    }
+
+
+    @Override
+    public List<String> searchCitizenReports(String nombre, String apellido, int electionId, int limit) {
+        try {
+            List<CitizenReportsConfiguration> configs =
+                    reportsManager.searchCitizenReports(nombre, apellido, electionId, limit);
+
+            return configs.stream()
+                    .map(config -> reportsManager.exportConfigurationToJson(config))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            return Arrays.asList("Error en búsqueda de ciudadanos: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean validateCitizenEligibility(String documento) {
+        try {
+            return reportsManager.validateCitizenEligibility(documento);
+        } catch (Exception e) {
+            System.err.println("Error validando elegibilidad ciudadano: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+    @Override
+    public Map<String, String> generateBatchCitizenReports(List<String> documentos, int electionId) {
+        try {
+            Map<String, CitizenReportsConfiguration> configs =
+                    reportsManager.generateBatchCitizenReports(documentos, electionId);
+
+            Map<String, String> jsonReports = new HashMap<>();
+            configs.forEach((documento, config) -> {
+                if (config != null) {
+                    jsonReports.put(documento, reportsManager.exportConfigurationToJson(config));
+                }
+            });
+
+            return jsonReports;
+        } catch (Exception e) {
+            Map<String, String> errorResult = new HashMap<>();
+            errorResult.put("error", "Error generando reportes en lote: " + e.getMessage());
+            return errorResult;
+        }
+    }
+
+
+    @Override
+    public List<String> generateMesaCitizenReports(int mesaId, int electionId) {
+        try {
+            List<CitizenReportsConfiguration> configs =
+                    reportsManager.generateMesaCitizenReports(mesaId, electionId);
+
+            return configs.stream()
+                    .map(config -> reportsManager.exportConfigurationToJson(config))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            return Arrays.asList("Error generando reportes de mesa: " + e.getMessage());
+        }
+    }
+
+
+    @Override
+    public String generateElectionResultsReport(int electionId) {
+        try {
+            ElectionReportsConfiguration config = reportsManager.generateElectionResultsReport(electionId);
+            if (config != null) {
+                return reportsManager.exportConfigurationToJson(config);
+            }
+            return "No se encontraron resultados para la elección: " + electionId;
+        } catch (Exception e) {
+            return "Error generando reporte de resultados: " + e.getMessage();
+        }
+    }
+
+    @Override
+    public String getElectionStatistics(int electionId) {
+        try {
+            Map<String, Object> stats = reportsManager.getElectionStatistics(electionId);
+            return jsonMapper.writeValueAsString(stats);
+        } catch (Exception e) {
+            return "Error obteniendo estadísticas de elección: " + e.getMessage();
+        }
+    }
+
+
+
+
+
+    @Override
+    public List<Map<String, Object>> getAvailableElections() {
+        try {
+            return reportsManager.getAvailableElections();
+        } catch (Exception e) {
+            System.err.println("Error obteniendo elecciones disponibles: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+
+    @Override
+    public String generateDepartmentReport(int departmentId, int electionId) {
+        try {
+            GeographicReportsConfiguration config =
+                    reportsManager.generateDepartmentReport(departmentId, electionId);
+            if (config != null) {
+                return reportsManager.exportConfigurationToJson(config);
+            }
+            return "No se encontró información para el departamento: " + departmentId;
+        } catch (Exception e) {
+            return "Error generando reporte departamental: " + e.getMessage();
+        }
+    }
+
+
+    @Override
+    public String generateMunicipalityReport(int municipalityId, int electionId) {
+        try {
+            GeographicReportsConfiguration config =
+                    reportsManager.generateMunicipalityReport(municipalityId, electionId);
+            if (config != null) {
+                return reportsManager.exportConfigurationToJson(config);
+            }
+            return "No se encontró información para el municipio: " + municipalityId;
+        } catch (Exception e) {
+            return "Error generando reporte municipal: " + e.getMessage();
+        }
+    }
+
+    @Override
+    public String generatePuestoReport(int puestoId, int electionId) {
+        try {
+            GeographicReportsConfiguration config =
+                    reportsManager.generatePuestoReport(puestoId, electionId);
+            if (config != null) {
+                return reportsManager.exportConfigurationToJson(config);
+            }
+            return "No se encontró información para el puesto: " + puestoId;
+        } catch (Exception e) {
+            return "Error generando reporte de puesto: " + e.getMessage();
+        }
+    }
+
+    @Override
+    public String getReportsStatistics(int electionId) {
+        try {
+            Map<String, Object> stats = reportsManager.getReportsStatistics(electionId);
+            StringBuilder sb = new StringBuilder("=== Estadísticas del Sistema de Reportes ===\n");
+
+            stats.forEach((key, value) -> {
+                sb.append(key).append(": ").append(value).append("\n");
+            });
+
+            return sb.toString();
+        } catch (Exception e) {
+            return "Error obteniendo estadísticas de reportes: " + e.getMessage();
+        }
+    }
+
+    @Override
+    public boolean isElectionReadyForReports(int electionId) {
+        try {
+            return reportsManager.isElectionReadyForReports(electionId);
+        } catch (Exception e) {
+            System.err.println("Error verificando preparación de elección para reportes: " + e.getMessage());
+            return false;
+        }
+    }
+    @Override
+    public String validateReportsSystem() {
+        try {
+            Map<String, Object> testResults = reportsManager.performSystemTest(election.getElectionId());
+
+            StringBuilder report = new StringBuilder("=== Validación del Sistema de Reportes ===\n");
+            report.append("Fecha de validación: ").append(new Date()).append("\n");
+
+            boolean allTestsPassed = (Boolean) testResults.getOrDefault("allTestsPassed", false);
+            report.append("Estado general: ").append(allTestsPassed ? "✓ PASÓ" : "✗ FALLÓ").append("\n");
+
+            Integer totalTests = (Integer) testResults.get("totalTests");
+            if (totalTests != null) {
+                report.append("Pruebas ejecutadas: ").append(totalTests).append("\n");
+            }
+
+            @SuppressWarnings("unchecked")
+            List<String> errors = (List<String>) testResults.get("errors");
+            if (errors != null && !errors.isEmpty()) {
+                report.append("\nErrores encontrados:\n");
+                errors.forEach(error -> report.append("• ").append(error).append("\n"));
+            }
+
+            // Add component-specific validations
+            report.append("\n=== Validaciones Específicas ===\n");
+            report.append("Base de datos: ").append(testResults.get("databaseHealthy")).append("\n");
+            report.append("Elección lista: ").append(testResults.get("electionReady")).append("\n");
+            report.append("Serialización Ice: ").append(testResults.get("iceSerializationWorks")).append("\n");
+            report.append("Validaciones: ").append(testResults.get("validationWorks")).append("\n");
+
+            return report.toString();
+        } catch (Exception e) {
+            return "Error validando sistema de reportes: " + e.getMessage();
+        }
+    }
+
+
+
+
+
+    @Override
+    public boolean exportCitizenReport(String documento, int electionId, String filePath) {
+        try {
+            CitizenReportsConfiguration config = reportsManager.generateCitizenReport(documento, electionId);
+            if (config != null) {
+                return reportsManager.saveConfigurationToFile(config, filePath);
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error exportando reporte ciudadano: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean exportElectionResultsReport(int electionId, String filePath) {
+        try {
+            ElectionReportsConfiguration config = reportsManager.generateElectionResultsReport(electionId);
+            if (config != null) {
+                return reportsManager.saveConfigurationToFile(config, filePath);
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error exportando reporte de resultados: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+    @Override
+    public boolean exportGeographicReport(int locationId, String locationType, int electionId, String filePath) {
+        try {
+            GeographicReportsConfiguration config = null;
+
+            switch (locationType.toLowerCase()) {
+                case "department":
+                case "departamento":
+                    config = reportsManager.generateDepartmentReport(locationId, electionId);
+                    break;
+                case "municipality":
+                case "municipio":
+                    config = reportsManager.generateMunicipalityReport(locationId, electionId);
+                    break;
+                case "puesto":
+                    config = reportsManager.generatePuestoReport(locationId, electionId);
+                    break;
+                default:
+                    System.err.println("Tipo de ubicación no soportado: " + locationType);
+                    return false;
+            }
+
+            if (config != null) {
+                return reportsManager.saveConfigurationToFile(config, filePath);
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error exportando reporte geográfico: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+
+
 
 
 
