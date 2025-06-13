@@ -54,5 +54,8 @@ public interface ServerControllerInterface {
     boolean exportCitizenReport(String documento, int electionId, String filePath);
     boolean exportElectionResultsReport(int electionId, String filePath);
     boolean exportGeographicReport(int locationId, String locationType, int electionId, String filePath);
+    Map<String, Object> generateDepartmentCitizenReports(int departmentId, int electionId);
+    Map<String, Object> generateMunicipalityCitizenReports(int municipalityId, int electionId);
+    Map<String, Object> generatePuestoCitizenReports(int puestoId, int electionId);
     void shutdown();
 }

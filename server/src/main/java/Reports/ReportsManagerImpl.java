@@ -1063,4 +1063,430 @@ public class ReportsManagerImpl implements ReportsManagerInterface {
             logger.error("Error shutting down Ice communicator", e);
         }
     }
+
+// =================== MÉTODOS PARA FULL CITIZEN REPORTS ===================
+
+    /**
+     * Genera reportes FULL CITIZEN REPORT para todos los ciudadanos de un departamento específico
+     * Guarda cada reporte como archivo ICE en la carpeta Reports/data
+     *
+     * @param departmentId ID del departamento
+     * @param electionId ID de la elección
+     * @return Map con estadísticas del proceso de generación
+     */
+    @Override
+    public Map<String, Object> generateDepartmentCitizenReports(int departmentId, int electionId) {
+        logger.info("Generating FULL CITIZEN REPORTS for all citizens in department {} and election {}", departmentId, electionId);
+
+        Map<String, Object> result = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+        int successCount = 0;
+        int totalCount = 0;
+
+        try {
+            // 1. Obtener información de la elección
+            Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
+            if (electionInfoMap == null) {
+                logger.error("Election {} not found", electionId);
+                result.put("success", false);
+                result.put("error", "Election not found: " + electionId);
+                return result;
+            }
+
+            // 2. Obtener elecciones disponibles una vez
+            List<Map<String, Object>> availableElectionsMap = connectionDB.getAllActiveElections();
+            ElectionInfo[] availableElections = convertToElectionInfoArray(availableElectionsMap);
+
+            // 3. Obtener todos los ciudadanos del departamento
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByDepartment(departmentId);
+            totalCount = citizens.size();
+
+            if (citizens.isEmpty()) {
+                logger.warn("No citizens found for department {}", departmentId);
+                result.put("success", true);
+                result.put("message", "No citizens found for department " + departmentId);
+                result.put("totalCitizens", 0);
+                result.put("successCount", 0);
+                return result;
+            }
+
+            // 4. Crear directorio si no existe
+            String reportDirectory = "server/src/main/java/Reports/data";
+            Path directoryPath = Paths.get(reportDirectory);
+            if (!Files.exists(directoryPath)) {
+                Files.createDirectories(directoryPath);
+                logger.info("Created directory: {}", reportDirectory);
+            }
+
+            // 5. Generar reporte para cada ciudadano
+            for (Map<String, Object> citizenData : citizens) {
+                try {
+                    String documento = (String) citizenData.get("documento");
+                    String nombre = (String) citizenData.get("nombre");
+                    String apellido = (String) citizenData.get("apellido");
+
+                    // Crear assignment usando los datos ya obtenidos
+                    CitizenVotingAssignment assignment = convertToCitizenVotingAssignmentFromData(citizenData, electionInfoMap);
+
+                    // Crear configuración del reporte
+                    CitizenReportsConfiguration config = new CitizenReportsConfiguration();
+                    config.assignment = assignment;
+                    config.availableElections = availableElections;
+                    config.packageVersion = PACKAGE_VERSION;
+                    config.generationTimestamp = System.currentTimeMillis();
+
+                    // Generar nombre del archivo
+                    String fileName = String.format("citizen_report_dept_%d_doc_%s.ice", departmentId, documento);
+                    String filePath = Paths.get(reportDirectory, fileName).toString();
+
+                    // Guardar como archivo ICE
+                    boolean saved = saveConfigurationToFile(config, filePath);
+
+                    if (saved) {
+                        successCount++;
+                        logger.debug("Saved citizen report for {} {} ({})", apellido, nombre, documento);
+                    } else {
+                        errors.add("Failed to save report for citizen: " + documento);
+                        logger.warn("Failed to save report for citizen: {}", documento);
+                    }
+
+                } catch (Exception e) {
+                    String documento = (String) citizenData.getOrDefault("documento", "unknown");
+                    String errorMsg = "Error generating report for citizen " + documento + ": " + e.getMessage();
+                    errors.add(errorMsg);
+                    logger.error("Error generating report for citizen: {}", documento, e);
+                }
+            }
+
+            // 6. Preparar resultado
+            result.put("success", true);
+            result.put("departmentId", departmentId);
+            result.put("electionId", electionId);
+            result.put("totalCitizens", totalCount);
+            result.put("successCount", successCount);
+            result.put("errorCount", errors.size());
+            result.put("errors", errors);
+            result.put("reportDirectory", reportDirectory);
+            result.put("generationTimestamp", System.currentTimeMillis());
+
+            logger.info("Completed FULL CITIZEN REPORTS generation for department {}: {}/{} reports generated successfully",
+                    departmentId, successCount, totalCount);
+
+        } catch (Exception e) {
+            logger.error("Critical error generating department citizen reports for department {} and election {}",
+                    departmentId, electionId, e);
+            result.put("success", false);
+            result.put("error", "Critical error: " + e.getMessage());
+            result.put("totalCitizens", totalCount);
+            result.put("successCount", successCount);
+        }
+
+        return result;
+    }
+
+    /**
+     * Genera reportes FULL CITIZEN REPORT para todos los ciudadanos de un municipio específico
+     * Guarda cada reporte como archivo ICE en la carpeta Reports/data
+     *
+     * @param municipalityId ID del municipio
+     * @param electionId ID de la elección
+     * @return Map con estadísticas del proceso de generación
+     */
+    @Override
+    public Map<String, Object> generateMunicipalityCitizenReports(int municipalityId, int electionId) {
+        logger.info("Generating FULL CITIZEN REPORTS for all citizens in municipality {} and election {}", municipalityId, electionId);
+
+        Map<String, Object> result = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+        int successCount = 0;
+        int totalCount = 0;
+
+        try {
+            // 1. Obtener información de la elección
+            Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
+            if (electionInfoMap == null) {
+                logger.error("Election {} not found", electionId);
+                result.put("success", false);
+                result.put("error", "Election not found: " + electionId);
+                return result;
+            }
+
+            // 2. Obtener elecciones disponibles una vez
+            List<Map<String, Object>> availableElectionsMap = connectionDB.getAllActiveElections();
+            ElectionInfo[] availableElections = convertToElectionInfoArray(availableElectionsMap);
+
+            // 3. Obtener todos los ciudadanos del municipio
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByMunicipality(municipalityId);
+            totalCount = citizens.size();
+
+            if (citizens.isEmpty()) {
+                logger.warn("No citizens found for municipality {}", municipalityId);
+                result.put("success", true);
+                result.put("message", "No citizens found for municipality " + municipalityId);
+                result.put("totalCitizens", 0);
+                result.put("successCount", 0);
+                return result;
+            }
+
+            // 4. Crear directorio si no existe
+            String reportDirectory = "server/src/main/java/Reports/data";
+            Path directoryPath = Paths.get(reportDirectory);
+            if (!Files.exists(directoryPath)) {
+                Files.createDirectories(directoryPath);
+                logger.info("Created directory: {}", reportDirectory);
+            }
+
+            // 5. Generar reporte para cada ciudadano
+            for (Map<String, Object> citizenData : citizens) {
+                try {
+                    String documento = (String) citizenData.get("documento");
+                    String nombre = (String) citizenData.get("nombre");
+                    String apellido = (String) citizenData.get("apellido");
+
+                    // Crear assignment usando los datos ya obtenidos
+                    CitizenVotingAssignment assignment = convertToCitizenVotingAssignmentFromData(citizenData, electionInfoMap);
+
+                    // Crear configuración del reporte
+                    CitizenReportsConfiguration config = new CitizenReportsConfiguration();
+                    config.assignment = assignment;
+                    config.availableElections = availableElections;
+                    config.packageVersion = PACKAGE_VERSION;
+                    config.generationTimestamp = System.currentTimeMillis();
+
+                    // Generar nombre del archivo
+                    String fileName = String.format("citizen_report_mun_%d_doc_%s.ice", municipalityId, documento);
+                    String filePath = Paths.get(reportDirectory, fileName).toString();
+
+                    // Guardar como archivo ICE
+                    boolean saved = saveConfigurationToFile(config, filePath);
+
+                    if (saved) {
+                        successCount++;
+                        logger.debug("Saved citizen report for {} {} ({})", apellido, nombre, documento);
+                    } else {
+                        errors.add("Failed to save report for citizen: " + documento);
+                        logger.warn("Failed to save report for citizen: {}", documento);
+                    }
+
+                } catch (Exception e) {
+                    String documento = (String) citizenData.getOrDefault("documento", "unknown");
+                    String errorMsg = "Error generating report for citizen " + documento + ": " + e.getMessage();
+                    errors.add(errorMsg);
+                    logger.error("Error generating report for citizen: {}", documento, e);
+                }
+            }
+
+            // 6. Preparar resultado
+            result.put("success", true);
+            result.put("municipalityId", municipalityId);
+            result.put("electionId", electionId);
+            result.put("totalCitizens", totalCount);
+            result.put("successCount", successCount);
+            result.put("errorCount", errors.size());
+            result.put("errors", errors);
+            result.put("reportDirectory", reportDirectory);
+            result.put("generationTimestamp", System.currentTimeMillis());
+
+            logger.info("Completed FULL CITIZEN REPORTS generation for municipality {}: {}/{} reports generated successfully",
+                    municipalityId, successCount, totalCount);
+
+        } catch (Exception e) {
+            logger.error("Critical error generating municipality citizen reports for municipality {} and election {}",
+                    municipalityId, electionId, e);
+            result.put("success", false);
+            result.put("error", "Critical error: " + e.getMessage());
+            result.put("totalCitizens", totalCount);
+            result.put("successCount", successCount);
+        }
+
+        return result;
+    }
+
+    /**
+     * Genera reportes FULL CITIZEN REPORT para todos los ciudadanos de un puesto de votación específico
+     * Guarda cada reporte como archivo ICE en la carpeta Reports/data
+     *
+     * @param puestoId ID del puesto de votación
+     * @param electionId ID de la elección
+     * @return Map con estadísticas del proceso de generación
+     */
+    @Override
+    public Map<String, Object> generatePuestoCitizenReports(int puestoId, int electionId) {
+        logger.info("Generating FULL CITIZEN REPORTS for all citizens in puesto {} and election {}", puestoId, electionId);
+
+        Map<String, Object> result = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+        int successCount = 0;
+        int totalCount = 0;
+
+        try {
+            // 1. Obtener información de la elección
+            Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
+            if (electionInfoMap == null) {
+                logger.error("Election {} not found", electionId);
+                result.put("success", false);
+                result.put("error", "Election not found: " + electionId);
+                return result;
+            }
+
+            // 2. Obtener elecciones disponibles una vez
+            List<Map<String, Object>> availableElectionsMap = connectionDB.getAllActiveElections();
+            ElectionInfo[] availableElections = convertToElectionInfoArray(availableElectionsMap);
+
+            // 3. Obtener todos los ciudadanos del puesto
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByPuesto(puestoId);
+            totalCount = citizens.size();
+
+            if (citizens.isEmpty()) {
+                logger.warn("No citizens found for puesto {}", puestoId);
+                result.put("success", true);
+                result.put("message", "No citizens found for puesto " + puestoId);
+                result.put("totalCitizens", 0);
+                result.put("successCount", 0);
+                return result;
+            }
+
+            // 4. Crear directorio si no existe
+            String reportDirectory = "server/src/main/java/Reports/data";
+            Path directoryPath = Paths.get(reportDirectory);
+            if (!Files.exists(directoryPath)) {
+                Files.createDirectories(directoryPath);
+                logger.info("Created directory: {}", reportDirectory);
+            }
+
+            // 5. Generar reporte para cada ciudadano
+            for (Map<String, Object> citizenData : citizens) {
+                try {
+                    String documento = (String) citizenData.get("documento");
+                    String nombre = (String) citizenData.get("nombre");
+                    String apellido = (String) citizenData.get("apellido");
+
+                    // Crear assignment usando los datos ya obtenidos
+                    CitizenVotingAssignment assignment = convertToCitizenVotingAssignmentFromData(citizenData, electionInfoMap);
+
+                    // Crear configuración del reporte
+                    CitizenReportsConfiguration config = new CitizenReportsConfiguration();
+                    config.assignment = assignment;
+                    config.availableElections = availableElections;
+                    config.packageVersion = PACKAGE_VERSION;
+                    config.generationTimestamp = System.currentTimeMillis();
+
+                    // Generar nombre del archivo
+                    String fileName = String.format("citizen_report_puesto_%d_doc_%s.ice", puestoId, documento);
+                    String filePath = Paths.get(reportDirectory, fileName).toString();
+
+                    // Guardar como archivo ICE
+                    boolean saved = saveConfigurationToFile(config, filePath);
+
+                    if (saved) {
+                        successCount++;
+                        logger.debug("Saved citizen report for {} {} ({})", apellido, nombre, documento);
+                    } else {
+                        errors.add("Failed to save report for citizen: " + documento);
+                        logger.warn("Failed to save report for citizen: {}", documento);
+                    }
+
+                } catch (Exception e) {
+                    String documento = (String) citizenData.getOrDefault("documento", "unknown");
+                    String errorMsg = "Error generating report for citizen " + documento + ": " + e.getMessage();
+                    errors.add(errorMsg);
+                    logger.error("Error generating report for citizen: {}", documento, e);
+                }
+            }
+
+            // 6. Preparar resultado
+            result.put("success", true);
+            result.put("puestoId", puestoId);
+            result.put("electionId", electionId);
+            result.put("totalCitizens", totalCount);
+            result.put("successCount", successCount);
+            result.put("errorCount", errors.size());
+            result.put("errors", errors);
+            result.put("reportDirectory", reportDirectory);
+            result.put("generationTimestamp", System.currentTimeMillis());
+
+            logger.info("Completed FULL CITIZEN REPORTS generation for puesto {}: {}/{} reports generated successfully",
+                    puestoId, successCount, totalCount);
+
+        } catch (Exception e) {
+            logger.error("Critical error generating puesto citizen reports for puesto {} and election {}",
+                    puestoId, electionId, e);
+            result.put("success", false);
+            result.put("error", "Critical error: " + e.getMessage());
+            result.put("totalCitizens", totalCount);
+            result.put("successCount", successCount);
+        }
+
+        return result;
+    }
+
+// =================== MÉTODO AUXILIAR ===================
+
+    /**
+     * Convierte datos de ciudadano obtenidos directamente de la consulta a CitizenVotingAssignment
+     * Evita hacer consultas adicionales a la base de datos
+     */
+    private CitizenVotingAssignment convertToCitizenVotingAssignmentFromData(Map<String, Object> citizenData, Map<String, Object> electionInfoMap) {
+        try {
+            CitizenVotingAssignment assignment = new CitizenVotingAssignment();
+
+            // Convert citizen info
+            CitizenInfo citizen = new CitizenInfo();
+            citizen.id = (Integer) citizenData.getOrDefault("ciudadano_id", 0);
+            citizen.documento = (String) citizenData.getOrDefault("documento", "");
+            citizen.nombre = (String) citizenData.getOrDefault("nombre", "");
+            citizen.apellido = (String) citizenData.getOrDefault("apellido", "");
+            assignment.citizen = citizen;
+
+            // Convert location info
+            LocationInfo location = new LocationInfo();
+            location.departamentoId = (Integer) citizenData.getOrDefault("departamento_id", 0);
+            location.departamentoNombre = (String) citizenData.getOrDefault("departamento_nombre", "");
+            location.municipioId = (Integer) citizenData.getOrDefault("municipio_id", 0);
+            location.municipioNombre = (String) citizenData.getOrDefault("municipio_nombre", "");
+            location.puestoId = (Integer) citizenData.getOrDefault("puesto_id", 0);
+            location.puestoNombre = (String) citizenData.getOrDefault("puesto_nombre", "");
+            location.puestoDireccion = (String) citizenData.getOrDefault("puesto_direccion", "");
+            location.puestoConsecutive = (Integer) citizenData.getOrDefault("puesto_consecutive", 0);
+            location.mesaId = (Integer) citizenData.getOrDefault("mesa_id", 0);
+            location.mesaConsecutive = (Integer) citizenData.getOrDefault("mesa_consecutive", 0);
+            assignment.location = location;
+
+            // Convert election info
+            ElectionInfo election = new ElectionInfo();
+            election.id = (Integer) electionInfoMap.getOrDefault("id", 0);
+            election.nombre = (String) electionInfoMap.getOrDefault("nombre", "");
+            election.estado = (String) electionInfoMap.getOrDefault("estado", "");
+
+            // Handle timestamp conversion safely
+            Object fechaInicio = electionInfoMap.get("fecha_inicio");
+            if (fechaInicio instanceof java.sql.Timestamp) {
+                election.fechaInicio = ((java.sql.Timestamp) fechaInicio).getTime();
+            } else if (fechaInicio instanceof Long) {
+                election.fechaInicio = (Long) fechaInicio;
+            } else {
+                election.fechaInicio = 0L;
+            }
+
+            Object fechaFin = electionInfoMap.get("fecha_fin");
+            if (fechaFin instanceof java.sql.Timestamp) {
+                election.fechaFin = ((java.sql.Timestamp) fechaFin).getTime();
+            } else if (fechaFin instanceof Long) {
+                election.fechaFin = (Long) fechaFin;
+            } else {
+                election.fechaFin = 0L;
+            }
+
+            assignment.election = election;
+            assignment.generationTimestamp = System.currentTimeMillis();
+
+            return assignment;
+
+        } catch (Exception e) {
+            logger.error("Error converting citizen data to CitizenVotingAssignment", e);
+            throw new RuntimeException("Failed to convert citizen voting assignment from data", e);
+        }
+    }
+
+
 }

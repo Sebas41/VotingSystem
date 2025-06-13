@@ -39,4 +39,22 @@ public interface ConnectionDBinterface {
     List<Map<String, Object>> getAllActiveElections();
     boolean validateCitizenDocument(String documento);
     Map<String, Object> getLocationHierarchyByMesa(int mesaId);
+// =================== MÉTODOS PARA FULL CITIZEN REPORTS ===================
+
+    /**
+     * Obtiene todos los ciudadanos de un departamento específico con información completa de ubicación
+     */
+    List<Map<String, Object>> getCitizensByDepartment(int departmentId);
+
+    /**
+     * Obtiene todos los ciudadanos de un municipio específico con información completa de ubicación
+     */
+    List<Map<String, Object>> getCitizensByMunicipality(int municipalityId);
+
+    /**
+     * Obtiene todos los ciudadanos de un puesto de votación específico con información completa de ubicación
+     */
+    List<Map<String, Object>> getCitizensByPuesto(int puestoId);
+
+
 }

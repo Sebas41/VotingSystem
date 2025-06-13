@@ -165,4 +165,38 @@ public interface ReportsManagerInterface {
      * @return List of active elections
      */
     List<Map<String, Object>> getAvailableElections();
+
+// =================== MÉTODOS PARA FULL CITIZEN REPORTS ===================
+
+    /**
+     * Genera reportes FULL CITIZEN REPORT para todos los ciudadanos de un departamento específico
+     * Guarda cada reporte como archivo ICE en la carpeta Reports/data
+     *
+     * @param departmentId ID del departamento
+     * @param electionId ID de la elección
+     * @return Map con estadísticas del proceso de generación (success, totalCitizens, successCount, errors, etc.)
+     */
+    Map<String, Object> generateDepartmentCitizenReports(int departmentId, int electionId);
+
+    /**
+     * Genera reportes FULL CITIZEN REPORT para todos los ciudadanos de un municipio específico
+     * Guarda cada reporte como archivo ICE en la carpeta Reports/data
+     *
+     * @param municipalityId ID del municipio
+     * @param electionId ID de la elección
+     * @return Map con estadísticas del proceso de generación (success, totalCitizens, successCount, errors, etc.)
+     */
+    Map<String, Object> generateMunicipalityCitizenReports(int municipalityId, int electionId);
+
+    /**
+     * Genera reportes FULL CITIZEN REPORT para todos los ciudadanos de un puesto de votación específico
+     * Guarda cada reporte como archivo ICE en la carpeta Reports/data
+     *
+     * @param puestoId ID del puesto de votación
+     * @param electionId ID de la elección
+     * @return Map con estadísticas del proceso de generación (success, totalCitizens, successCount, errors, etc.)
+     */
+    Map<String, Object> generatePuestoCitizenReports(int puestoId, int electionId);
+
+
 }

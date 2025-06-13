@@ -1245,6 +1245,209 @@ public class ConnectionDB implements ConnectionDBinterface {
         return null;
     }
 
+    // =================== MÉTODOS PARA FULL CITIZEN REPORTS ===================
+
+    /**
+     * Obtiene todos los ciudadanos de un departamento específico
+     */
+    @Override
+    public List<Map<String, Object>> getCitizensByDepartment(int departmentId) {
+        List<Map<String, Object>> citizens = new ArrayList<>();
+
+        String sql = """
+        SELECT DISTINCT
+            c.id as ciudadano_id,
+            c.documento,
+            c.nombre,
+            c.apellido,
+            c.mesa_id,
+            mv.consecutive as mesa_consecutive,
+            pv.id as puesto_id,
+            pv.nombre as puesto_nombre,
+            pv.direccion as puesto_direccion,
+            pv.consecutive as puesto_consecutive,
+            m.id as municipio_id,
+            m.nombre as municipio_nombre,
+            d.id as departamento_id,
+            d.nombre as departamento_nombre
+        FROM ciudadano c
+        JOIN mesa_votacion mv ON c.mesa_id = mv.id
+        JOIN puesto_votacion pv ON mv.puesto_id = pv.id
+        JOIN municipio m ON pv.municipio_id = m.id
+        JOIN departamento d ON m.departamento_id = d.id
+        WHERE d.id = ?
+        ORDER BY c.apellido, c.nombre, c.documento
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, departmentId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> citizen = new HashMap<>();
+                    citizen.put("ciudadano_id", rs.getInt("ciudadano_id"));
+                    citizen.put("documento", rs.getString("documento"));
+                    citizen.put("nombre", rs.getString("nombre"));
+                    citizen.put("apellido", rs.getString("apellido"));
+                    citizen.put("mesa_id", rs.getInt("mesa_id"));
+                    citizen.put("mesa_consecutive", rs.getInt("mesa_consecutive"));
+                    citizen.put("puesto_id", rs.getInt("puesto_id"));
+                    citizen.put("puesto_nombre", rs.getString("puesto_nombre"));
+                    citizen.put("puesto_direccion", rs.getString("puesto_direccion"));
+                    citizen.put("puesto_consecutive", rs.getInt("puesto_consecutive"));
+                    citizen.put("municipio_id", rs.getInt("municipio_id"));
+                    citizen.put("municipio_nombre", rs.getString("municipio_nombre"));
+                    citizen.put("departamento_id", rs.getInt("departamento_id"));
+                    citizen.put("departamento_nombre", rs.getString("departamento_nombre"));
+                    citizens.add(citizen);
+                }
+            }
+
+            logger.info("Retrieved {} citizens for department {}", citizens.size(), departmentId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting citizens for department: {}", departmentId, e);
+        }
+
+        return citizens;
+    }
+
+    /**
+     * Obtiene todos los ciudadanos de un municipio específico
+     */
+    @Override
+    public List<Map<String, Object>> getCitizensByMunicipality(int municipalityId) {
+        List<Map<String, Object>> citizens = new ArrayList<>();
+
+        String sql = """
+        SELECT DISTINCT
+            c.id as ciudadano_id,
+            c.documento,
+            c.nombre,
+            c.apellido,
+            c.mesa_id,
+            mv.consecutive as mesa_consecutive,
+            pv.id as puesto_id,
+            pv.nombre as puesto_nombre,
+            pv.direccion as puesto_direccion,
+            pv.consecutive as puesto_consecutive,
+            m.id as municipio_id,
+            m.nombre as municipio_nombre,
+            d.id as departamento_id,
+            d.nombre as departamento_nombre
+        FROM ciudadano c
+        JOIN mesa_votacion mv ON c.mesa_id = mv.id
+        JOIN puesto_votacion pv ON mv.puesto_id = pv.id
+        JOIN municipio m ON pv.municipio_id = m.id
+        JOIN departamento d ON m.departamento_id = d.id
+        WHERE m.id = ?
+        ORDER BY c.apellido, c.nombre, c.documento
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, municipalityId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> citizen = new HashMap<>();
+                    citizen.put("ciudadano_id", rs.getInt("ciudadano_id"));
+                    citizen.put("documento", rs.getString("documento"));
+                    citizen.put("nombre", rs.getString("nombre"));
+                    citizen.put("apellido", rs.getString("apellido"));
+                    citizen.put("mesa_id", rs.getInt("mesa_id"));
+                    citizen.put("mesa_consecutive", rs.getInt("mesa_consecutive"));
+                    citizen.put("puesto_id", rs.getInt("puesto_id"));
+                    citizen.put("puesto_nombre", rs.getString("puesto_nombre"));
+                    citizen.put("puesto_direccion", rs.getString("puesto_direccion"));
+                    citizen.put("puesto_consecutive", rs.getInt("puesto_consecutive"));
+                    citizen.put("municipio_id", rs.getInt("municipio_id"));
+                    citizen.put("municipio_nombre", rs.getString("municipio_nombre"));
+                    citizen.put("departamento_id", rs.getInt("departamento_id"));
+                    citizen.put("departamento_nombre", rs.getString("departamento_nombre"));
+                    citizens.add(citizen);
+                }
+            }
+
+            logger.info("Retrieved {} citizens for municipality {}", citizens.size(), municipalityId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting citizens for municipality: {}", municipalityId, e);
+        }
+
+        return citizens;
+    }
+
+    /**
+     * Obtiene todos los ciudadanos de un puesto de votación específico
+     */
+    @Override
+    public List<Map<String, Object>> getCitizensByPuesto(int puestoId) {
+        List<Map<String, Object>> citizens = new ArrayList<>();
+
+        String sql = """
+        SELECT DISTINCT
+            c.id as ciudadano_id,
+            c.documento,
+            c.nombre,
+            c.apellido,
+            c.mesa_id,
+            mv.consecutive as mesa_consecutive,
+            pv.id as puesto_id,
+            pv.nombre as puesto_nombre,
+            pv.direccion as puesto_direccion,
+            pv.consecutive as puesto_consecutive,
+            m.id as municipio_id,
+            m.nombre as municipio_nombre,
+            d.id as departamento_id,
+            d.nombre as departamento_nombre
+        FROM ciudadano c
+        JOIN mesa_votacion mv ON c.mesa_id = mv.id
+        JOIN puesto_votacion pv ON mv.puesto_id = pv.id
+        JOIN municipio m ON pv.municipio_id = m.id
+        JOIN departamento d ON m.departamento_id = d.id
+        WHERE pv.id = ?
+        ORDER BY c.apellido, c.nombre, c.documento
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, puestoId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> citizen = new HashMap<>();
+                    citizen.put("ciudadano_id", rs.getInt("ciudadano_id"));
+                    citizen.put("documento", rs.getString("documento"));
+                    citizen.put("nombre", rs.getString("nombre"));
+                    citizen.put("apellido", rs.getString("apellido"));
+                    citizen.put("mesa_id", rs.getInt("mesa_id"));
+                    citizen.put("mesa_consecutive", rs.getInt("mesa_consecutive"));
+                    citizen.put("puesto_id", rs.getInt("puesto_id"));
+                    citizen.put("puesto_nombre", rs.getString("puesto_nombre"));
+                    citizen.put("puesto_direccion", rs.getString("puesto_direccion"));
+                    citizen.put("puesto_consecutive", rs.getInt("puesto_consecutive"));
+                    citizen.put("municipio_id", rs.getInt("municipio_id"));
+                    citizen.put("municipio_nombre", rs.getString("municipio_nombre"));
+                    citizen.put("departamento_id", rs.getInt("departamento_id"));
+                    citizen.put("departamento_nombre", rs.getString("departamento_nombre"));
+                    citizens.add(citizen);
+                }
+            }
+
+            logger.info("Retrieved {} citizens for puesto {}", citizens.size(), puestoId);
+
+        } catch (SQLException e) {
+            logger.error("Error getting citizens for puesto: {}", puestoId, e);
+        }
+
+        return citizens;
+    }
+
 
 
 

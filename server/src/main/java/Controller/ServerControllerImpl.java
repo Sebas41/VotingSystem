@@ -124,6 +124,107 @@ public class ServerControllerImpl implements ServerControllerInterface {
             System.err.println("Error cargando datos de prueba: " + e.getMessage());
         }
     }
+// =================== FULL CITIZEN REPORTS METHODS ===================
+
+    @Override
+    public Map<String, Object> generateDepartmentCitizenReports(int departmentId, int electionId) {
+        try {
+            System.out.println("=== Generating FULL CITIZEN REPORTS for Department " + departmentId + " ===");
+
+            Map<String, Object> result = reportsManager.generateDepartmentCitizenReports(departmentId, electionId);
+
+            // Log results
+            boolean success = (Boolean) result.getOrDefault("success", false);
+            int totalCitizens = (Integer) result.getOrDefault("totalCitizens", 0);
+            int successCount = (Integer) result.getOrDefault("successCount", 0);
+            int errorCount = (Integer) result.getOrDefault("errorCount", 0);
+
+            System.out.printf("Department %d reports: %s - %d/%d citizens processed (%d errors)%n",
+                    departmentId,
+                    success ? "SUCCESS" : "FAILED",
+                    successCount,
+                    totalCitizens,
+                    errorCount);
+
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("Error generating department citizen reports: " + e.getMessage());
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("error", "Controller error: " + e.getMessage());
+            errorResult.put("departmentId", departmentId);
+            errorResult.put("electionId", electionId);
+            return errorResult;
+        }
+    }
+
+    @Override
+    public Map<String, Object> generateMunicipalityCitizenReports(int municipalityId, int electionId) {
+        try {
+            System.out.println("=== Generating FULL CITIZEN REPORTS for Municipality " + municipalityId + " ===");
+
+            Map<String, Object> result = reportsManager.generateMunicipalityCitizenReports(municipalityId, electionId);
+
+            // Log results
+            boolean success = (Boolean) result.getOrDefault("success", false);
+            int totalCitizens = (Integer) result.getOrDefault("totalCitizens", 0);
+            int successCount = (Integer) result.getOrDefault("successCount", 0);
+            int errorCount = (Integer) result.getOrDefault("errorCount", 0);
+
+            System.out.printf("Municipality %d reports: %s - %d/%d citizens processed (%d errors)%n",
+                    municipalityId,
+                    success ? "SUCCESS" : "FAILED",
+                    successCount,
+                    totalCitizens,
+                    errorCount);
+
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("Error generating municipality citizen reports: " + e.getMessage());
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("error", "Controller error: " + e.getMessage());
+            errorResult.put("municipalityId", municipalityId);
+            errorResult.put("electionId", electionId);
+            return errorResult;
+        }
+    }
+
+    @Override
+    public Map<String, Object> generatePuestoCitizenReports(int puestoId, int electionId) {
+        try {
+            System.out.println("=== Generating FULL CITIZEN REPORTS for Puesto " + puestoId + " ===");
+
+            Map<String, Object> result = reportsManager.generatePuestoCitizenReports(puestoId, electionId);
+
+            // Log results
+            boolean success = (Boolean) result.getOrDefault("success", false);
+            int totalCitizens = (Integer) result.getOrDefault("totalCitizens", 0);
+            int successCount = (Integer) result.getOrDefault("successCount", 0);
+            int errorCount = (Integer) result.getOrDefault("errorCount", 0);
+
+            System.out.printf("Puesto %d reports: %s - %d/%d citizens processed (%d errors)%n",
+                    puestoId,
+                    success ? "SUCCESS" : "FAILED",
+                    successCount,
+                    totalCitizens,
+                    errorCount);
+
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("Error generating puesto citizen reports: " + e.getMessage());
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("error", "Controller error: " + e.getMessage());
+            errorResult.put("puestoId", puestoId);
+            errorResult.put("electionId", electionId);
+            return errorResult;
+        }
+    }
+
 
 
     public List<Map<String, Object>> getAvailableDepartments() {

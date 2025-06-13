@@ -14,66 +14,75 @@ public class ReportsManagerTest {
     private static final int ELECTION_ID = 1; // Test election ID
 
     public static void main(String[] args) {
-        System.out.println("=== REPORTS MANAGER COMPREHENSIVE TEST ===");
+    System.out.println("=== REPORTS MANAGER COMPREHENSIVE TEST ===");
 
-        // Initialize components
-        serverController = new ServerControllerImpl();
-        scanner = new Scanner(System.in);
+    // Initialize components
+    serverController = new ServerControllerImpl();
+    scanner = new Scanner(System.in);
 
-        try {
-            // Main interactive loop
-            boolean running = true;
-            while (running) {
-                displayMainMenu();
-                int choice = getMenuChoice(1, 12);
+    try {
+        // Main interactive loop
+        boolean running = true;
+        while (running) {
+            displayMainMenu();
+            int choice = getMenuChoice(1, 15); // ✅ CAMBIAR DE 12 a 15
 
-                switch (choice) {
-                    case 1:
-                        testSystemValidation();
-                        break;
-                    case 2:
-                        testCitizenLookup();
-                        break;
-                    case 3:
-                        testCitizenSearch();
-                        break;
-                    case 4:
-                        testBatchCitizenReports();
-                        break;
-                    case 5:
-                        testElectionResults();
-                        break;
-                    case 6:
-                        testGeographicReports();
-                        break;
-                    case 7:
-                        testMesaCitizenReports();
-                        break;
-                    case 8:
-                        testExportFunctionality();
-                        break;
-                    case 9:
-                        viewReportsStatistics();
-                        break;
-                    case 10:
-                        testCitizenEligibility();
-                        break;
-                    case 11:
-                        performComprehensiveTest();
-                        break;
-                    case 12:
-                        running = false;
-                        break;
-                }
+            switch (choice) {
+                case 1:
+                    testSystemValidation();
+                    break;
+                case 2:
+                    testCitizenLookup();
+                    break;
+                case 3:
+                    testCitizenSearch();
+                    break;
+                case 4:
+                    testBatchCitizenReports();
+                    break;
+                case 5:
+                    testElectionResults();
+                    break;
+                case 6:
+                    testGeographicReports();
+                    break;
+                case 7:
+                    testMesaCitizenReports();
+                    break;
+                case 8:
+                    testExportFunctionality();
+                    break;
+                case 9:
+                    viewReportsStatistics();
+                    break;
+                case 10:
+                    testCitizenEligibility();
+                    break;
+                case 11:
+                    testFullDepartmentCitizenReports();  // ✅ Ahora funcionará
+                    break;
+                case 12:
+                    testFullMunicipalityCitizenReports(); // ✅ Ahora funcionará
+                    break;
+                case 13:
+                    testFullPuestoCitizenReports();       // ✅ Ahora funcionará
+                    break;
+                case 14:
+                    performComprehensiveTest();           // ✅ Ahora funcionará
+                    break;
+                case 15:
+                    running = false;                      // ✅ Ahora funcionará
+                    break;
             }
-
-        } catch (Exception e) {
-            System.err.println("Error during testing: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-            cleanup();
         }
+
+    } catch (Exception e) {
+        System.err.println("Error during testing: " + e.getMessage());
+        e.printStackTrace();
+    } finally {
+        cleanup();
     }
+}
 
     private static void displayMainMenu() {
         System.out.println("\n" + "=".repeat(70));
@@ -84,15 +93,18 @@ public class ReportsManagerTest {
         System.out.println("3.   Test Citizen Search (by Name)");
         System.out.println("4.   Test Batch Citizen Reports");
         System.out.println("5.   Test Election Results Reports");
-        System.out.println("6.  ️Test Geographic Reports");
-        System.out.println("7.  Test Mesa Citizen Reports");
+        System.out.println("6.   Test Geographic Reports");
+        System.out.println("7.   Test Mesa Citizen Reports");
         System.out.println("8.   Test Export Functionality");
         System.out.println("9.   View Reports Statistics");
         System.out.println("10.  Test Citizen Eligibility");
-        System.out.println("11.  Comprehensive Test Suite");
-        System.out.println("12.  Exit");
+        System.out.println("11.  🆕 Test FULL Department Citizen Reports");  // NUEVO
+        System.out.println("12.  🆕 Test FULL Municipality Citizen Reports"); // NUEVO
+        System.out.println("13.  🆕 Test FULL Puesto Citizen Reports");       // NUEVO
+        System.out.println("14.  Comprehensive Test Suite");
+        System.out.println("15.  Exit");
         System.out.println("=".repeat(70));
-        System.out.print("Select option (1-12): ");
+        System.out.print("Select option (1-15): ");
     }
 
     private static void testSystemValidation() {
@@ -164,6 +176,198 @@ public class ReportsManagerTest {
             System.out.println(" Cannot generate report for ineligible citizen");
         }
     }
+
+    private static void testFullDepartmentCitizenReports() {
+        System.out.println("\n=== 🏛️ FULL DEPARTMENT CITIZEN REPORTS TEST ===");
+
+        System.out.print("Enter department ID (e.g., 1): ");
+        int departmentId = getMenuChoice(1, 999);
+
+        System.out.println("⚠️  WARNING: This will generate INDIVIDUAL ICE files for ALL citizens in department " + departmentId);
+        System.out.println("This could take a significant amount of time and disk space.");
+        System.out.print("Continue? (y/n): ");
+
+        if (!scanner.nextLine().trim().toLowerCase().startsWith("y")) {
+            System.out.println("Operation cancelled.");
+            return;
+        }
+
+        System.out.println("🚀 Starting FULL citizen reports generation for department " + departmentId + "...");
+        long startTime = System.currentTimeMillis();
+
+        Map<String, Object> result = serverController.generateDepartmentCitizenReports(departmentId, ELECTION_ID);
+
+        long endTime = System.currentTimeMillis();
+        double totalTimeSeconds = (endTime - startTime) / 1000.0;
+
+        System.out.println("\n📊 DEPARTMENT CITIZEN REPORTS RESULTS:");
+        System.out.println("=".repeat(60));
+
+        boolean success = (Boolean) result.getOrDefault("success", false);
+        System.out.println("🎯 Status: " + (success ? "✅ SUCCESS" : "❌ FAILED"));
+
+        if (success) {
+            int totalCitizens = (Integer) result.getOrDefault("totalCitizens", 0);
+            int successCount = (Integer) result.getOrDefault("successCount", 0);
+            int errorCount = (Integer) result.getOrDefault("errorCount", 0);
+            String reportDirectory = (String) result.getOrDefault("reportDirectory", "N/A");
+
+            System.out.println("👥 Total Citizens: " + totalCitizens);
+            System.out.println("✅ Successful Reports: " + successCount);
+            System.out.println("❌ Failed Reports: " + errorCount);
+            System.out.println("⏱️  Generation Time: " + String.format("%.2f seconds", totalTimeSeconds));
+            System.out.println("📈 Success Rate: " + String.format("%.1f%%", (successCount * 100.0 / totalCitizens)));
+            System.out.println("📁 Report Directory: " + reportDirectory);
+
+            if (totalCitizens > 0) {
+                System.out.println("⚡ Average Time per Report: " +
+                        String.format("%.2f ms", (totalTimeSeconds * 1000) / totalCitizens));
+            }
+
+            // Show errors if any
+            @SuppressWarnings("unchecked")
+            List<String> errors = (List<String>) result.get("errors");
+            if (errors != null && !errors.isEmpty()) {
+                System.out.println("\n⚠️  ERRORS ENCOUNTERED:");
+                errors.stream().limit(5).forEach(error -> System.out.println("  • " + error));
+                if (errors.size() > 5) {
+                    System.out.println("  ... and " + (errors.size() - 5) + " more errors");
+                }
+            }
+        } else {
+            String error = (String) result.get("error");
+            System.out.println("❌ Error: " + error);
+        }
+    }
+
+    private static void testFullMunicipalityCitizenReports() {
+        System.out.println("\n=== 🏘️ FULL MUNICIPALITY CITIZEN REPORTS TEST ===");
+
+        System.out.print("Enter municipality ID (e.g., 1): ");
+        int municipalityId = getMenuChoice(1, 999);
+
+        System.out.println("⚠️  WARNING: This will generate INDIVIDUAL ICE files for ALL citizens in municipality " + municipalityId);
+        System.out.println("This could take a significant amount of time and disk space.");
+        System.out.print("Continue? (y/n): ");
+
+        if (!scanner.nextLine().trim().toLowerCase().startsWith("y")) {
+            System.out.println("Operation cancelled.");
+            return;
+        }
+
+        System.out.println("🚀 Starting FULL citizen reports generation for municipality " + municipalityId + "...");
+        long startTime = System.currentTimeMillis();
+
+        Map<String, Object> result = serverController.generateMunicipalityCitizenReports(municipalityId, ELECTION_ID);
+
+        long endTime = System.currentTimeMillis();
+        double totalTimeSeconds = (endTime - startTime) / 1000.0;
+
+        System.out.println("\n📊 MUNICIPALITY CITIZEN REPORTS RESULTS:");
+        System.out.println("=".repeat(60));
+
+        boolean success = (Boolean) result.getOrDefault("success", false);
+        System.out.println("🎯 Status: " + (success ? "✅ SUCCESS" : "❌ FAILED"));
+
+        if (success) {
+            int totalCitizens = (Integer) result.getOrDefault("totalCitizens", 0);
+            int successCount = (Integer) result.getOrDefault("successCount", 0);
+            int errorCount = (Integer) result.getOrDefault("errorCount", 0);
+            String reportDirectory = (String) result.getOrDefault("reportDirectory", "N/A");
+
+            System.out.println("👥 Total Citizens: " + totalCitizens);
+            System.out.println("✅ Successful Reports: " + successCount);
+            System.out.println("❌ Failed Reports: " + errorCount);
+            System.out.println("⏱️  Generation Time: " + String.format("%.2f seconds", totalTimeSeconds));
+            System.out.println("📈 Success Rate: " + String.format("%.1f%%", (successCount * 100.0 / totalCitizens)));
+            System.out.println("📁 Report Directory: " + reportDirectory);
+
+            if (totalCitizens > 0) {
+                System.out.println("⚡ Average Time per Report: " +
+                        String.format("%.2f ms", (totalTimeSeconds * 1000) / totalCitizens));
+            }
+
+            // Show errors if any
+            @SuppressWarnings("unchecked")
+            List<String> errors = (List<String>) result.get("errors");
+            if (errors != null && !errors.isEmpty()) {
+                System.out.println("\n⚠️  ERRORS ENCOUNTERED:");
+                errors.stream().limit(5).forEach(error -> System.out.println("  • " + error));
+                if (errors.size() > 5) {
+                    System.out.println("  ... and " + (errors.size() - 5) + " more errors");
+                }
+            }
+        } else {
+            String error = (String) result.get("error");
+            System.out.println("❌ Error: " + error);
+        }
+    }
+
+    private static void testFullPuestoCitizenReports() {
+        System.out.println("\n=== 🗳️ FULL PUESTO CITIZEN REPORTS TEST ===");
+
+        System.out.print("Enter puesto ID (e.g., 1): ");
+        int puestoId = getMenuChoice(1, 999999);
+
+        System.out.println("⚠️  WARNING: This will generate INDIVIDUAL ICE files for ALL citizens in puesto " + puestoId);
+        System.out.println("This could take some time depending on the number of citizens.");
+        System.out.print("Continue? (y/n): ");
+
+        if (!scanner.nextLine().trim().toLowerCase().startsWith("y")) {
+            System.out.println("Operation cancelled.");
+            return;
+        }
+
+        System.out.println("🚀 Starting FULL citizen reports generation for puesto " + puestoId + "...");
+        long startTime = System.currentTimeMillis();
+
+        Map<String, Object> result = serverController.generatePuestoCitizenReports(puestoId, ELECTION_ID);
+
+        long endTime = System.currentTimeMillis();
+        double totalTimeSeconds = (endTime - startTime) / 1000.0;
+
+        System.out.println("\n📊 PUESTO CITIZEN REPORTS RESULTS:");
+        System.out.println("=".repeat(60));
+
+        boolean success = (Boolean) result.getOrDefault("success", false);
+        System.out.println("🎯 Status: " + (success ? "✅ SUCCESS" : "❌ FAILED"));
+
+        if (success) {
+            int totalCitizens = (Integer) result.getOrDefault("totalCitizens", 0);
+            int successCount = (Integer) result.getOrDefault("successCount", 0);
+            int errorCount = (Integer) result.getOrDefault("errorCount", 0);
+            String reportDirectory = (String) result.getOrDefault("reportDirectory", "N/A");
+
+            System.out.println("👥 Total Citizens: " + totalCitizens);
+            System.out.println("✅ Successful Reports: " + successCount);
+            System.out.println("❌ Failed Reports: " + errorCount);
+            System.out.println("⏱️  Generation Time: " + String.format("%.2f seconds", totalTimeSeconds));
+
+            if (totalCitizens > 0) {
+                System.out.println("📈 Success Rate: " + String.format("%.1f%%", (successCount * 100.0 / totalCitizens)));
+                System.out.println("⚡ Average Time per Report: " +
+                        String.format("%.2f ms", (totalTimeSeconds * 1000) / totalCitizens));
+            }
+
+            System.out.println("📁 Report Directory: " + reportDirectory);
+
+            // Show errors if any
+            @SuppressWarnings("unchecked")
+            List<String> errors = (List<String>) result.get("errors");
+            if (errors != null && !errors.isEmpty()) {
+                System.out.println("\n⚠️  ERRORS ENCOUNTERED:");
+                errors.stream().limit(5).forEach(error -> System.out.println("  • " + error));
+                if (errors.size() > 5) {
+                    System.out.println("  ... and " + (errors.size() - 5) + " more errors");
+                }
+            }
+        } else {
+            String error = (String) result.get("error");
+            System.out.println("❌ Error: " + error);
+        }
+    }
+
+    // También actualizar el método getMenuChoice para el nuevo rango
 
     private static void testCitizenSearch() {
         System.out.println("\n=== 🔍 CITIZEN SEARCH TEST ===");
@@ -539,6 +743,7 @@ public class ReportsManagerTest {
         scanner.nextLine();
     }
 
+    // También actualizar el método getMenuChoice para el nuevo rango
     private static int getMenuChoice(int min, int max) {
         while (true) {
             try {
