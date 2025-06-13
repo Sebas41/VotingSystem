@@ -1,6 +1,9 @@
 package Controller;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 /**
@@ -13,7 +16,7 @@ public class ReportsManagerTest {
     private static Scanner scanner;
     private static final int ELECTION_ID = 1; // Test election ID
 
-    public static void main(String[] args) {
+   public static void main(String[] args) {
     System.out.println("=== REPORTS MANAGER COMPREHENSIVE TEST ===");
 
     // Initialize components
@@ -59,19 +62,19 @@ public class ReportsManagerTest {
                     testCitizenEligibility();
                     break;
                 case 11:
-                    testFullDepartmentCitizenReports();  // ✅ Ahora funcionará
+                    testFullDepartmentCitizenReports();  
                     break;
                 case 12:
-                    testFullMunicipalityCitizenReports(); // ✅ Ahora funcionará
+                    testFullMunicipalityCitizenReports(); 
                     break;
                 case 13:
-                    testFullPuestoCitizenReports();       // ✅ Ahora funcionará
+                    testFullPuestoCitizenReports();       
                     break;
                 case 14:
-                    performComprehensiveTest();           // ✅ Ahora funcionará
+                    performComprehensiveTest();           
                     break;
                 case 15:
-                    running = false;                      // ✅ Ahora funcionará
+                    running = false;                     
                     break;
             }
         }
