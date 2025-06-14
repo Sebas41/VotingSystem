@@ -1,63 +1,137 @@
 package VotingMachineManager;
 
 import ConnectionDB.ConnectionDBinterface;
-import VotingSystem.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.zeroc.Ice.Communicator;
-import com.zeroc.Ice.OutputStream;
-import com.zeroc.Ice.InputStream;
-import com.zeroc.Ice.Util;
-
-import java.io.*;
-import java.nio.file.*;
+import com.zeroc.Ice.Current;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Ice-based implementation of VotingManagerInterface
- * Uses Ice serialization for efficient binary storage and transmission
- */
-public class VotingManagerImpl implements VotingManagerInterface {
+// =================== IMPORTS ACTUALIZADOS DE VotingSystem ===================
+import VotingSystem.ConfigurationService;
+
+public class VotingManagerImpl implements ConfigurationService {
 
     private static final Logger logger = LoggerFactory.getLogger(VotingManagerImpl.class);
     private final ConnectionDBinterface connectionDB;
-    private final ObjectMapper jsonMapper;
-    private final Communicator iceCommunicator;
-
-    // Configuration constants
     private static final String PACKAGE_VERSION = "1.0";
+
+    // Delimitadores para formatear strings (como en máquina de café)
+    private static final String FIELD_SEPARATOR = "-";     // Para separar campos
+    private static final String RECORD_SEPARATOR = "#";    // Para separar registros
+    private static final String ARRAY_SEPARATOR = "|";     // Para separar arrays
 
     public VotingManagerImpl(ConnectionDBinterface connectionDB) {
         this.connectionDB = connectionDB;
-        this.jsonMapper = new ObjectMapper();
-        this.jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        logger.info("VotingManagerImpl initialized for Ice communication with string formatting");
+    }
 
-        // Initialize Ice communicator for serialization
-        this.iceCommunicator = Util.initialize();
+    // =================== MÉTODOS @Override SIMPLIFICADOS ===================
 
-        logger.info("VotingManagerImpl initialized with Ice serialization support");
+    @Override
+    public String getConfiguration(int mesaId, int electionId, Current current) {
+        logger.debug("Ice request: getConfiguration for mesa {} election {}", mesaId, electionId);
+
+        try {
+            return generateMachineConfigurationString(mesaId, electionId);
+        } catch (Exception e) {
+            logger.error("Error generating configuration string for mesa {} election {}", mesaId, electionId, e);
+            return createErrorString("Error generating configuration: " + e.getMessage());
+        }
     }
 
     @Override
-    public VotingConfiguration generateMachineConfiguration(int mesaId, int electionId) {
-        logger.info("Generating Ice configuration for mesa {} and election {}", mesaId, electionId);
+    public boolean isConfigurationReady(int mesaId, int electionId, Current current) {
+        logger.debug("Ice request: isConfigurationReady for mesa {} election {}", mesaId, electionId);
+        return validateMesaConfiguration(mesaId, electionId);
+    }
+
+    @Override
+    public void preloadConfigurations(int[] mesaIds, int electionId, Current current) {
+        logger.info("Ice request: preloadConfigurations for {} mesas election {}", mesaIds.length, electionId);
+
+        try {
+            // Preload configurations for each mesa (caching logic could be added here)
+            for (int mesaId : mesaIds) {
+                generateMachineConfigurationString(mesaId, electionId);
+            }
+            logger.info("Preloading completed for {} mesas", mesaIds.length);
+        } catch (Exception e) {
+            logger.error("Error during preloading for election {}", electionId, e);
+        }
+    }
+
+    @Override
+    public String[] getBatchConfigurations(int[] mesaIds, int electionId, Current current) {
+        logger.debug("Ice request: getBatchConfigurations for {} mesas election {}", mesaIds.length, electionId);
+
+        try {
+            return generateBatchMachineConfigurationStrings(Arrays.asList(mesaIds), electionId);
+        } catch (Exception e) {
+            logger.error("Error generating batch configuration strings for election {}", electionId, e);
+            return new String[]{createErrorString("Error generating batch configurations: " + e.getMessage())};
+        }
+    }
+
+    @Override
+    public String[] getDepartmentConfigurations(int departmentId, int electionId, Current current) {
+        logger.debug("Ice request: getDepartmentConfigurations for department {} election {}", departmentId, electionId);
+
+        try {
+            return generateDepartmentConfigurationStrings(departmentId, electionId);
+        } catch (Exception e) {
+            logger.error("Error generating department configuration strings for department {} election {}", departmentId, electionId, e);
+            return new String[]{createErrorString("Error generating department configurations: " + e.getMessage())};
+        }
+    }
+
+    @Override
+    public String[] getPuestoConfigurations(int puestoId, int electionId, Current current) {
+        logger.debug("Ice request: getPuestoConfigurations for puesto {} election {}", puestoId, electionId);
+
+        try {
+            return generatePuestoConfigurationStrings(puestoId, electionId);
+        } catch (Exception e) {
+            logger.error("Error generating puesto configuration strings for puesto {} election {}", puestoId, electionId, e);
+            return new String[]{createErrorString("Error generating puesto configurations: " + e.getMessage())};
+        }
+    }
+
+    @Override
+    public String getConfigurationStatistics(int electionId, Current current) {
+        logger.debug("Ice request: getConfigurationStatistics for election {}", electionId);
+
+        try {
+            return generateConfigurationStatisticsString(electionId);
+        } catch (Exception e) {
+            logger.error("Error generating configuration statistics string for election {}", electionId, e);
+            return createErrorString("Error generating statistics: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean isElectionReadyForConfiguration(int electionId, Current current) {
+        return isElectionReadyForConfiguration(electionId);
+    }
+
+    // =================== MÉTODOS PARA GENERAR STRINGS FORMATEADOS ===================
+
+    public String generateMachineConfigurationString(int mesaId, int electionId) {
+        logger.info("Generating machine configuration string for mesa {} and election {}", mesaId, electionId);
 
         try {
             // 1. Get mesa information
             Map<String, Object> mesaInfoMap = connectionDB.getMesaConfiguration(mesaId);
             if (mesaInfoMap == null) {
                 logger.error("Mesa {} not found", mesaId);
-                return null;
+                return createErrorString("Mesa not found");
             }
 
             // 2. Get election information
             Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
             if (electionInfoMap == null) {
                 logger.error("Election {} not found", electionId);
-                return null;
+                return createErrorString("Election not found");
             }
 
             // 3. Get candidates for this election
@@ -66,56 +140,57 @@ public class VotingManagerImpl implements VotingManagerInterface {
             // 4. Get assigned citizens for this mesa
             List<Map<String, Object>> citizensMap = connectionDB.getCitizensByMesa(mesaId);
 
-            // 5. Convert to Ice structs
-            MesaInfo mesaInfo = convertToMesaInfo(mesaInfoMap);
-            ElectionInfo electionInfo = convertToElectionInfo(electionInfoMap);
-            Candidate[] candidates = convertToCandidates(candidatesMap);
-            Citizen[] citizens = convertToCitizens(citizensMap);
+            // Formato: MESA_INFO#ELECTION_INFO#CANDIDATES#CITIZENS#METADATA
+            StringBuilder config = new StringBuilder();
 
-            // 6. Build Ice configuration
-            VotingConfiguration configuration = new VotingConfiguration();
-            configuration.mesaInfo = mesaInfo;
-            configuration.electionInfo = electionInfo;
-            configuration.candidates = candidates;
-            configuration.citizens = citizens;
-            configuration.packageVersion = PACKAGE_VERSION;
-            configuration.generationTimestamp = System.currentTimeMillis();
+            // 1. Mesa info: mesaId-mesaConsecutive-puestoId-puestoNombre-puestoDireccion-municipioId-municipioNombre-departamentoId-departamentoNombre-totalCiudadanos
+            config.append(formatMesaInfoString(mesaInfoMap)).append(RECORD_SEPARATOR);
 
-            logger.info("Ice configuration generated for mesa {} - {} citizens, {} candidates",
-                    mesaId, citizens.length, candidates.length);
+            // 2. Election info: id-nombre-estado-fechaInicio-fechaFin
+            config.append(formatElectionInfoString(electionInfoMap)).append(RECORD_SEPARATOR);
 
-            return configuration;
+            // 3. Candidates: candidate1|candidate2|candidate3
+            config.append(formatCandidatesArray(candidatesMap)).append(RECORD_SEPARATOR);
+
+            // 4. Citizens: citizen1|citizen2|citizen3
+            config.append(formatCitizensArray(citizensMap)).append(RECORD_SEPARATOR);
+
+            // 5. Metadata: packageVersion-timestamp
+            config.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
+
+            logger.info("Machine configuration string generated for mesa {} - {} citizens, {} candidates",
+                    mesaId, citizensMap.size(), candidatesMap.size());
+
+            return config.toString();
 
         } catch (Exception e) {
-            logger.error("Error generating Ice configuration for mesa {} and election {}", mesaId, electionId, e);
-            return null;
+            logger.error("Error generating machine configuration string for mesa {} and election {}", mesaId, electionId, e);
+            return createErrorString("Error generating machine configuration: " + e.getMessage());
         }
     }
 
-    @Override
-    public Map<Integer, VotingConfiguration> generateBatchMachineConfigurations(List<Integer> mesaIds, int electionId) {
-        logger.info("Generating batch Ice configurations for {} mesas and election {}", mesaIds.size(), electionId);
-
-        Map<Integer, VotingConfiguration> batchConfigurations = new ConcurrentHashMap<>();
+    public String[] generateBatchMachineConfigurationStrings(List<Integer> mesaIds, int electionId) {
+        logger.info("Generating batch machine configuration strings for {} mesas and election {}", mesaIds.size(), electionId);
 
         try {
             // 1. Get election info and candidates once (they're the same for all machines)
             Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
             if (electionInfoMap == null) {
                 logger.error("Election {} not found", electionId);
-                return batchConfigurations;
+                return new String[]{createErrorString("Election not found")};
             }
 
             List<Map<String, Object>> candidatesMap = connectionDB.getCandidatesByElection(electionId);
 
-            /* Convert to Ice structs once */
-            ElectionInfo electionInfo = convertToElectionInfo(electionInfoMap);
-            Candidate[] candidates = convertToCandidates(candidatesMap);
+            // Convert to formatted strings once
+            String electionInfoString = formatElectionInfoString(electionInfoMap);
+            String candidatesString = formatCandidatesArray(candidatesMap);
 
             // 2. Get citizens for all mesas in batch (optimized query)
             Map<Integer, List<Map<String, Object>>> citizensByMesa = connectionDB.getCitizensByMesaBatch(mesaIds);
 
-            // 3. Generate configurations for each mesa
+            // 3. Generate configuration strings for each mesa
+            List<String> batchConfigurations = new ArrayList<>();
             for (Integer mesaId : mesaIds) {
                 try {
                     Map<String, Object> mesaInfoMap = connectionDB.getMesaConfiguration(mesaId);
@@ -126,38 +201,32 @@ public class VotingManagerImpl implements VotingManagerInterface {
 
                     List<Map<String, Object>> assignedCitizensMap = citizensByMesa.getOrDefault(mesaId, new ArrayList<>());
 
-                    // Convert to Ice structs
-                    MesaInfo mesaInfo = convertToMesaInfo(mesaInfoMap);
-                    Citizen[] assignedCitizens = convertToCitizens(assignedCitizensMap);
+                    // Build configuration string
+                    StringBuilder config = new StringBuilder();
+                    config.append(formatMesaInfoString(mesaInfoMap)).append(RECORD_SEPARATOR);
+                    config.append(electionInfoString).append(RECORD_SEPARATOR);
+                    config.append(candidatesString).append(RECORD_SEPARATOR);
+                    config.append(formatCitizensArray(assignedCitizensMap)).append(RECORD_SEPARATOR);
+                    config.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
 
-                    // Build Ice configuration
-                    VotingConfiguration configuration = new VotingConfiguration();
-                    configuration.mesaInfo = mesaInfo;
-                    configuration.electionInfo = electionInfo;
-                    configuration.candidates = candidates;
-                    configuration.citizens = assignedCitizens;
-                    configuration.packageVersion = PACKAGE_VERSION;
-                    configuration.generationTimestamp = System.currentTimeMillis();
-
-                    batchConfigurations.put(mesaId, configuration);
+                    batchConfigurations.add(config.toString());
 
                 } catch (Exception e) {
-                    logger.error("Error generating Ice configuration for mesa {} in batch", mesaId, e);
+                    logger.error("Error generating configuration string for mesa {} in batch", mesaId, e);
                 }
             }
 
-            logger.info("Batch Ice configuration generated for {} mesas successfully", batchConfigurations.size());
+            logger.info("Batch configuration strings generated for {} mesas successfully", batchConfigurations.size());
+            return batchConfigurations.toArray(new String[0]);
 
         } catch (Exception e) {
-            logger.error("Error in batch Ice configuration generation", e);
+            logger.error("Error in batch configuration string generation", e);
+            return new String[]{createErrorString("Error in batch generation: " + e.getMessage())};
         }
-
-        return batchConfigurations;
     }
 
-    @Override
-    public Map<Integer, VotingConfiguration> generateDepartmentConfigurations(int departmentId, int electionId) {
-        logger.info("Generating Ice configurations for department {} and election {}", departmentId, electionId);
+    public String[] generateDepartmentConfigurationStrings(int departmentId, int electionId) {
+        logger.info("Generating configuration strings for department {} and election {}", departmentId, electionId);
 
         try {
             // Get all mesa IDs for the department
@@ -165,60 +234,21 @@ public class VotingManagerImpl implements VotingManagerInterface {
 
             if (mesaIds.isEmpty()) {
                 logger.warn("No mesas found for department {}", departmentId);
-                return new HashMap<>();
+                return new String[]{createErrorString("No mesas found for department")};
             }
 
             // Use batch generation for efficiency
-            return generateBatchMachineConfigurations(mesaIds, electionId);
+            return generateBatchMachineConfigurationStrings(mesaIds, electionId);
 
         } catch (Exception e) {
-            logger.error("Error generating Ice department configurations for department {} and election {}",
+            logger.error("Error generating department configuration strings for department {} and election {}",
                     departmentId, electionId, e);
-            return new HashMap<>();
+            return new String[]{createErrorString("Error generating department configurations: " + e.getMessage())};
         }
     }
 
-    @Override
-    public Map<Integer, VotingConfiguration> generateAllMachineConfigurations(int electionId) {
-        logger.info("Generating Ice configurations for ALL mesas and election {}", electionId);
-
-        try {
-            // Get all mesa IDs in the system
-            List<Integer> allMesaIds = connectionDB.getAllMesaIds();
-
-            if (allMesaIds.isEmpty()) {
-                logger.warn("No mesas found in the system");
-                return new HashMap<>();
-            }
-
-            logger.info("Processing {} total mesas for national election configuration", allMesaIds.size());
-
-            Map<Integer, VotingConfiguration> allConfigurations = new ConcurrentHashMap<>();
-            int batchSize = 1000;
-
-            for (int i = 0; i < allMesaIds.size(); i += batchSize) {
-                int endIndex = Math.min(i + batchSize, allMesaIds.size());
-                List<Integer> batch = allMesaIds.subList(i, endIndex);
-
-                logger.info("Processing batch {}/{} ({} mesas)",
-                        (i / batchSize) + 1, (allMesaIds.size() + batchSize - 1) / batchSize, batch.size());
-
-                Map<Integer, VotingConfiguration> batchConfigurations = generateBatchMachineConfigurations(batch, electionId);
-                allConfigurations.putAll(batchConfigurations);
-            }
-
-            logger.info("Generated Ice configurations for {} mesas nationally", allConfigurations.size());
-            return allConfigurations;
-
-        } catch (Exception e) {
-            logger.error("Error generating all Ice machine configurations for election {}", electionId, e);
-            return new HashMap<>();
-        }
-    }
-
-    @Override
-    public Map<Integer, VotingConfiguration> generatePuestoConfigurations(int puestoId, int electionId) {
-        logger.info("Generating Ice configurations for puesto {} and election {}", puestoId, electionId);
+    public String[] generatePuestoConfigurationStrings(int puestoId, int electionId) {
+        logger.info("Generating configuration strings for puesto {} and election {}", puestoId, electionId);
 
         try {
             // Get all mesa IDs for this puesto
@@ -237,200 +267,23 @@ public class VotingManagerImpl implements VotingManagerInterface {
 
             if (mesaIds.isEmpty()) {
                 logger.warn("No mesas found for puesto {}", puestoId);
-                return new HashMap<>();
+                return new String[]{createErrorString("No mesas found for puesto")};
             }
 
             logger.info("Found {} mesas in puesto {}", mesaIds.size(), puestoId);
 
             // Use batch generation for efficiency
-            return generateBatchMachineConfigurations(mesaIds, electionId);
+            return generateBatchMachineConfigurationStrings(mesaIds, electionId);
 
         } catch (Exception e) {
-            logger.error("Error generating Ice puesto configurations for puesto {} and election {}",
+            logger.error("Error generating puesto configuration strings for puesto {} and election {}",
                     puestoId, electionId, e);
-            return new HashMap<>();
+            return new String[]{createErrorString("Error generating puesto configurations: " + e.getMessage())};
         }
     }
 
-    @Override
-    public boolean validateConfiguration(VotingConfiguration configuration) {
-        if (configuration == null) {
-            return false;
-        }
-
-        try {
-            boolean hasElectionInfo = configuration.electionInfo != null;
-            boolean hasCandidates = configuration.candidates != null && configuration.candidates.length > 0;
-            boolean hasCitizens = configuration.citizens != null;
-            boolean hasMesaInfo = configuration.mesaInfo != null;
-
-            if (!hasElectionInfo || !hasCandidates || !hasCitizens || !hasMesaInfo) {
-                logger.warn("Ice configuration missing required sections");
-                return false;
-            }
-
-            // Validate election info
-            if (configuration.electionInfo.nombre == null || configuration.electionInfo.nombre.isEmpty() ||
-                    configuration.electionInfo.estado == null || configuration.electionInfo.estado.isEmpty()) {
-                logger.warn("Election info missing required fields");
-                return false;
-            }
-
-            // Validate candidates
-            for (Candidate candidate : configuration.candidates) {
-                if (candidate.nombre == null || candidate.nombre.isEmpty() ||
-                        candidate.partido == null || candidate.partido.isEmpty()) {
-                    logger.warn("Candidate missing required fields");
-                    return false;
-                }
-            }
-
-            // Validate citizens
-            for (Citizen citizen : configuration.citizens) {
-                if (citizen.documento == null || citizen.documento.isEmpty() ||
-                        citizen.nombre == null || citizen.nombre.isEmpty() ||
-                        citizen.apellido == null || citizen.apellido.isEmpty()) {
-                    logger.warn("Citizen missing required fields");
-                    return false;
-                }
-            }
-
-            logger.debug("Ice configuration validation passed");
-            return true;
-
-        } catch (Exception e) {
-            logger.error("Error validating Ice configuration", e);
-            return false;
-        }
-    }
-
-    // REPLACE these two methods in VotingManagerImpl.java with pure Ice serialization:
-
-    // REPLACE these two methods in VotingManagerImpl.java with pure Ice serialization:
-
-    @Override
-    public byte[] exportConfigurationToBytes(VotingConfiguration configuration) {
-        try {
-            // Use modern Ice 3.7+ API for native serialization
-            com.zeroc.Ice.OutputStream out = new com.zeroc.Ice.OutputStream(iceCommunicator);
-
-            // Write the VotingConfiguration directly using Ice's encoding
-            out.writeValue(configuration);
-            out.writePendingValues();
-
-            return out.finished();
-        } catch (Exception e) {
-            logger.error("Error exporting Ice configuration to bytes", e);
-            return new byte[0];
-        }
-    }
-
-    @Override
-    public VotingConfiguration importConfigurationFromBytes(byte[] data) {
-        try {
-            // Use modern Ice 3.7+ API for native deserialization
-            com.zeroc.Ice.InputStream in = new com.zeroc.Ice.InputStream(iceCommunicator, data);
-
-            // Create a container to hold the result
-            final VotingConfiguration[] holder = new VotingConfiguration[1];
-
-            // Read the value using Ice's callback mechanism
-            in.readValue(value -> {
-                holder[0] = (VotingConfiguration) value;
-            });
-            in.readPendingValues();
-
-            return holder[0];
-        } catch (Exception e) {
-            logger.error("Error importing Ice configuration from bytes", e);
-            return null;
-        }
-    }
-
-
-
-    @Override
-    public String exportConfigurationToJson(VotingConfiguration configuration) {
-        try {
-            // Convert Ice configuration to a JSON-friendly Map
-            Map<String, Object> jsonMap = new HashMap<>();
-
-            // Mesa info
-            Map<String, Object> mesaInfoMap = new HashMap<>();
-            if (configuration.mesaInfo != null) {
-                mesaInfoMap.put("mesaId", configuration.mesaInfo.mesaId);
-                mesaInfoMap.put("mesaConsecutive", configuration.mesaInfo.mesaConsecutive);
-                mesaInfoMap.put("puestoId", configuration.mesaInfo.puestoId);
-                mesaInfoMap.put("puestoNombre", configuration.mesaInfo.puestoNombre);
-                mesaInfoMap.put("puestoDireccion", configuration.mesaInfo.puestoDireccion);
-                mesaInfoMap.put("municipioId", configuration.mesaInfo.municipioId);
-                mesaInfoMap.put("municipioNombre", configuration.mesaInfo.municipioNombre);
-                mesaInfoMap.put("departamentoId", configuration.mesaInfo.departamentoId);
-                mesaInfoMap.put("departamentoNombre", configuration.mesaInfo.departamentoNombre);
-                mesaInfoMap.put("totalCiudadanos", configuration.mesaInfo.totalCiudadanos);
-            }
-            jsonMap.put("mesaInfo", mesaInfoMap);
-
-            // Election info
-            Map<String, Object> electionInfoMap = new HashMap<>();
-            if (configuration.electionInfo != null) {
-                electionInfoMap.put("id", configuration.electionInfo.id);
-                electionInfoMap.put("nombre", configuration.electionInfo.nombre);
-                electionInfoMap.put("estado", configuration.electionInfo.estado);
-                electionInfoMap.put("fechaInicio", configuration.electionInfo.fechaInicio);
-                electionInfoMap.put("fechaFin", configuration.electionInfo.fechaFin);
-            }
-            jsonMap.put("electionInfo", electionInfoMap);
-
-            // Candidates
-            List<Map<String, Object>> candidatesList = new ArrayList<>();
-            if (configuration.candidates != null) {
-                for (Candidate candidate : configuration.candidates) {
-                    Map<String, Object> candidateMap = new HashMap<>();
-                    candidateMap.put("id", candidate.id);
-                    candidateMap.put("nombre", candidate.nombre);
-                    candidateMap.put("partido", candidate.partido);
-                    candidatesList.add(candidateMap);
-                }
-            }
-            jsonMap.put("candidates", candidatesList);
-
-            // Citizens
-            List<Map<String, Object>> citizensList = new ArrayList<>();
-            if (configuration.citizens != null) {
-                for (Citizen citizen : configuration.citizens) {
-                    Map<String, Object> citizenMap = new HashMap<>();
-                    citizenMap.put("id", citizen.id);
-                    citizenMap.put("documento", citizen.documento);
-                    citizenMap.put("nombre", citizen.nombre);
-                    citizenMap.put("apellido", citizen.apellido);
-                    citizensList.add(citizenMap);
-                }
-            }
-            jsonMap.put("citizens", citizensList);
-
-            // Metadata
-            jsonMap.put("packageVersion", configuration.packageVersion);
-            jsonMap.put("generationTimestamp", new Date(configuration.generationTimestamp));
-
-            // Summary
-            Map<String, Object> summary = new HashMap<>();
-            summary.put("totalCandidates", configuration.candidates != null ? configuration.candidates.length : 0);
-            summary.put("totalAssignedCitizens", configuration.citizens != null ? configuration.citizens.length : 0);
-            summary.put("mesaId", configuration.mesaInfo != null ? configuration.mesaInfo.mesaId : 0);
-            jsonMap.put("summary", summary);
-
-            return jsonMapper.writeValueAsString(jsonMap);
-
-        } catch (Exception e) {
-            logger.error("Error exporting Ice configuration to JSON", e);
-            return "{}";
-        }
-    }
-
-    @Override
-    public Map<String, Object> getConfigurationStatistics(int electionId) {
-        Map<String, Object> stats = new HashMap<>();
+    public String generateConfigurationStatisticsString(int electionId) {
+        logger.info("Generating configuration statistics string for election {}", electionId);
 
         try {
             // Get database metrics
@@ -445,29 +298,121 @@ public class VotingManagerImpl implements VotingManagerInterface {
             // Get candidates
             List<Map<String, Object>> candidates = connectionDB.getCandidatesByElection(electionId);
 
-            stats.put("totalMesas", allMesaIds.size());
-            stats.put("totalCitizens", dbMetrics.get("total_citizens"));
-            stats.put("totalCandidates", candidates.size());
-            stats.put("electionName", electionInfo != null ? electionInfo.get("nombre") : "Unknown");
-            stats.put("electionStatus", electionInfo != null ? electionInfo.get("estado") : "Unknown");
-            stats.put("timestamp", new Date());
-            stats.put("serializationType", "Ice Binary");
+            // Formato: totalMesas-totalCitizens-totalCandidates-electionName-electionStatus-timestamp-serializationType-estimatedTotalRecords
+            StringBuilder stats = new StringBuilder();
+
+            stats.append(allMesaIds.size()).append(FIELD_SEPARATOR);
+            stats.append(dbMetrics.get("total_citizens")).append(FIELD_SEPARATOR);
+            stats.append(candidates.size()).append(FIELD_SEPARATOR);
+            stats.append(electionInfo != null ? electionInfo.get("nombre") : "Unknown").append(FIELD_SEPARATOR);
+            stats.append(electionInfo != null ? electionInfo.get("estado") : "Unknown").append(FIELD_SEPARATOR);
+            stats.append(System.currentTimeMillis()).append(FIELD_SEPARATOR);
+            stats.append("String Formatted").append(FIELD_SEPARATOR);
 
             int avgCitizensPerMesa = 979;
             long estimatedTotalRecords = (long) allMesaIds.size() * avgCitizensPerMesa;
-            stats.put("estimatedTotalRecords", estimatedTotalRecords);
+            stats.append(estimatedTotalRecords);
 
-            logger.info("Ice configuration statistics generated for election {}", electionId);
+            logger.info("Configuration statistics string generated for election {}", electionId);
+            return stats.toString();
 
         } catch (Exception e) {
-            logger.error("Error getting Ice configuration statistics for election {}", electionId, e);
-            stats.put("error", "Failed to generate statistics: " + e.getMessage());
+            logger.error("Error getting configuration statistics string for election {}", electionId, e);
+            return createErrorString("Failed to generate statistics: " + e.getMessage());
         }
-
-        return stats;
     }
 
-    @Override
+    // =================== MÉTODOS HELPER PARA FORMATEAR STRINGS ===================
+
+    private String createErrorString(String message) {
+        return "ERROR" + FIELD_SEPARATOR + message + FIELD_SEPARATOR + System.currentTimeMillis();
+    }
+
+    private String formatMesaInfoString(Map<String, Object> mesaInfoMap) {
+        // Formato: mesaId-mesaConsecutive-puestoId-puestoNombre-puestoDireccion-municipioId-municipioNombre-departamentoId-departamentoNombre-totalCiudadanos
+        return String.join(FIELD_SEPARATOR,
+                String.valueOf(mesaInfoMap.get("mesa_id")),
+                String.valueOf(mesaInfoMap.get("mesa_consecutive")),
+                String.valueOf(mesaInfoMap.get("puesto_id")),
+                String.valueOf(mesaInfoMap.get("puesto_nombre")),
+                String.valueOf(mesaInfoMap.get("puesto_direccion")),
+                String.valueOf(mesaInfoMap.get("municipio_id")),
+                String.valueOf(mesaInfoMap.get("municipio_nombre")),
+                String.valueOf(mesaInfoMap.get("departamento_id")),
+                String.valueOf(mesaInfoMap.get("departamento_nombre")),
+                String.valueOf(mesaInfoMap.get("total_ciudadanos"))
+        );
+    }
+
+    private String formatElectionInfoString(Map<String, Object> electionInfoMap) {
+        // Formato: id-nombre-estado-fechaInicio-fechaFin
+        long fechaInicio = 0L;
+        long fechaFin = 0L;
+
+        // Convert Timestamp to long
+        if (electionInfoMap.get("fecha_inicio") instanceof java.sql.Timestamp) {
+            fechaInicio = ((java.sql.Timestamp) electionInfoMap.get("fecha_inicio")).getTime();
+        }
+        if (electionInfoMap.get("fecha_fin") instanceof java.sql.Timestamp) {
+            fechaFin = ((java.sql.Timestamp) electionInfoMap.get("fecha_fin")).getTime();
+        }
+
+        return String.join(FIELD_SEPARATOR,
+                String.valueOf(electionInfoMap.get("id")),
+                String.valueOf(electionInfoMap.get("nombre")),
+                String.valueOf(electionInfoMap.get("estado")),
+                String.valueOf(fechaInicio),
+                String.valueOf(fechaFin)
+        );
+    }
+
+    private String formatCandidatesArray(List<Map<String, Object>> candidatesMap) {
+        // Formato: candidate1|candidate2|candidate3 (cada candidate como id:nombre:partido)
+        List<String> formattedCandidates = new ArrayList<>();
+        for (Map<String, Object> candidate : candidatesMap) {
+            formattedCandidates.add(
+                    candidate.get("id") + ":" +
+                            candidate.get("nombre") + ":" +
+                            candidate.get("partido")
+            );
+        }
+        return String.join(ARRAY_SEPARATOR, formattedCandidates);
+    }
+
+    private String formatCitizensArray(List<Map<String, Object>> citizensMap) {
+        // Formato: citizen1|citizen2|citizen3 (cada citizen como id:documento:nombre:apellido)
+        List<String> formattedCitizens = new ArrayList<>();
+        for (Map<String, Object> citizen : citizensMap) {
+            formattedCitizens.add(
+                    citizen.get("id") + ":" +
+                            citizen.get("documento") + ":" +
+                            citizen.get("nombre") + ":" +
+                            citizen.get("apellido")
+            );
+        }
+        return String.join(ARRAY_SEPARATOR, formattedCitizens);
+    }
+
+    // =================== MÉTODOS HELPER INTERNOS (NO @Override) ===================
+
+    public boolean validateMesaConfiguration(int mesaId, int electionId) {
+        try {
+            // Check if mesa exists
+            Map<String, Object> mesaInfo = connectionDB.getMesaConfiguration(mesaId);
+            if (mesaInfo == null) {
+                logger.warn("Mesa {} not found", mesaId);
+                return false;
+            }
+
+            // Check if election exists and is ready
+            return isElectionReadyForConfiguration(electionId);
+
+        } catch (Exception e) {
+            logger.error("Error validating mesa {} configuration for election {}", mesaId, electionId, e);
+            return false;
+        }
+    }
+
     public boolean isElectionReadyForConfiguration(int electionId) {
         try {
             // Check if election exists
@@ -491,108 +436,12 @@ public class VotingManagerImpl implements VotingManagerInterface {
                 return false;
             }
 
-            logger.info("Election {} is ready for Ice configuration generation", electionId);
+            logger.debug("Election {} is ready for configuration generation", electionId);
             return true;
 
         } catch (Exception e) {
             logger.error("Error checking if election {} is ready", electionId, e);
             return false;
-        }
-    }
-
-    @Override
-    public boolean saveConfigurationToFile(VotingConfiguration configuration, String filePath) {
-        try {
-            byte[] configBytes = exportConfigurationToBytes(configuration);
-            Files.write(Paths.get(filePath), configBytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            logger.debug("Ice configuration saved to file: {}", filePath);
-            return true;
-        } catch (Exception e) {
-            logger.error("Error saving Ice configuration to file: {}", filePath, e);
-            return false;
-        }
-    }
-
-    @Override
-    public VotingConfiguration loadConfigurationFromFile(String filePath) {
-        try {
-            byte[] configBytes = Files.readAllBytes(Paths.get(filePath));
-            VotingConfiguration config = importConfigurationFromBytes(configBytes);
-            logger.debug("Ice configuration loaded from file: {}", filePath);
-            return config;
-        } catch (Exception e) {
-            logger.error("Error loading Ice configuration from file: {}", filePath, e);
-            return null;
-        }
-    }
-
-    // =================== HELPER METHODS FOR CONVERSION ===================
-
-    private MesaInfo convertToMesaInfo(Map<String, Object> mesaInfoMap) {
-        MesaInfo mesaInfo = new MesaInfo();
-        mesaInfo.mesaId = (Integer) mesaInfoMap.get("mesa_id");
-        mesaInfo.mesaConsecutive = (Integer) mesaInfoMap.get("mesa_consecutive");
-        mesaInfo.puestoId = (Integer) mesaInfoMap.get("puesto_id");
-        mesaInfo.puestoNombre = (String) mesaInfoMap.get("puesto_nombre");
-        mesaInfo.puestoDireccion = (String) mesaInfoMap.get("puesto_direccion");
-        mesaInfo.municipioId = (Integer) mesaInfoMap.get("municipio_id");
-        mesaInfo.municipioNombre = (String) mesaInfoMap.get("municipio_nombre");
-        mesaInfo.departamentoId = (Integer) mesaInfoMap.get("departamento_id");
-        mesaInfo.departamentoNombre = (String) mesaInfoMap.get("departamento_nombre");
-        mesaInfo.totalCiudadanos = (Integer) mesaInfoMap.get("total_ciudadanos");
-        return mesaInfo;
-    }
-
-    private ElectionInfo convertToElectionInfo(Map<String, Object> electionInfoMap) {
-        ElectionInfo electionInfo = new ElectionInfo();
-        electionInfo.id = (Integer) electionInfoMap.get("id");
-        electionInfo.nombre = (String) electionInfoMap.get("nombre");
-        electionInfo.estado = (String) electionInfoMap.get("estado");
-
-        // Convert Timestamp to long
-        if (electionInfoMap.get("fecha_inicio") instanceof java.sql.Timestamp) {
-            electionInfo.fechaInicio = ((java.sql.Timestamp) electionInfoMap.get("fecha_inicio")).getTime();
-        }
-        if (electionInfoMap.get("fecha_fin") instanceof java.sql.Timestamp) {
-            electionInfo.fechaFin = ((java.sql.Timestamp) electionInfoMap.get("fecha_fin")).getTime();
-        }
-
-        return electionInfo;
-    }
-
-    private Candidate[] convertToCandidates(List<Map<String, Object>> candidatesMap) {
-        Candidate[] candidates = new Candidate[candidatesMap.size()];
-        for (int i = 0; i < candidatesMap.size(); i++) {
-            Map<String, Object> candidateMap = candidatesMap.get(i);
-            Candidate candidate = new Candidate();
-            candidate.id = (Integer) candidateMap.get("id");
-            candidate.nombre = (String) candidateMap.get("nombre");
-            candidate.partido = (String) candidateMap.get("partido");
-            candidates[i] = candidate;
-        }
-        return candidates;
-    }
-
-    private Citizen[] convertToCitizens(List<Map<String, Object>> citizensMap) {
-        Citizen[] citizens = new Citizen[citizensMap.size()];
-        for (int i = 0; i < citizensMap.size(); i++) {
-            Map<String, Object> citizenMap = citizensMap.get(i);
-            Citizen citizen = new Citizen();
-            citizen.id = (Integer) citizenMap.get("id");
-            citizen.documento = (String) citizenMap.get("documento");
-            citizen.nombre = (String) citizenMap.get("nombre");
-            citizen.apellido = (String) citizenMap.get("apellido");
-            citizens[i] = citizen;
-        }
-        return citizens;
-    }
-
-    /**
-     * Cleanup Ice communicator when shutting down
-     */
-    public void shutdown() {
-        if (iceCommunicator != null) {
-            iceCommunicator.destroy();
         }
     }
 }
