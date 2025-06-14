@@ -1489,4 +1489,336 @@ public class ReportsManagerImpl implements ReportsManagerInterface {
     }
 
 
+    @Override
+    public byte[] getCitizenReportFile(String documento, int electionId) {
+        logger.debug("Serving citizen report file for document: {} election: {}", documento, electionId);
+
+        try {
+            // Buscar el archivo ICE existente basado en la ubicación del ciudadano
+            Map<String, Object> assignment = connectionDB.getCitizenVotingAssignment(documento);
+            if (assignment == null) {
+                logger.warn("No voting assignment found for document: {}", documento);
+                return null;
+            }
+
+            int departmentId = (Integer) assignment.get("departamento_id");
+            int municipalityId = (Integer) assignment.get("municipio_id");
+            int puestoId = (Integer) assignment.get("puesto_id");
+
+            // Intentar encontrar el archivo en orden: puesto -> municipio -> departamento
+            String[] possiblePaths = {
+                    String.format("server/src/main/java/Reports/data/citizen_report_puesto_%d_doc_%s.ice", puestoId, documento),
+                    String.format("server/src/main/java/Reports/data/citizen_report_mun_%d_doc_%s.ice", municipalityId, documento),
+                    String.format("server/src/main/java/Reports/data/citizen_report_dept_%d_doc_%s.ice", departmentId, documento)
+            };
+
+            for (String filePath : possiblePaths) {
+                Path path = Paths.get(filePath);
+                if (Files.exists(path)) {
+                    logger.debug("Serving existing citizen report file: {}", filePath);
+                    return Files.readAllBytes(path);
+                }
+            }
+
+            // Si no existe archivo, generar y guardar
+            logger.info("File not found, generating new citizen report for: {}", documento);
+            CitizenReportsConfiguration config = generateCitizenReport(documento, electionId);
+            if (config != null) {
+                // Guardar para futuras consultas (priorizar puesto)
+                String filePath = String.format("server/src/main/java/Reports/data/citizen_report_puesto_%d_doc_%s.ice",
+                        puestoId, documento);
+                saveConfigurationToFile(config, filePath);
+                return exportConfigurationToBytes(config);
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            logger.error("Error getting citizen report file for: {}", documento, e);
+            return null;
+        }
+    }
+
+    @Override
+    public byte[] getElectionReportFile(int electionId) {
+        logger.debug("Serving election report file for election: {}", electionId);
+
+        try {
+            String filePath = String.format("server/src/main/java/Reports/data/election_%d_results.ice", electionId);
+            Path path = Paths.get(filePath);
+
+            if (Files.exists(path)) {
+                logger.debug("Serving existing election report file: {}", filePath);
+                return Files.readAllBytes(path);
+            }
+
+            // Generar si no existe
+            logger.info("File not found, generating new election report for: {}", electionId);
+            ElectionReportsConfiguration config = generateElectionResultsReport(electionId);
+            if (config != null) {
+                saveConfigurationToFile(config, filePath);
+                return exportConfigurationToBytes(config);
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            logger.error("Error getting election report file for: {}", electionId, e);
+            return null;
+        }
+    }
+
+    @Override
+    public byte[] getGeographicReportFile(int locationId, String locationType, int electionId) {
+        logger.debug("Serving geographic report file for: {} {} election: {}", locationType, locationId, electionId);
+
+        try {
+            String fileName = String.format("%s_%d_election_%d.ice", locationType.toLowerCase(), locationId, electionId);
+            String filePath = "server/src/main/java/Reports/data/" + fileName;
+            Path path = Paths.get(filePath);
+
+            if (Files.exists(path)) {
+                logger.debug("Serving existing geographic report file: {}", filePath);
+                return Files.readAllBytes(path);
+            }
+
+            // Generar si no existe
+            logger.info("File not found, generating new geographic report for: {} {}", locationType, locationId);
+            GeographicReportsConfiguration config = null;
+
+            switch (locationType.toLowerCase()) {
+                case "department":
+                case "departamento":
+                    config = generateDepartmentReport(locationId, electionId);
+                    break;
+                case "municipality":
+                case "municipio":
+                    config = generateMunicipalityReport(locationId, electionId);
+                    break;
+                case "puesto":
+                    config = generatePuestoReport(locationId, electionId);
+                    break;
+                default:
+                    logger.warn("Unknown location type: {}", locationType);
+                    return null;
+            }
+
+            if (config != null) {
+                saveConfigurationToFile(config, filePath);
+                return exportConfigurationToBytes(config);
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            logger.error("Error getting geographic report file for: {} {}", locationType, locationId, e);
+            return null;
+        }
+    }
+
+    @Override
+    public List<String> getAvailableReportFiles(String reportType, int electionId) {
+        logger.debug("Listing available report files for type: {} election: {}", reportType, electionId);
+
+        List<String> availableFiles = new ArrayList<>();
+
+        try {
+            String baseDir = "server/src/main/java/Reports/data/";
+            Path reportsDir = Paths.get(baseDir);
+
+            if (!Files.exists(reportsDir)) {
+                logger.warn("Reports directory does not exist: {}", baseDir);
+                return availableFiles;
+            }
+
+            // Filtrar archivos según el tipo solicitado
+            String pattern = switch (reportType.toLowerCase()) {
+                case "citizen" -> "citizen_report_.*\\.ice";
+                case "election" -> "election_.*_results\\.ice";
+                case "geographic" -> "(department|municipality|puesto)_.*_election_.*\\.ice";
+                case "all" -> ".*\\.ice";
+                default -> ".*\\.ice";
+            };
+
+            Files.walk(reportsDir, 1)
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().matches(pattern))
+                    .filter(path -> electionId == 0 || path.getFileName().toString().contains("election_" + electionId)
+                            || path.getFileName().toString().contains("_" + electionId + "_"))
+                    .forEach(path -> availableFiles.add(path.getFileName().toString()));
+
+            logger.debug("Found {} available {} report files for election {}",
+                    availableFiles.size(), reportType, electionId);
+
+        } catch (Exception e) {
+            logger.error("Error listing available report files", e);
+        }
+
+        return availableFiles;
+    }
+
+    @Override
+    public Map<String, Object> getReportFileMetadata(String fileName) {
+        Map<String, Object> metadata = new HashMap<>();
+
+        try {
+            String filePath = "server/src/main/java/Reports/data/" + fileName;
+            Path path = Paths.get(filePath);
+
+            if (Files.exists(path)) {
+                metadata.put("fileName", fileName);
+                metadata.put("fileSize", Files.size(path));
+                metadata.put("lastModified", Files.getLastModifiedTime(path).toMillis());
+                metadata.put("exists", true);
+
+                // Determine report type from filename
+                if (fileName.contains("citizen_report_")) {
+                    metadata.put("reportType", "citizen");
+                } else if (fileName.contains("election_") && fileName.contains("_results")) {
+                    metadata.put("reportType", "election");
+                } else if (fileName.matches("(department|municipality|puesto)_.*")) {
+                    metadata.put("reportType", "geographic");
+                }
+
+                logger.debug("Retrieved metadata for file: {}", fileName);
+            } else {
+                metadata.put("fileName", fileName);
+                metadata.put("exists", false);
+                logger.debug("File not found: {}", fileName);
+            }
+
+        } catch (Exception e) {
+            logger.error("Error getting metadata for file: {}", fileName, e);
+            metadata.put("fileName", fileName);
+            metadata.put("error", e.getMessage());
+            metadata.put("exists", false);
+        }
+
+        return metadata;
+    }
+
+    @Override
+    public boolean reportFileExists(String fileName) {
+        try {
+            String filePath = "server/src/main/java/Reports/data/" + fileName;
+            return Files.exists(Paths.get(filePath));
+        } catch (Exception e) {
+            logger.error("Error checking if file exists: {}", fileName, e);
+            return false;
+        }
+    }
+
+    @Override
+    public Map<String, byte[]> getBulkReportFiles(List<String> fileNames) {
+        logger.info("Serving bulk report files: {} files requested", fileNames.size());
+
+        Map<String, byte[]> filesData = new HashMap<>();
+
+        try {
+            String baseDir = "server/src/main/java/Reports/data/";
+
+            for (String fileName : fileNames) {
+                try {
+                    String filePath = baseDir + fileName;
+                    Path path = Paths.get(filePath);
+
+                    if (Files.exists(path)) {
+                        byte[] fileData = Files.readAllBytes(path);
+                        filesData.put(fileName, fileData);
+                        logger.debug("Added file to bulk response: {} ({} bytes)", fileName, fileData.length);
+                    } else {
+                        logger.warn("File not found for bulk request: {}", fileName);
+                        filesData.put(fileName, null); // Indicate file not found
+                    }
+
+                } catch (Exception e) {
+                    logger.error("Error reading file for bulk request: {}", fileName, e);
+                    filesData.put(fileName, new byte[0]); // Indicate error
+                }
+            }
+
+            logger.info("Bulk file request completed: {}/{} files served",
+                    filesData.values().stream().mapToInt(data -> data != null && data.length > 0 ? 1 : 0).sum(),
+                    fileNames.size());
+
+        } catch (Exception e) {
+            logger.error("Error processing bulk file request", e);
+        }
+
+        return filesData;
+    }
+
+    // =================== EXISTING ReportsCache INTERFACE IMPLEMENTATION ===================
+
+    // Ya implementados en ReportsManagerImpl, estos métodos simplemente llaman a los métodos de generación existentes
+
+    @Override
+    public CitizenReportsConfiguration getCitizenReports(String documento, int electionId, com.zeroc.Ice.Current current) {
+        return generateCitizenReport(documento, electionId);
+    }
+
+    @Override
+    public ElectionReportsConfiguration getElectionReports(int electionId, com.zeroc.Ice.Current current) {
+        return generateElectionResultsReport(electionId);
+    }
+
+    @Override
+    public GeographicReportsConfiguration getGeographicReports(int locationId, String locationType, int electionId, com.zeroc.Ice.Current current) {
+        switch (locationType.toLowerCase()) {
+            case "department":
+            case "departamento":
+                return generateDepartmentReport(locationId, electionId);
+            case "municipality":
+            case "municipio":
+                return generateMunicipalityReport(locationId, electionId);
+            case "puesto":
+                return generatePuestoReport(locationId, electionId);
+            default:
+                logger.warn("Unknown location type: {}", locationType);
+                return null;
+        }
+    }
+
+    @Override
+    public boolean areReportsReady(int electionId, com.zeroc.Ice.Current current) {
+        return isElectionReadyForReports(electionId);
+    }
+
+    @Override
+    public void preloadReports(int electionId, com.zeroc.Ice.Current current) {
+        logger.info("Preloading reports for election: {}", electionId);
+
+        try {
+            // Preload election report
+            getElectionReportFile(electionId);
+
+            // Preload geographic reports for all departments
+            List<Map<String, Object>> departments = connectionDB.getAllDepartments();
+            for (Map<String, Object> dept : departments) {
+                int deptId = (Integer) dept.get("id");
+                getGeographicReportFile(deptId, "department", electionId);
+
+                // Preload municipalities
+                List<Map<String, Object>> municipalities = connectionDB.getMunicipalitiesByDepartment(deptId);
+                for (Map<String, Object> mun : municipalities) {
+                    int munId = (Integer) mun.get("id");
+                    getGeographicReportFile(munId, "municipality", electionId);
+
+                    // Preload puestos
+                    List<Map<String, Object>> puestos = connectionDB.getPuestosByMunicipality(munId);
+                    for (Map<String, Object> puesto : puestos) {
+                        int puestoId = (Integer) puesto.get("id");
+                        getGeographicReportFile(puestoId, "puesto", electionId);
+                    }
+                }
+            }
+
+            logger.info("Preloading completed for election: {}", electionId);
+
+        } catch (Exception e) {
+            logger.error("Error during preloading for election: {}", electionId, e);
+        }
+    }
+
+
 }

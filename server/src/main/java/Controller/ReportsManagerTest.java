@@ -511,7 +511,7 @@ public class ReportsManagerTest {
     }
 
     private static void testGeographicReports() {
-        System.out.println("\n=== 🗺️ GEOGRAPHIC REPORTS TEST ===");
+        System.out.println("\n===  GEOGRAPHIC REPORTS TEST ===");
 
         System.out.println("Select geographic level:");
         System.out.println("1. Department Report");
@@ -561,7 +561,7 @@ public class ReportsManagerTest {
 
             System.out.print("\nShow full report? (y/n): ");
             if (scanner.nextLine().trim().toLowerCase().startsWith("y")) {
-                System.out.println("\n🗺️ FULL " + reportType.toUpperCase() + " REPORT:");
+                System.out.println("\n FULL " + reportType.toUpperCase() + " REPORT:");
                 System.out.println(report);
             }
         }
@@ -585,7 +585,7 @@ public class ReportsManagerTest {
             System.out.println("\n📋 Sample reports (first 3):");
             for (int i = 0; i < Math.min(3, mesaReports.size()); i++) {
                 String report = mesaReports.get(i);
-                System.out.println("\n👤 Citizen " + (i + 1) + ":");
+                System.out.println("\n Citizen " + (i + 1) + ":");
                 if (report.contains("Error")) {
                     System.out.println(" " + report);
                 } else {
@@ -611,7 +611,7 @@ public class ReportsManagerTest {
     }
 
     private static void testExportFunctionality() {
-        System.out.println("\n=== 💾 EXPORT FUNCTIONALITY TEST ===");
+        System.out.println("\n===  EXPORT FUNCTIONALITY TEST ===");
 
         System.out.println("Select export type:");
         System.out.println("1. Export Citizen Report");
@@ -639,7 +639,7 @@ public class ReportsManagerTest {
                 String electionPath = "server/src/main/java/Reports/data/" + filename + "_election.ice";
                 exportResult = serverController.exportElectionResultsReport(ELECTION_ID, electionPath);
                 System.out.println("Election results export: " + (exportResult ? " SUCCESS" : " FAILED"));
-                if (exportResult) System.out.println("📁 Saved to: " + electionPath);
+                if (exportResult) System.out.println(" Saved to: " + electionPath);
                 break;
 
             case 3:
@@ -652,11 +652,11 @@ public class ReportsManagerTest {
                 String geoPath = "server/src/main/java/Reports/data/" + filename + "_geographic.ice";
                 exportResult = serverController.exportGeographicReport(locationId, locationType, ELECTION_ID, geoPath);
                 System.out.println("Geographic report export: " + (exportResult ? " SUCCESS" : " FAILED"));
-                if (exportResult) System.out.println("📁 Saved to: " + geoPath);
+                if (exportResult) System.out.println(" Saved to: " + geoPath);
                 break;
         }
 
-        System.out.println("\n💾 Export test complete!");
+        System.out.println("\n Export test complete!");
     }
 
     private static void viewReportsStatistics() {
@@ -703,16 +703,16 @@ public class ReportsManagerTest {
     }
 
     private static void performComprehensiveTest() {
-        System.out.println("\n=== 🎯 COMPREHENSIVE TEST SUITE ===");
+        System.out.println("\n===  COMPREHENSIVE TEST SUITE ===");
         System.out.println("Running all tests automatically...\n");
 
         // Test 1: System Validation
-        System.out.println("🔧 Running system validation...");
+        System.out.println(" Running system validation...");
         testSystemValidation();
         waitForUser();
 
         // Test 2: Sample Citizen Lookup
-        System.out.println("\n👤 Testing citizen lookup with sample data...");
+        System.out.println("\n Testing citizen lookup with sample data...");
         System.out.println("Testing document: 1000000001");
         String citizenReport = serverController.generateCitizenReport("1000000001", ELECTION_ID);
         System.out.println("Result: " + (citizenReport.contains("Error") ? " FAILED" : " SUCCESS"));
@@ -728,16 +728,16 @@ public class ReportsManagerTest {
         System.out.println("Election results: " + (electionResults.contains("Error") ? " FAILED" : " SUCCESS"));
 
         // Test 5: Geographic Report
-        System.out.println("\n🗺️ Testing geographic report...");
+        System.out.println("\n️ Testing geographic report...");
         String geoReport = serverController.generateDepartmentReport(1, ELECTION_ID);
         System.out.println("Geographic report: " + (geoReport.contains("Error") ? " FAILED" : " SUCCESS"));
 
         // Test 6: Statistics
-        System.out.println("\n📈 Getting reports statistics...");
+        System.out.println("\n Getting reports statistics...");
         String stats = serverController.getReportsStatistics(ELECTION_ID);
         System.out.println("Statistics: " + (stats.contains("Error") ? " FAILED" : " SUCCESS"));
 
-        System.out.println("\n🎯 COMPREHENSIVE TEST COMPLETE!");
+        System.out.println("\n COMPREHENSIVE TEST COMPLETE!");
         System.out.println("Check individual test results above for detailed information.");
     }
 

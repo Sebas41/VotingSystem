@@ -1,0 +1,138 @@
+// ProxyCacheReports/build.gradle
+// Configuración final - Solo clases Ice manuales
+
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.electoral'
+version = '1.0.0'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Ice dependencies
+    implementation 'com.zeroc:ice:3.7.10'
+    implementation 'com.zeroc:icebox:3.7.10'
+
+    // Database
+    implementation 'org.postgresql:postgresql:42.7.3'
+    implementation 'com.zaxxer:HikariCP:5.0.1'
+
+    // Logging
+    implementation 'ch.qos.logback:logback-classic:1.4.14'
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+
+    // JSON processing
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+
+    // Configuration
+    implementation 'org.yaml:snakeyaml:2.2'
+
+    // Testing
+    testImplementation platform('org.junit:junit-bom:5.10.1')
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:5.8.0'
+}
+
+// =================== SOURCE SETS ===================
+// SOLO usar src/main/java - NO generated-src
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+    }
+}
+
+// =================== APPLICATION ===================
+
+application {
+    mainClass = 'org.votaciones.Main'
+}
+
+// =================== TASKS ===================
+
+task runProxy(type: JavaExec) {
+    description = 'Run the ProxyCache service'
+    group = 'application'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.votaciones.Main'
+
+    setArgs([
+            '--mode=municipality',
+            '--location=9',
+            '--port=9092',
+            '--main-server=tcp -h localhost -p 9090'
+    ])
+
+    if (project.hasProperty('appArgs')) {
+        setArgs(project.appArgs.split(','))
+    }
+
+    dependsOn classes
+}
+
+task checkIceClasses() {
+    description = 'Check if Ice classes are present'
+    group = 'verification'
+
+    doLast {
+        def iceClassesDir = file('src/main/java/Reports')
+
+        if (iceClassesDir.exists()) {
+            println "✅ Ice classes found in: ${iceClassesDir.absolutePath}"
+
+            def classFiles = iceClassesDir.listFiles().findAll { it.name.endsWith('.java') }
+            println "   📄 Found ${classFiles.size()} Ice class files"
+        } else {
+            println "❌ Ice classes not found. Run:"
+            println "   slice2java --output-dir src/main/java src/main/slice/Reports.ice"
+        }
+    }
+}
+
+// =================== JAR CONFIGURATION ===================
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'org.votaciones.Main',
+                'Implementation-Title': 'ProxyCache Reports Service',
+                'Implementation-Version': project.version
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// =================== TESTING ===================
+
+test {
+    useJUnitPlatform()
+}
+
+// =================== CLEAN EXTRA DIRS ===================
+
+// Asegurarse de que clean borre directorios problemáticos
+clean {
+    delete 'build/generated-src'
+    delete 'src/main/java-generated'
+}
+
+// No permitir que se usen directorios generated
+configurations.all {
+    exclude group: 'com.zeroc.gradle.ice-builder.slice'
+}

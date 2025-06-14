@@ -5,52 +5,140 @@
  * Learn more about Gradle by exploring our Samples at https://docs.gradle.org/8.12/samples
  */
 
+// =================== PLUGINS ===================
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.zeroc.gradle.ice-builder.slice' version '1.5.0'
+}
+
+// =================== PROJECT INFO ===================
+group = 'com.electoral'
+version = '1.0.0'
+
+// =================== SLICE CONFIGURATION ===================
 slice {
     java {
         files = [file("../Service.ice")]
     }
 }
 
+// =================== REPOSITORIES ===================
 repositories {
     mavenCentral()
 }
 
+// =================== DEPENDENCIES ===================
 dependencies {
-
+    // Ice framework
     implementation 'com.zeroc:ice:3.7.2'
+
+    // Internal dependencies
     implementation project(':reliableServer')
 
-
+    // Database
     implementation 'org.postgresql:postgresql:42.7.3'
-
     implementation 'com.zaxxer:HikariCP:5.1.0'
 
-
+    // JSON processing
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.1'
     implementation 'com.fasterxml.jackson.core:jackson-core:2.17.1'
 
-
+    // Utilities
     implementation 'org.apache.commons:commons-lang3:3.14.0'
     implementation 'commons-io:commons-io:2.15.1'
 
-
+    // Logging
     implementation 'org.slf4j:slf4j-api:2.0.12'
     implementation 'ch.qos.logback:logback-classic:1.5.3'
 
+    // Collections
     implementation 'org.apache.commons:commons-collections4:4.4'
 
+    // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.mockito:mockito-core:5.11.0'
 }
 
-
+// =================== JAVA CONFIGURATION ===================
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
+// =================== APPLICATION CONFIGURATION ===================
+application {
+    mainClass = 'Server'  // Tu clase principal Server.java
+}
 
+// =================== CUSTOM TASKS ===================
+
+// Task principal para ejecutar el servidor
+task runServer(type: JavaExec) {
+    description = 'Run the Electoral Server'
+    group = 'application'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'Server'
+
+    // Configurar argumentos si son necesarios
+    if (project.hasProperty('serverArgs')) {
+        setArgs(project.serverArgs.split(','))
+    }
+
+    dependsOn classes
+}
+
+// Task para ejecutar con parámetros de desarrollo
+task runServerDev(type: JavaExec) {
+    description = 'Run the Electoral Server in development mode'
+    group = 'application'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'Server'
+
+    // Argumentos específicos para desarrollo
+    setArgs([
+            '--Ice.Trace.Network=1',
+            '--Ice.Warn.Connections=1'
+    ])
+
+    dependsOn classes
+}
+
+// Task para verificar la configuración
+task checkConfig() {
+    description = 'Check server configuration'
+    group = 'verification'
+
+    doLast {
+        println "✅ Server Configuration Check:"
+        println "   📁 Main Class: Server"
+        println "   🗄️  Database: PostgreSQL with HikariCP"
+        println "   🧊 Ice Version: 3.7.2"
+        println "   ☕ Java Version: 17"
+        println "   🏗️  Build Tool: Gradle ${gradle.gradleVersion}"
+
+        // Verificar que existe la clase principal
+        def mainClassFile = file('src/main/java/Server.java')
+        if (mainClassFile.exists()) {
+            println "   ✅ Main class found: ${mainClassFile.path}"
+        } else {
+            println "   ❌ Main class NOT found: src/main/java/Server.java"
+        }
+
+        // Verificar archivos Ice
+        def iceFile = file('../Service.ice')
+        if (iceFile.exists()) {
+            println "   ✅ Ice definition found: ${iceFile.path}"
+        } else {
+            println "   ❌ Ice definition NOT found: ../Service.ice"
+        }
+    }
+}
+
+// =================== JVM CONFIGURATION ===================
 tasks.withType(JavaExec) {
     jvmArgs = [
             '-Xms4g',
@@ -58,21 +146,120 @@ tasks.withType(JavaExec) {
             '-XX:+UseG1GC',
             '-XX:MaxGCPauseMillis=200',
             '-XX:+UseStringDeduplication',
-            '-XX:+OptimizeStringConcat'
+            '-XX:+OptimizeStringConcat',
+            '-Djava.awt.headless=false'  // Para permitir la UI de Swing
     ]
+
+    // Variables de entorno para desarrollo
+    environment 'ICE_TRACE_LEVEL', '1'
+    environment 'LOG_LEVEL', 'INFO'
 }
 
-
+// =================== TESTING ===================
 test {
     useJUnitPlatform()
     maxHeapSize = '2g'
+
+    // Configurar sistema de pruebas
+    systemProperties = [
+            'junit.jupiter.execution.parallel.enabled': 'true',
+            'junit.jupiter.execution.parallel.mode.default': 'concurrent'
+    ]
 }
 
+// =================== JAR CONFIGURATION ===================
 jar {
     manifest {
         attributes(
-                "Main-Class": project.name.capitalize(),
+                "Main-Class": "Server",
+                "Implementation-Title": "Electoral Server",
+                "Implementation-Version": project.version,
                 "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
         )
     }
+
+    // Incluir dependencias en el JAR
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+// =================== DISTRIBUTION ===================
+distributions {
+    main {
+        distributionBaseName = 'electoral-server'
+        contents {
+            from('config') {
+                into 'config'
+            }
+            from('scripts') {
+                into 'scripts'
+                fileMode = 0755
+            }
+        }
+    }
+}
+
+// =================== ADDITIONAL TASKS ===================
+
+// Task para generar archivos de configuración de ejemplo
+task generateConfigFiles() {
+    description = 'Generate sample configuration files'
+    group = 'setup'
+
+    doLast {
+        def configDir = file('config')
+        if (!configDir.exists()) {
+            configDir.mkdirs()
+        }
+
+        // Crear archivo de configuración de base de datos
+        def dbConfigFile = file('config/database.properties')
+        if (!dbConfigFile.exists()) {
+            dbConfigFile.text = """
+# Database Configuration
+db.url=jdbc:postgresql://localhost:5432/electoral_db
+db.username=electoral_user
+db.password=electoral_pass
+db.pool.maximumPoolSize=20
+db.pool.minimumIdle=5
+db.pool.connectionTimeout=30000
+""".stripIndent()
+            println "✅ Created: ${dbConfigFile.path}"
+        }
+
+        // Crear archivo de configuración de Ice
+        def iceConfigFile = file('config/ice.config')
+        if (!iceConfigFile.exists()) {
+            iceConfigFile.text = """
+# Ice Configuration
+Ice.Trace.Network=1
+Ice.Trace.Protocol=0
+Ice.Warn.Connections=1
+Ice.ThreadPool.Server.Size=4
+Ice.ThreadPool.Server.SizeMax=20
+Ice.ThreadPool.Client.Size=4
+Ice.ThreadPool.Client.SizeMax=10
+""".stripIndent()
+            println "✅ Created: ${iceConfigFile.path}"
+        }
+    }
+}
+
+// Task para limpiar archivos temporales
+clean {
+    delete 'logs'
+    delete 'temp'
+    delete fileTree('Reports/data') {
+        include '**/*.tmp'
+        include '**/*.lock'
+    }
+}
+
+// =================== TASK DEPENDENCIES ===================
+build.dependsOn checkConfig
+run.dependsOn generateConfigFiles
