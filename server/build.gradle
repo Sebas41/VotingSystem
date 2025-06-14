@@ -18,6 +18,10 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.7.3'
     implementation 'com.zaxxer:HikariCP:5.1.0'
 
+    // =================== DEPENDENCIA CRÍTICA ===================
+    // Esta línea resuelve el problema de model.Vote, model.ReliableMessage, etc.
+    implementation project(':reliableServer')
+
     // Logging
     implementation 'org.slf4j:slf4j-api:2.0.12'
     implementation 'ch.qos.logback:logback-classic:1.5.3'
@@ -35,7 +39,7 @@ java {
     }
 }
 
-// Configuración de sourceSets para incluir las clases generadas por Ice
+// =================== CONFIGURACIÓN DE SOURCESET ===================
 sourceSets {
     main {
         java {
@@ -49,38 +53,77 @@ sourceSets {
 }
 
 application {
-    mainClass = 'com.electoral.Server'  // Asegúrate de usar el nombre completo de la clase
+    mainClass = 'org.votaciones.Server'
 }
 
-// Tareas para ejecutar servidores específicos
-task runReportsServer(type: JavaExec) {
-    group = 'application'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'Reports.ReportsServer'  // Ajusta si ReportsServer está en un paquete
-}
-
-task runVotingServer(type: JavaExec) {
-    group = 'application'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'Voting.VotingServer'  // Ajusta si VotingServer está en un paquete
-}
+// =================== TAREAS PERSONALIZADAS ===================
 
 task runServer(type: JavaExec) {
     group = 'application'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'com.electoral.Server'  // Ajusta si Server está en un paquete
+    mainClass = 'org.votaciones.Server'
+    args = ['--Ice.Config=src/main/resources/electoralserver.cfg']
+}
+
+task runServerDebug(type: JavaExec) {
+    group = 'development'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.votaciones.Server'
+    args = ['--Ice.Config=src/main/resources/electoralserver.cfg']
+    jvmArgs = ['-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005']
+}
+
+// Verificar dependencias del proyecto
+task showProjectDependencies {
+    group = 'verification'
+    doLast {
+        println "📦 Dependencias del proyecto:"
+        configurations.compileClasspath.allDependencies.withType(ProjectDependency).each {
+            println "   - Proyecto: ${it.dependencyProject.name}"
+            println "     Path: ${it.dependencyProject.projectDir}"
+        }
+
+        println "\n📁 Source directories:"
+        sourceSets.main.java.srcDirs.each { println "   - ${it}" }
+    }
 }
 
 compileJava {
     options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:unchecked', '-Xlint:deprecation']
 }
 
-// Tarea para debugging del classpath
-task showClasspath {
-    doLast {
-        println "Compile classpath:"
-        configurations.compileClasspath.each { println "  ${it}" }
-        println "\nSource sets:"
-        sourceSets.main.java.srcDirs.each { println "  ${it}" }
+// =================== CONFIGURACIÓN DE JAR ===================
+jar {
+    manifest {
+        attributes(
+                "Main-Class": "org.votaciones.Server",
+                "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
+        )
     }
 }
+
+// Verificar que reliableServer esté disponible
+task verifyReliableServer {
+    group = 'verification'
+    description = 'Verifica que el proyecto reliableServer esté disponible'
+    doLast {
+        try {
+            def reliableServerProject = project(':reliableServer')
+            println "✅ Proyecto reliableServer encontrado: ${reliableServerProject.projectDir}"
+
+            // Verificar que las clases model estén en reliableServer
+            def modelClasses = fileTree(dir: reliableServerProject.projectDir, include: '**/model/*.java')
+            println "📄 Clases model encontradas:"
+            modelClasses.each { println "   - ${it.name}" }
+
+        } catch (Exception e) {
+            println "❌ Error: Proyecto reliableServer no encontrado"
+            println "💡 Asegúrate de que esté incluido en settings.gradle"
+            throw e
+        }
+    }
+}
+
+// Asegurar verificación antes de compilar
+compileJava.dependsOn verifyReliableServer

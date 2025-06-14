@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.zeroc.Ice.Current;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 // =================== IMPORTS ACTUALIZADOS DE VotingSystem ===================
 import VotingSystem.ConfigurationService;
@@ -66,7 +67,10 @@ public class VotingManagerImpl implements ConfigurationService {
         logger.debug("Ice request: getBatchConfigurations for {} mesas election {}", mesaIds.length, electionId);
 
         try {
-            return generateBatchMachineConfigurationStrings(Arrays.asList(mesaIds), electionId);
+            return generateBatchMachineConfigurationStrings(
+                    Arrays.stream(mesaIds).boxed().collect(Collectors.toList()),
+                    electionId
+            );
         } catch (Exception e) {
             logger.error("Error generating batch configuration strings for election {}", electionId, e);
             return new String[]{createErrorString("Error generating batch configurations: " + e.getMessage())};
