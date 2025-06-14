@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="17" />
+    <bytecodeTargetLevel target="11" />
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="reliable-message-example.ProxyCacheReports.main" options="-Xlint:unchecked -Xlint:deprecation" />
+      <module name="reliable-message-example.server.main" options="-Xlint:unchecked -Xlint:deprecation" />
+    </option>
   </component>
 </project>
