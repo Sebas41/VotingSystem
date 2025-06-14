@@ -32,6 +32,29 @@ module ReportsSystem {
         
 
         void preloadReports(int electionId);
+
+        int preloadDepartmentCitizens(int departmentId, int electionId);
+
+
+        int preloadMunicipalityCitizens(int municipalityId, int electionId);
+
+
+        int preloadPuestoCitizens(int puestoId, int electionId);
+
+        int preloadMesasCitizens(int* mesaIds, int electionId);
+
+
+
+
+
+
+
+
+
+
+
+
+
     };
     
     exception ReportsException {
