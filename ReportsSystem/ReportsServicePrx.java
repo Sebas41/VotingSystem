@@ -17,21 +17,37 @@ package ReportsSystem;
 
 public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
 {
+    /**
+     * Obtiene el reporte completo de un ciudadano
+     **/
     default String getCitizenReports(String documento, int electionId)
     {
         return getCitizenReports(documento, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
+    /**
+     * Obtiene el reporte completo de un ciudadano
+     * @param context The Context map to send with the invocation.
+     **/
     default String getCitizenReports(String documento, int electionId, java.util.Map<String, String> context)
     {
         return _iceI_getCitizenReportsAsync(documento, electionId, context, true).waitForResponse();
     }
 
+    /**
+     * Obtiene el reporte completo de un ciudadano
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.String> getCitizenReportsAsync(String documento, int electionId)
     {
         return _iceI_getCitizenReportsAsync(documento, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
+    /**
+     * Obtiene el reporte completo de un ciudadano
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.String> getCitizenReportsAsync(String documento, int electionId, java.util.Map<String, String> context)
     {
         return _iceI_getCitizenReportsAsync(documento, electionId, context, false);
@@ -59,21 +75,37 @@ public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    /**
+     * Busca ciudadanos por nombre y apellido
+     **/
     default String[] searchCitizenReports(String nombre, String apellido, int electionId, int limit)
     {
         return searchCitizenReports(nombre, apellido, electionId, limit, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
+    /**
+     * Busca ciudadanos por nombre y apellido
+     * @param context The Context map to send with the invocation.
+     **/
     default String[] searchCitizenReports(String nombre, String apellido, int electionId, int limit, java.util.Map<String, String> context)
     {
         return _iceI_searchCitizenReportsAsync(nombre, apellido, electionId, limit, context, true).waitForResponse();
     }
 
+    /**
+     * Busca ciudadanos por nombre y apellido
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<String[]> searchCitizenReportsAsync(String nombre, String apellido, int electionId, int limit)
     {
         return _iceI_searchCitizenReportsAsync(nombre, apellido, electionId, limit, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
+    /**
+     * Busca ciudadanos por nombre y apellido
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<String[]> searchCitizenReportsAsync(String nombre, String apellido, int electionId, int limit, java.util.Map<String, String> context)
     {
         return _iceI_searchCitizenReportsAsync(nombre, apellido, electionId, limit, context, false);
@@ -105,21 +137,37 @@ public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    /**
+     * Obtiene todos los ciudadanos de una mesa
+     **/
     default String[] getMesaCitizenReports(int mesaId, int electionId)
     {
         return getMesaCitizenReports(mesaId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
+    /**
+     * Obtiene todos los ciudadanos de una mesa
+     * @param context The Context map to send with the invocation.
+     **/
     default String[] getMesaCitizenReports(int mesaId, int electionId, java.util.Map<String, String> context)
     {
         return _iceI_getMesaCitizenReportsAsync(mesaId, electionId, context, true).waitForResponse();
     }
 
+    /**
+     * Obtiene todos los ciudadanos de una mesa
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<String[]> getMesaCitizenReportsAsync(int mesaId, int electionId)
     {
         return _iceI_getMesaCitizenReportsAsync(mesaId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
+    /**
+     * Obtiene todos los ciudadanos de una mesa
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<String[]> getMesaCitizenReportsAsync(int mesaId, int electionId, java.util.Map<String, String> context)
     {
         return _iceI_getMesaCitizenReportsAsync(mesaId, electionId, context, false);
@@ -147,21 +195,37 @@ public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    /**
+     * Valida si un ciudadano es elegible para votar
+     **/
     default boolean validateCitizenEligibility(String documento)
     {
         return validateCitizenEligibility(documento, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
+    /**
+     * Valida si un ciudadano es elegible para votar
+     * @param context The Context map to send with the invocation.
+     **/
     default boolean validateCitizenEligibility(String documento, java.util.Map<String, String> context)
     {
         return _iceI_validateCitizenEligibilityAsync(documento, context, true).waitForResponse();
     }
 
+    /**
+     * Valida si un ciudadano es elegible para votar
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.Boolean> validateCitizenEligibilityAsync(String documento)
     {
         return _iceI_validateCitizenEligibilityAsync(documento, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
+    /**
+     * Valida si un ciudadano es elegible para votar
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.Boolean> validateCitizenEligibilityAsync(String documento, java.util.Map<String, String> context)
     {
         return _iceI_validateCitizenEligibilityAsync(documento, context, false);
@@ -187,21 +251,37 @@ public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    /**
+     * Obtiene el reporte de resultados de una elección
+     **/
     default String getElectionReports(int electionId)
     {
         return getElectionReports(electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
+    /**
+     * Obtiene el reporte de resultados de una elección
+     * @param context The Context map to send with the invocation.
+     **/
     default String getElectionReports(int electionId, java.util.Map<String, String> context)
     {
         return _iceI_getElectionReportsAsync(electionId, context, true).waitForResponse();
     }
 
+    /**
+     * Obtiene el reporte de resultados de una elección
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.String> getElectionReportsAsync(int electionId)
     {
         return _iceI_getElectionReportsAsync(electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
+    /**
+     * Obtiene el reporte de resultados de una elección
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.String> getElectionReportsAsync(int electionId, java.util.Map<String, String> context)
     {
         return _iceI_getElectionReportsAsync(electionId, context, false);
@@ -227,21 +307,37 @@ public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    /**
+     * Obtiene la lista de elecciones disponibles
+     **/
     default String[] getAvailableElections()
     {
         return getAvailableElections(com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
+    /**
+     * Obtiene la lista de elecciones disponibles
+     * @param context The Context map to send with the invocation.
+     **/
     default String[] getAvailableElections(java.util.Map<String, String> context)
     {
         return _iceI_getAvailableElectionsAsync(context, true).waitForResponse();
     }
 
+    /**
+     * Obtiene la lista de elecciones disponibles
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<String[]> getAvailableElectionsAsync()
     {
         return _iceI_getAvailableElectionsAsync(com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
+    /**
+     * Obtiene la lista de elecciones disponibles
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<String[]> getAvailableElectionsAsync(java.util.Map<String, String> context)
     {
         return _iceI_getAvailableElectionsAsync(context, false);
@@ -264,21 +360,37 @@ public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    /**
+     * Verifica si los reportes están listos para una elección
+     **/
     default boolean areReportsReady(int electionId)
     {
         return areReportsReady(electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
+    /**
+     * Verifica si los reportes están listos para una elección
+     * @param context The Context map to send with the invocation.
+     **/
     default boolean areReportsReady(int electionId, java.util.Map<String, String> context)
     {
         return _iceI_areReportsReadyAsync(electionId, context, true).waitForResponse();
     }
 
+    /**
+     * Verifica si los reportes están listos para una elección
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.Boolean> areReportsReadyAsync(int electionId)
     {
         return _iceI_areReportsReadyAsync(electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
+    /**
+     * Verifica si los reportes están listos para una elección
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.Boolean> areReportsReadyAsync(int electionId, java.util.Map<String, String> context)
     {
         return _iceI_areReportsReadyAsync(electionId, context, false);
@@ -304,21 +416,37 @@ public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    /**
+     * Obtiene reportes geográficos (departamento, municipio, puesto)
+     **/
     default String getGeographicReports(int locationId, String locationType, int electionId)
     {
         return getGeographicReports(locationId, locationType, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
+    /**
+     * Obtiene reportes geográficos (departamento, municipio, puesto)
+     * @param context The Context map to send with the invocation.
+     **/
     default String getGeographicReports(int locationId, String locationType, int electionId, java.util.Map<String, String> context)
     {
         return _iceI_getGeographicReportsAsync(locationId, locationType, electionId, context, true).waitForResponse();
     }
 
+    /**
+     * Obtiene reportes geográficos (departamento, municipio, puesto)
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.String> getGeographicReportsAsync(int locationId, String locationType, int electionId)
     {
         return _iceI_getGeographicReportsAsync(locationId, locationType, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
+    /**
+     * Obtiene reportes geográficos (departamento, municipio, puesto)
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
     default java.util.concurrent.CompletableFuture<java.lang.String> getGeographicReportsAsync(int locationId, String locationType, int electionId, java.util.Map<String, String> context)
     {
         return _iceI_getGeographicReportsAsync(locationId, locationType, electionId, context, false);
@@ -348,39 +476,348 @@ public interface ReportsServicePrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
-    default void preloadReports(int electionId)
+    /**
+     * Precarga reportes de manera inteligente según el tipo
+     **/
+    default String preloadReports(int electionId, String locationType, int locationId)
     {
-        preloadReports(electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+        return preloadReports(electionId, locationType, locationId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
     }
 
-    default void preloadReports(int electionId, java.util.Map<String, String> context)
+    /**
+     * Precarga reportes de manera inteligente según el tipo
+     * @param context The Context map to send with the invocation.
+     **/
+    default String preloadReports(int electionId, String locationType, int locationId, java.util.Map<String, String> context)
     {
-        _iceI_preloadReportsAsync(electionId, context, true).waitForResponse();
+        return _iceI_preloadReportsAsync(electionId, locationType, locationId, context, true).waitForResponse();
     }
 
-    default java.util.concurrent.CompletableFuture<Void> preloadReportsAsync(int electionId)
+    /**
+     * Precarga reportes de manera inteligente según el tipo
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<java.lang.String> preloadReportsAsync(int electionId, String locationType, int locationId)
     {
-        return _iceI_preloadReportsAsync(electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+        return _iceI_preloadReportsAsync(electionId, locationType, locationId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
     }
 
-    default java.util.concurrent.CompletableFuture<Void> preloadReportsAsync(int electionId, java.util.Map<String, String> context)
+    /**
+     * Precarga reportes de manera inteligente según el tipo
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<java.lang.String> preloadReportsAsync(int electionId, String locationType, int locationId, java.util.Map<String, String> context)
     {
-        return _iceI_preloadReportsAsync(electionId, context, false);
+        return _iceI_preloadReportsAsync(electionId, locationType, locationId, context, false);
     }
 
     /**
      * @hidden
      * @param iceP_electionId -
+     * @param iceP_locationType -
+     * @param iceP_locationId -
      * @param context -
      * @param sync -
      * @return -
      **/
-    default com.zeroc.IceInternal.OutgoingAsync<Void> _iceI_preloadReportsAsync(int iceP_electionId, java.util.Map<String, String> context, boolean sync)
+    default com.zeroc.IceInternal.OutgoingAsync<java.lang.String> _iceI_preloadReportsAsync(int iceP_electionId, String iceP_locationType, int iceP_locationId, java.util.Map<String, String> context, boolean sync)
     {
-        com.zeroc.IceInternal.OutgoingAsync<Void> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "preloadReports", null, sync, null);
-        f.invoke(false, context, null, ostr -> {
+        com.zeroc.IceInternal.OutgoingAsync<java.lang.String> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "preloadReports", null, sync, null);
+        f.invoke(true, context, null, ostr -> {
                      ostr.writeInt(iceP_electionId);
-                 }, null);
+                     ostr.writeString(iceP_locationType);
+                     ostr.writeInt(iceP_locationId);
+                 }, istr -> {
+                     String ret;
+                     ret = istr.readString();
+                     return ret;
+                 });
+        return f;
+    }
+
+    /**
+     * Obtiene estadísticas del cache
+     **/
+    default String getCacheStats()
+    {
+        return getCacheStats(com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    /**
+     * Obtiene estadísticas del cache
+     * @param context The Context map to send with the invocation.
+     **/
+    default String getCacheStats(java.util.Map<String, String> context)
+    {
+        return _iceI_getCacheStatsAsync(context, true).waitForResponse();
+    }
+
+    /**
+     * Obtiene estadísticas del cache
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<java.lang.String> getCacheStatsAsync()
+    {
+        return _iceI_getCacheStatsAsync(com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    /**
+     * Obtiene estadísticas del cache
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<java.lang.String> getCacheStatsAsync(java.util.Map<String, String> context)
+    {
+        return _iceI_getCacheStatsAsync(context, false);
+    }
+
+    /**
+     * @hidden
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<java.lang.String> _iceI_getCacheStatsAsync(java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<java.lang.String> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "getCacheStats", null, sync, null);
+        f.invoke(true, context, null, null, istr -> {
+                     String ret;
+                     ret = istr.readString();
+                     return ret;
+                 });
+        return f;
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un departamento
+     **/
+    default String[] getDepartmentCitizenDocuments(int departmentId, int electionId)
+    {
+        return getDepartmentCitizenDocuments(departmentId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un departamento
+     * @param context The Context map to send with the invocation.
+     **/
+    default String[] getDepartmentCitizenDocuments(int departmentId, int electionId, java.util.Map<String, String> context)
+    {
+        return _iceI_getDepartmentCitizenDocumentsAsync(departmentId, electionId, context, true).waitForResponse();
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un departamento
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<String[]> getDepartmentCitizenDocumentsAsync(int departmentId, int electionId)
+    {
+        return _iceI_getDepartmentCitizenDocumentsAsync(departmentId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un departamento
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<String[]> getDepartmentCitizenDocumentsAsync(int departmentId, int electionId, java.util.Map<String, String> context)
+    {
+        return _iceI_getDepartmentCitizenDocumentsAsync(departmentId, electionId, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_departmentId -
+     * @param iceP_electionId -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<String[]> _iceI_getDepartmentCitizenDocumentsAsync(int iceP_departmentId, int iceP_electionId, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<String[]> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "getDepartmentCitizenDocuments", null, sync, null);
+        f.invoke(true, context, null, ostr -> {
+                     ostr.writeInt(iceP_departmentId);
+                     ostr.writeInt(iceP_electionId);
+                 }, istr -> {
+                     String[] ret;
+                     ret = istr.readStringSeq();
+                     return ret;
+                 });
+        return f;
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un municipio
+     **/
+    default String[] getMunicipalityCitizenDocuments(int municipalityId, int electionId)
+    {
+        return getMunicipalityCitizenDocuments(municipalityId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un municipio
+     * @param context The Context map to send with the invocation.
+     **/
+    default String[] getMunicipalityCitizenDocuments(int municipalityId, int electionId, java.util.Map<String, String> context)
+    {
+        return _iceI_getMunicipalityCitizenDocumentsAsync(municipalityId, electionId, context, true).waitForResponse();
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un municipio
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<String[]> getMunicipalityCitizenDocumentsAsync(int municipalityId, int electionId)
+    {
+        return _iceI_getMunicipalityCitizenDocumentsAsync(municipalityId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un municipio
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<String[]> getMunicipalityCitizenDocumentsAsync(int municipalityId, int electionId, java.util.Map<String, String> context)
+    {
+        return _iceI_getMunicipalityCitizenDocumentsAsync(municipalityId, electionId, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_municipalityId -
+     * @param iceP_electionId -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<String[]> _iceI_getMunicipalityCitizenDocumentsAsync(int iceP_municipalityId, int iceP_electionId, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<String[]> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "getMunicipalityCitizenDocuments", null, sync, null);
+        f.invoke(true, context, null, ostr -> {
+                     ostr.writeInt(iceP_municipalityId);
+                     ostr.writeInt(iceP_electionId);
+                 }, istr -> {
+                     String[] ret;
+                     ret = istr.readStringSeq();
+                     return ret;
+                 });
+        return f;
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un puesto
+     **/
+    default String[] getPuestoCitizenDocuments(int puestoId, int electionId)
+    {
+        return getPuestoCitizenDocuments(puestoId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un puesto
+     * @param context The Context map to send with the invocation.
+     **/
+    default String[] getPuestoCitizenDocuments(int puestoId, int electionId, java.util.Map<String, String> context)
+    {
+        return _iceI_getPuestoCitizenDocumentsAsync(puestoId, electionId, context, true).waitForResponse();
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un puesto
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<String[]> getPuestoCitizenDocumentsAsync(int puestoId, int electionId)
+    {
+        return _iceI_getPuestoCitizenDocumentsAsync(puestoId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    /**
+     * Obtiene los documentos de todos los ciudadanos de un puesto
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<String[]> getPuestoCitizenDocumentsAsync(int puestoId, int electionId, java.util.Map<String, String> context)
+    {
+        return _iceI_getPuestoCitizenDocumentsAsync(puestoId, electionId, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_puestoId -
+     * @param iceP_electionId -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<String[]> _iceI_getPuestoCitizenDocumentsAsync(int iceP_puestoId, int iceP_electionId, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<String[]> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "getPuestoCitizenDocuments", null, sync, null);
+        f.invoke(true, context, null, ostr -> {
+                     ostr.writeInt(iceP_puestoId);
+                     ostr.writeInt(iceP_electionId);
+                 }, istr -> {
+                     String[] ret;
+                     ret = istr.readStringSeq();
+                     return ret;
+                 });
+        return f;
+    }
+
+    /**
+     * Obtiene los documentos de ciudadanos de una mesa específica
+     **/
+    default String[] getMesaCitizenDocuments(int mesaId, int electionId)
+    {
+        return getMesaCitizenDocuments(mesaId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    /**
+     * Obtiene los documentos de ciudadanos de una mesa específica
+     * @param context The Context map to send with the invocation.
+     **/
+    default String[] getMesaCitizenDocuments(int mesaId, int electionId, java.util.Map<String, String> context)
+    {
+        return _iceI_getMesaCitizenDocumentsAsync(mesaId, electionId, context, true).waitForResponse();
+    }
+
+    /**
+     * Obtiene los documentos de ciudadanos de una mesa específica
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<String[]> getMesaCitizenDocumentsAsync(int mesaId, int electionId)
+    {
+        return _iceI_getMesaCitizenDocumentsAsync(mesaId, electionId, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    /**
+     * Obtiene los documentos de ciudadanos de una mesa específica
+     * @param context The Context map to send with the invocation.
+     * @return A future that will be completed with the result.
+     **/
+    default java.util.concurrent.CompletableFuture<String[]> getMesaCitizenDocumentsAsync(int mesaId, int electionId, java.util.Map<String, String> context)
+    {
+        return _iceI_getMesaCitizenDocumentsAsync(mesaId, electionId, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_mesaId -
+     * @param iceP_electionId -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<String[]> _iceI_getMesaCitizenDocumentsAsync(int iceP_mesaId, int iceP_electionId, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<String[]> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "getMesaCitizenDocuments", null, sync, null);
+        f.invoke(true, context, null, ostr -> {
+                     ostr.writeInt(iceP_mesaId);
+                     ostr.writeInt(iceP_electionId);
+                 }, istr -> {
+                     String[] ret;
+                     ret = istr.readStringSeq();
+                     return ret;
+                 });
         return f;
     }
 

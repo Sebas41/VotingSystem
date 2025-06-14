@@ -9,10 +9,7 @@ import java.lang.Object;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-// =================== IMPORTS ACTUALIZADOS DE ReportsSystem ===================
-import ReportsSystem.ReportsService;
-
-public class ReportsManagerImpl implements ReportsService {
+public class ReportsManagerImpl implements ReportsSystem.ReportsService {
 
     private static final Logger logger = LoggerFactory.getLogger(ReportsManagerImpl.class);
     private final ConnectionDBinterface connectionDB;
@@ -130,7 +127,6 @@ public class ReportsManagerImpl implements ReportsService {
         }
     }
 
-    @Override
     public void preloadReports(int electionId, Current current) {
         logger.info("Ice request: preloadReports for election {}", electionId);
 
@@ -652,5 +648,571 @@ public class ReportsManagerImpl implements ReportsService {
 
         return stats;
     }
+
+    // =================== MÉTODOS AUXILIARES PARA PRECARGA GEOGRÁFICA ===================
+// Agregar estos métodos a tu ReportsManagerImpl.java
+
+    @Override
+    public String[] getDepartmentCitizenDocuments(int departmentId, int electionId, Current current) {
+        logger.debug("Ice request: getDepartmentCitizenDocuments for department {} election {}", departmentId, electionId);
+
+        try {
+            // Validar que la elección existe
+            Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
+            if (electionInfo == null) {
+                logger.warn("Election {} not found", electionId);
+                return new String[]{createErrorString("Election not found")};
+            }
+
+            // Obtener todos los ciudadanos del departamento
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByDepartment(departmentId);
+
+            // Extraer solo los documentos
+            String[] documents = new String[citizens.size()];
+            for (int i = 0; i < citizens.size(); i++) {
+                documents[i] = (String) citizens.get(i).get("documento");
+            }
+
+            logger.info("Retrieved {} citizen documents for department {}", documents.length, departmentId);
+            return documents;
+
+        } catch (Exception e) {
+            logger.error("Error getting citizen documents for department {} election {}", departmentId, electionId, e);
+            return new String[]{createErrorString("Error getting citizen documents: " + e.getMessage())};
+        }
+    }
+
+    @Override
+    public String[] getMunicipalityCitizenDocuments(int municipalityId, int electionId, Current current) {
+        logger.debug("Ice request: getMunicipalityCitizenDocuments for municipality {} election {}", municipalityId, electionId);
+
+        try {
+            // Validar que la elección existe
+            Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
+            if (electionInfo == null) {
+                logger.warn("Election {} not found", electionId);
+                return new String[]{createErrorString("Election not found")};
+            }
+
+            // Obtener todos los ciudadanos del municipio
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByMunicipality(municipalityId);
+
+            // Extraer solo los documentos
+            String[] documents = new String[citizens.size()];
+            for (int i = 0; i < citizens.size(); i++) {
+                documents[i] = (String) citizens.get(i).get("documento");
+            }
+
+            logger.info("Retrieved {} citizen documents for municipality {}", documents.length, municipalityId);
+            return documents;
+
+        } catch (Exception e) {
+            logger.error("Error getting citizen documents for municipality {} election {}", municipalityId, electionId, e);
+            return new String[]{createErrorString("Error getting citizen documents: " + e.getMessage())};
+        }
+    }
+
+    @Override
+    public String[] getPuestoCitizenDocuments(int puestoId, int electionId, Current current) {
+        logger.debug("Ice request: getPuestoCitizenDocuments for puesto {} election {}", puestoId, electionId);
+
+        try {
+            // Validar que la elección existe
+            Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
+            if (electionInfo == null) {
+                logger.warn("Election {} not found", electionId);
+                return new String[]{createErrorString("Election not found")};
+            }
+
+            // Obtener todos los ciudadanos del puesto
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByPuesto(puestoId);
+
+            // Extraer solo los documentos
+            String[] documents = new String[citizens.size()];
+            for (int i = 0; i < citizens.size(); i++) {
+                documents[i] = (String) citizens.get(i).get("documento");
+            }
+
+            logger.info("Retrieved {} citizen documents for puesto {}", documents.length, puestoId);
+            return documents;
+
+        } catch (Exception e) {
+            logger.error("Error getting citizen documents for puesto {} election {}", puestoId, electionId, e);
+            return new String[]{createErrorString("Error getting citizen documents: " + e.getMessage())};
+        }
+    }
+
+    @Override
+    public String[] getMesaCitizenDocuments(int mesaId, int electionId, Current current) {
+        logger.debug("Ice request: getMesaCitizenDocuments for mesa {} election {}", mesaId, electionId);
+
+        try {
+            // Validar que la elección existe
+            Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
+            if (electionInfo == null) {
+                logger.warn("Election {} not found", electionId);
+                return new String[]{createErrorString("Election not found")};
+            }
+
+            // Obtener todos los ciudadanos de la mesa
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByMesa(mesaId);
+
+            // Extraer solo los documentos
+            String[] documents = new String[citizens.size()];
+            for (int i = 0; i < citizens.size(); i++) {
+                documents[i] = (String) citizens.get(i).get("documento");
+            }
+
+            logger.info("Retrieved {} citizen documents for mesa {}", documents.length, mesaId);
+            return documents;
+
+        } catch (Exception e) {
+            logger.error("Error getting citizen documents for mesa {} election {}", mesaId, electionId, e);
+            return new String[]{createErrorString("Error getting citizen documents: " + e.getMessage())};
+        }
+    }
+    // =================== MÉTODOS FALTANTES PARA COMPLETAR ReportsManagerImpl ===================
+// Agregar estos métodos al final de tu clase ReportsManagerImpl
+
+    /**
+     * Precarga reportes de manera inteligente según el tipo especificado
+     * NUEVO MÉTODO con parámetros mejorados
+     */
+    @Override
+    public String preloadReports(int electionId, String locationType, int locationId, Current current) {
+        logger.info("🚀 Ice request: preloadReports type '{}' for election {} location {}", locationType, electionId, locationId);
+
+        long startTime = System.currentTimeMillis();
+        StringBuilder result = new StringBuilder();
+        result.append("🚀 ========== PRECARGA DE REPORTES ==========\n");
+        result.append(String.format("📊 Elección: %d | Tipo: %s | Ubicación: %d\n\n", electionId, locationType, locationId));
+
+        try {
+            switch (locationType.toLowerCase()) {
+                case "basic":
+                    return preloadBasicReports(electionId, result, startTime);
+
+                case "department":
+                case "departamento":
+                    return preloadDepartmentReports(electionId, locationId, result, startTime);
+
+                case "municipality":
+                case "municipio":
+                    return preloadMunicipalityReports(electionId, locationId, result, startTime);
+
+                case "puesto":
+                    return preloadPuestoReports(electionId, locationId, result, startTime);
+
+                case "mesa":
+                    return preloadMesaReports(electionId, locationId, result, startTime);
+
+                case "all":
+                    return preloadAllReports(electionId, result, startTime);
+
+                default:
+                    throw new IllegalArgumentException("Tipo de precarga no válido: " + locationType +
+                            ". Tipos válidos: basic, department, municipality, puesto, mesa, all");
+            }
+
+        } catch (Exception e) {
+            logger.error("❌ Error en precarga tipo '{}': {}", locationType, e.getMessage());
+            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            return result.toString();
+        }
+    }
+
+    /**
+     * Obtiene estadísticas del servidor de reportes
+     */
+    @Override
+    public String getCacheStats(Current current) {
+        logger.debug("Ice request: getCacheStats");
+
+        try {
+            StringBuilder stats = new StringBuilder();
+            stats.append("📊 ========== ESTADÍSTICAS DEL SERVIDOR REPORTS ==========\n");
+
+            // 1. Información básica del servidor
+            stats.append(String.format("🔧 Versión del paquete: %s\n", PACKAGE_VERSION));
+            stats.append(String.format("⏰ Timestamp: %d\n", System.currentTimeMillis()));
+            stats.append(String.format("🔄 Estado del servidor: ACTIVO\n"));
+
+            // 2. Estadísticas de la base de datos
+            Map<String, Object> dbMetrics = connectionDB.getPerformanceMetrics();
+            if (dbMetrics != null && !dbMetrics.containsKey("error")) {
+                stats.append("\n💾 Estadísticas de Base de Datos:\n");
+                stats.append(String.format("   👥 Total ciudadanos: %s\n",
+                        formatNumber(dbMetrics.get("total_citizens"))));
+                stats.append(String.format("   📋 Total mesas: %s\n",
+                        formatNumber(dbMetrics.get("total_mesas"))));
+                stats.append(String.format("   🗳️ Total puestos: %s\n",
+                        formatNumber(dbMetrics.get("total_puestos"))));
+
+                // Pool de conexiones
+                if (dbMetrics.containsKey("pool_active_connections")) {
+                    stats.append("\n🔌 Pool de Conexiones:\n");
+                    stats.append(String.format("   🟢 Conexiones activas: %s\n",
+                            dbMetrics.get("pool_active_connections")));
+                    stats.append(String.format("   ⭐ Conexiones idle: %s\n",
+                            dbMetrics.get("pool_idle_connections")));
+                    stats.append(String.format("   📊 Total conexiones: %s\n",
+                            dbMetrics.get("pool_total_connections")));
+                }
+            }
+
+            // 3. Estadísticas de elecciones
+            List<Map<String, Object>> elections = connectionDB.getAllActiveElections();
+            stats.append(String.format("\n🗳️ Elecciones activas: %d\n", elections.size()));
+
+            // 4. Estadísticas de departamentos
+            List<Map<String, Object>> departments = connectionDB.getAllDepartments();
+            stats.append(String.format("🏛️ Departamentos: %d\n", departments.size()));
+
+            // 5. Estado de salud de la BD
+            boolean isHealthy = connectionDB.isHealthy();
+            stats.append(String.format("\n💚 Estado de BD: %s\n", isHealthy ? "SALUDABLE" : "CON PROBLEMAS"));
+
+            // 6. Información de rendimiento
+            stats.append("\n⚡ Rendimiento del Servidor:\n");
+            stats.append("   🔥 Sin cache local (servidor directo a BD)\n");
+            stats.append("   📈 Optimizado con HikariCP\n");
+            stats.append("   🎯 Respuestas en formato string\n");
+
+            // 7. Información adicional
+            stats.append("\n📋 Métodos Disponibles:\n");
+            stats.append("   • getCitizenReports\n");
+            stats.append("   • searchCitizenReports\n");
+            stats.append("   • getElectionReports\n");
+            stats.append("   • getGeographicReports\n");
+            stats.append("   • getMesaCitizenReports\n");
+            stats.append("   • preloadReports (básico + geográfico)\n");
+            stats.append("   • getDepartmentCitizenDocuments\n");
+            stats.append("   • getMunicipalityCitizenDocuments\n");
+            stats.append("   • getPuestoCitizenDocuments\n");
+
+            stats.append("\n========================================\n");
+
+            String result = stats.toString();
+            logger.info("Server stats generated successfully");
+            return result;
+
+        } catch (Exception e) {
+            logger.error("Error generating server stats: {}", e.getMessage());
+            return createErrorString("Error generating server stats: " + e.getMessage());
+        }
+    }
+
+// =================== MÉTODOS AUXILIARES PARA PRECARGA ===================
+
+    /**
+     * Precarga básica: reportes generales y metadata
+     */
+    private String preloadBasicReports(int electionId, StringBuilder result, long startTime) {
+        try {
+            result.append("📋 PRECARGA BÁSICA\n");
+            int itemsPreloaded = 0;
+
+            // 1. Reporte general de la elección
+            result.append("⏳ Precargando reporte de elección...\n");
+            String electionReport = generateElectionResultsReportString(electionId);
+            if (!electionReport.startsWith("ERROR")) {
+                itemsPreloaded++;
+                result.append("   ✅ Reporte de elección generado\n");
+            } else {
+                result.append("   ❌ Error en reporte de elección\n");
+            }
+
+            // 2. Elecciones disponibles
+            result.append("⏳ Precargando lista de elecciones...\n");
+            List<Map<String, Object>> elections = connectionDB.getAllActiveElections();
+            itemsPreloaded++;
+            result.append("   ✅ Lista de elecciones obtenida\n");
+
+            // 3. Reportes geográficos principales (departamentos)
+            result.append("⏳ Precargando reportes de departamentos principales...\n");
+            int[] mainDepartments = {1, 2, 3, 5}; // IDs de departamentos principales
+            int deptSuccessCount = 0;
+
+            for (int deptId : mainDepartments) {
+                try {
+                    String geoReport = generateDepartmentReportString(deptId, electionId);
+                    if (!geoReport.startsWith("ERROR")) {
+                        deptSuccessCount++;
+                    }
+                } catch (Exception e) {
+                    result.append("   ⚠️ Error con departamento ").append(deptId).append("\n");
+                }
+            }
+
+            itemsPreloaded += deptSuccessCount;
+            result.append(String.format("   ✅ %d departamentos precargados\n", deptSuccessCount));
+
+            long duration = System.currentTimeMillis() - startTime;
+            result.append(String.format("\n✅ PRECARGA BÁSICA COMPLETADA\n"));
+            result.append(String.format("📊 Items precargados: %d\n", itemsPreloaded));
+            result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
+
+            return result.toString();
+
+        } catch (Exception e) {
+            logger.error("❌ Error en precarga básica: {}", e.getMessage());
+            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            return result.toString();
+        }
+    }
+
+    /**
+     * Precarga completa de un departamento
+     */
+    private String preloadDepartmentReports(int electionId, int departmentId, StringBuilder result, long startTime) {
+        try {
+            result.append(String.format("🏛️ PRECARGA DEPARTAMENTO %d\n", departmentId));
+
+            // 1. Reporte geográfico del departamento
+            result.append("⏳ Precargando reporte geográfico del departamento...\n");
+            String deptReport = generateDepartmentReportString(departmentId, electionId);
+            if (deptReport.startsWith("ERROR")) {
+                result.append("   ❌ Error generando reporte geográfico\n");
+                return result.toString();
+            }
+            result.append("   ✅ Reporte geográfico generado\n");
+
+            // 2. Obtener todos los ciudadanos del departamento
+            result.append("⏳ Obteniendo lista de ciudadanos del departamento...\n");
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByDepartment(departmentId);
+            result.append(String.format("   📊 Encontrados %d ciudadanos\n", citizens.size()));
+
+            // 3. Precargar reportes de ciudadanos en lotes (solo una muestra para evitar sobrecarga)
+            result.append("⏳ Precargando muestra de reportes de ciudadanos...\n");
+            int maxSample = Math.min(citizens.size(), 100); // Limitar a 100 ciudadanos como muestra
+            int preloadedCitizens = 0;
+
+            for (int i = 0; i < maxSample; i++) {
+                try {
+                    String documento = (String) citizens.get(i).get("documento");
+                    String citizenReport = generateCitizenReportString(documento, electionId);
+                    if (!citizenReport.startsWith("ERROR")) {
+                        preloadedCitizens++;
+                    }
+                } catch (Exception e) {
+                    // Continuar con el siguiente ciudadano
+                }
+
+                // Log de progreso cada 25 ciudadanos
+                if ((i + 1) % 25 == 0) {
+                    result.append(String.format("   📈 Progreso: %d/%d ciudadanos\n", i + 1, maxSample));
+                }
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            result.append(String.format("\n✅ PRECARGA DEPARTAMENTO %d COMPLETADA\n", departmentId));
+            result.append(String.format("📊 Ciudadanos precargados: %d/%d (muestra)\n", preloadedCitizens, maxSample));
+            result.append(String.format("👥 Total ciudadanos en departamento: %d\n", citizens.size()));
+            result.append(String.format("⏱️ Tiempo total: %d ms\n", duration));
+
+            if (maxSample < citizens.size()) {
+                result.append(String.format("💡 Nota: Se precargó una muestra de %d ciudadanos de %d totales\n", maxSample, citizens.size()));
+            }
+
+            return result.toString();
+
+        } catch (Exception e) {
+            logger.error("❌ Error en precarga de departamento {}: {}", departmentId, e.getMessage());
+            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            return result.toString();
+        }
+    }
+
+    /**
+     * Precarga completa de un municipio
+     */
+    private String preloadMunicipalityReports(int electionId, int municipalityId, StringBuilder result, long startTime) {
+        try {
+            result.append(String.format("🏙️ PRECARGA MUNICIPIO %d\n", municipalityId));
+
+            // Reporte geográfico del municipio
+            String munReport = generateMunicipalityReportString(municipalityId, electionId);
+            if (munReport.startsWith("ERROR")) {
+                result.append("   ❌ Error generando reporte geográfico\n");
+                return result.toString();
+            }
+
+            // Obtener ciudadanos del municipio
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByMunicipality(municipalityId);
+            int maxSample = Math.min(citizens.size(), 50); // Muestra de 50
+            int preloaded = 0;
+
+            for (int i = 0; i < maxSample; i++) {
+                try {
+                    String documento = (String) citizens.get(i).get("documento");
+                    String citizenReport = generateCitizenReportString(documento, electionId);
+                    if (!citizenReport.startsWith("ERROR")) {
+                        preloaded++;
+                    }
+                } catch (Exception e) {
+                    // Continuar
+                }
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            result.append(String.format("\n✅ PRECARGA MUNICIPIO %d COMPLETADA\n", municipalityId));
+            result.append(String.format("📊 Ciudadanos precargados: %d/%d (muestra)\n", preloaded, maxSample));
+            result.append(String.format("👥 Total ciudadanos en municipio: %d\n", citizens.size()));
+            result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
+
+            return result.toString();
+
+        } catch (Exception e) {
+            logger.error("❌ Error en precarga de municipio {}: {}", municipalityId, e.getMessage());
+            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            return result.toString();
+        }
+    }
+
+    /**
+     * Precarga completa de un puesto de votación
+     */
+    private String preloadPuestoReports(int electionId, int puestoId, StringBuilder result, long startTime) {
+        try {
+            result.append(String.format("🗳️ PRECARGA PUESTO %d\n", puestoId));
+
+            // Obtener ciudadanos del puesto
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByPuesto(puestoId);
+            int preloaded = 0;
+
+            for (Map<String, Object> citizen : citizens) {
+                try {
+                    String documento = (String) citizen.get("documento");
+                    String citizenReport = generateCitizenReportString(documento, electionId);
+                    if (!citizenReport.startsWith("ERROR")) {
+                        preloaded++;
+                    }
+                } catch (Exception e) {
+                    // Continuar
+                }
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            result.append(String.format("\n✅ PRECARGA PUESTO %d COMPLETADA\n", puestoId));
+            result.append(String.format("📊 Ciudadanos precargados: %d\n", preloaded));
+            result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
+
+            return result.toString();
+
+        } catch (Exception e) {
+            logger.error("❌ Error en precarga de puesto {}: {}", puestoId, e.getMessage());
+            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            return result.toString();
+        }
+    }
+
+    /**
+     * Precarga completa de una mesa
+     */
+    private String preloadMesaReports(int electionId, int mesaId, StringBuilder result, long startTime) {
+        try {
+            result.append(String.format("📋 PRECARGA MESA %d\n", mesaId));
+
+            // Obtener ciudadanos de la mesa
+            List<Map<String, Object>> citizens = connectionDB.getCitizensByMesa(mesaId);
+            int preloaded = 0;
+
+            for (Map<String, Object> citizen : citizens) {
+                try {
+                    String documento = (String) citizen.get("documento");
+                    String citizenReport = generateCitizenReportString(documento, electionId);
+                    if (!citizenReport.startsWith("ERROR")) {
+                        preloaded++;
+                    }
+                } catch (Exception e) {
+                    // Continuar
+                }
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            result.append(String.format("\n✅ PRECARGA MESA %d COMPLETADA\n", mesaId));
+            result.append(String.format("📊 Ciudadanos precargados: %d\n", preloaded));
+            result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
+
+            return result.toString();
+
+        } catch (Exception e) {
+            logger.error("❌ Error en precarga de mesa {}: {}", mesaId, e.getMessage());
+            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            return result.toString();
+        }
+    }
+
+    /**
+     * Precarga completa del sistema
+     */
+    private String preloadAllReports(int electionId, StringBuilder result, long startTime) {
+        try {
+            result.append("🌐 PRECARGA COMPLETA DEL SISTEMA\n");
+            result.append("⚠️ ADVERTENCIA: Esta operación puede tomar mucho tiempo\n\n");
+
+            // 1. Precarga básica
+            result.append("📋 Fase 1: Precarga básica...\n");
+            preloadBasicReports(electionId, new StringBuilder(), System.currentTimeMillis());
+            result.append("   ✅ Precarga básica completada\n");
+
+            // 2. Precarga de departamentos principales
+            result.append("\n🏛️ Fase 2: Precarga de departamentos principales...\n");
+            List<Map<String, Object>> departments = connectionDB.getAllDepartments();
+            int deptCount = 0;
+
+            for (Map<String, Object> dept : departments) {
+                try {
+                    int deptId = (Integer) dept.get("id");
+                    if (deptCount < 3) { // Limitar a los primeros 3 departamentos
+                        preloadDepartmentReports(electionId, deptId, new StringBuilder(), System.currentTimeMillis());
+                        result.append(String.format("   ✅ Departamento %d precargado\n", deptId));
+                        deptCount++;
+                    }
+                } catch (Exception e) {
+                    result.append(String.format("   ❌ Error en departamento\n"));
+                }
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            result.append(String.format("\n✅ PRECARGA COMPLETA FINALIZADA\n"));
+            result.append(String.format("📊 Departamentos procesados: %d\n", deptCount));
+            result.append(String.format("⏱️ Tiempo total: %d ms (%.1f minutos)\n",
+                    duration, duration / 60000.0));
+
+            return result.toString();
+
+        } catch (Exception e) {
+            logger.error("❌ Error en precarga completa: {}", e.getMessage());
+            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            return result.toString();
+        }
+    }
+
+// =================== MÉTODOS HELPER ADICIONALES ===================
+
+    /**
+     * Formatea números grandes para mejor lectura
+     */
+    private String formatNumber(Object number) {
+        if (number == null) return "0";
+
+        try {
+            long num = ((Number) number).longValue();
+            if (num >= 1_000_000) {
+                return String.format("%.1fM", num / 1_000_000.0);
+            } else if (num >= 1_000) {
+                return String.format("%.1fK", num / 1_000.0);
+            } else {
+                return String.valueOf(num);
+            }
+        } catch (Exception e) {
+            return String.valueOf(number);
+        }
+    }
+
+
+
+
 
 }
