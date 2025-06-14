@@ -114,7 +114,6 @@ public class VotingManagerImpl implements ConfigurationService {
         return isElectionReadyForConfiguration(electionId);
     }
 
-    // =================== MÉTODOS PARA GENERAR STRINGS FORMATEADOS ===================
 
     public String generateMachineConfigurationString(int mesaId, int electionId) {
         logger.info("Generating machine configuration string for mesa {} and election {}", mesaId, electionId);
