@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.lang.reflect.Method;
 
 // Imports específicos para las clases generadas por Ice
 import VotingSystem.ConfigurationCache;
@@ -62,17 +63,23 @@ public class ConfigurationCacheProxyImpl implements ConfigurationCache {
     private VotingConfiguration loadConfigurationFromFile(File file) throws IOException {
         try (FileInputStream fis = new FileInputStream(file)) {
             byte[] data = fis.readAllBytes();
-            
+
             // Crear InputStream de Ice para deserializar
             InputStream inputStream = new InputStream(communicator, data);
             inputStream.startEncapsulation();
-            
-            // Leer el objeto VotingConfiguration
+
+            // Crear el objeto VotingConfiguration
             VotingConfiguration config = new VotingConfiguration();
-            config.ice_read(inputStream);
-            
+
+            // Usar reflexión para invocar el método _iceReadImpl
+            Method iceReadMethod = VotingConfiguration.class.getDeclaredMethod("_iceReadImpl", InputStream.class);
+            iceReadMethod.setAccessible(true); // Permite acceder al método protegido
+            iceReadMethod.invoke(config, inputStream); // Invoca el método con el InputStream
+
             inputStream.endEncapsulation();
             return config;
+        } catch (Exception e) {
+            throw new IOException("Error al cargar configuración desde archivo", e);
         }
     }
 
@@ -83,9 +90,9 @@ public class ConfigurationCacheProxyImpl implements ConfigurationCache {
     }
 
     @Override
-    public void preloadConfigurations(java.util.List<Integer> mesaIds, int electionId, Current current) {
+    public void preloadConfigurations(int[] mesaIds, int electionId, Current current) {
         for (int mesaId : mesaIds) {
-            getConfiguration(mesaId, electionId, current); // Carga en caché
+            getConfiguration(mesaId, electionId, current);
         }
     }
 }

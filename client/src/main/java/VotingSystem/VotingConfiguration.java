@@ -15,17 +15,15 @@
 
 package VotingSystem;
 
-public class VotingConfiguration extends com.zeroc.Ice.Value
-{
-    public VotingConfiguration()
-    {
+public class VotingConfiguration extends com.zeroc.Ice.Value {
+    public VotingConfiguration() {
         this.mesaInfo = new MesaInfo();
         this.electionInfo = new ElectionInfo();
         this.packageVersion = "";
     }
 
-    public VotingConfiguration(MesaInfo mesaInfo, ElectionInfo electionInfo, Candidate[] candidates, Citizen[] citizens, String packageVersion, long generationTimestamp)
-    {
+    public VotingConfiguration(MesaInfo mesaInfo, ElectionInfo electionInfo, Candidate[] candidates, Citizen[] citizens,
+            String packageVersion, long generationTimestamp) {
         this.mesaInfo = mesaInfo;
         this.electionInfo = electionInfo;
         this.candidates = candidates;
@@ -46,19 +44,16 @@ public class VotingConfiguration extends com.zeroc.Ice.Value
 
     public long generationTimestamp;
 
-    public VotingConfiguration clone()
-    {
-        return (VotingConfiguration)super.clone();
+    public VotingConfiguration clone() {
+        return (VotingConfiguration) super.clone();
     }
 
-    public static String ice_staticId()
-    {
+    public static String ice_staticId() {
         return "::VotingSystem::VotingConfiguration";
     }
 
     @Override
-    public String ice_id()
-    {
+    public String ice_id() {
         return ice_staticId();
     }
 
@@ -67,8 +62,7 @@ public class VotingConfiguration extends com.zeroc.Ice.Value
 
     /** @hidden */
     @Override
-    protected void _iceWriteImpl(com.zeroc.Ice.OutputStream ostr_)
-    {
+    protected void _iceWriteImpl(com.zeroc.Ice.OutputStream ostr_) {
         ostr_.startSlice(ice_staticId(), -1, true);
         MesaInfo.ice_write(ostr_, mesaInfo);
         ElectionInfo.ice_write(ostr_, electionInfo);
@@ -81,8 +75,7 @@ public class VotingConfiguration extends com.zeroc.Ice.Value
 
     /** @hidden */
     @Override
-    protected void _iceReadImpl(com.zeroc.Ice.InputStream istr_)
-    {
+    protected void _iceReadImpl(com.zeroc.Ice.InputStream istr_) {
         istr_.startSlice();
         mesaInfo = MesaInfo.ice_read(istr_);
         electionInfo = ElectionInfo.ice_read(istr_);
