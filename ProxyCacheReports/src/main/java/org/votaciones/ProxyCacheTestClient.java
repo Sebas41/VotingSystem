@@ -77,6 +77,9 @@ public class ProxyCacheTestClient {
                     case "11":
                         testAuxiliaryMethods(proxyCache, scanner);
                         break;
+                    case "12":
+                        testHotspotGenerator(proxyCache, scanner);
+                        break;
                     case "0":
                         running = false;
                         break;
@@ -101,6 +104,7 @@ public class ProxyCacheTestClient {
         }
     }
 
+    // También agregar la opción al menú principal:
     private static void mostrarMenu() {
         System.out.println("\n📋 ========== MENÚ DE PRUEBAS ==========");
         System.out.println("1. 👤 Consultar reporte de ciudadano");
@@ -114,11 +118,11 @@ public class ProxyCacheTestClient {
         System.out.println("9. 📥 Precargar reportes (con opciones geográficas)");
         System.out.println("10. 📊 Ver estadísticas del cache");
         System.out.println("11. 🔧 Probar métodos auxiliares geográficos");
+        System.out.println("12. 🔥 Generar hotspot (probar cache inteligente)"); // ⭐ NUEVA OPCIÓN
         System.out.println("0. 🚪 Salir");
         System.out.println("==========================================");
         System.out.print("Selecciona una opción: ");
     }
-
     private static void testCitizenReports(ReportsServicePrx proxyCache, Scanner scanner) {
         try {
             System.out.print("📝 Ingresa el documento del ciudadano (ej: 12345678): ");
@@ -479,4 +483,99 @@ public class ProxyCacheTestClient {
             System.err.println("❌ Error: " + e.getMessage());
         }
     }
+
+    private static void testHotspotGenerator(ReportsServicePrx proxyCache, Scanner scanner) {
+        try {
+            System.out.println("🔥 ========== GENERADOR DE HOTSPOTS ==========");
+            System.out.println("Este test simula actividad intensa para activar la precarga predictiva");
+
+            System.out.print("📝 Ingresa el tipo de ubicación (puesto/mesa/municipality): ");
+            String locationType = scanner.nextLine().trim().toLowerCase();
+
+            System.out.print("📝 Ingresa el ID de la ubicación (ej: 1): ");
+            int locationId = Integer.parseInt(scanner.nextLine().trim());
+
+            System.out.print("📝 Número de consultas a simular (ej: 5): ");
+            int numQueries = Integer.parseInt(scanner.nextLine().trim());
+
+            int electionId = 1;
+
+            System.out.println("\n🚀 Iniciando simulación de hotspot...");
+            System.out.println("⏰ Haciendo " + numQueries + " consultas cada 10 segundos");
+            System.out.println("👀 Observa los logs del servidor para ver la detección del hotspot");
+
+            for (int round = 1; round <= 3; round++) {
+                System.out.println("\n🔄 Ronda " + round + " de consultas:");
+
+                for (int i = 1; i <= numQueries; i++) {
+                    long startTime = System.currentTimeMillis();
+
+                    switch (locationType) {
+                        case "puesto":
+                            String[] puestoResults = proxyCache.getPuestoCitizenDocuments(locationId, electionId);
+                            System.out.println("   " + i + ". Puesto " + locationId + ": " + puestoResults.length + " documentos");
+                            break;
+
+                        case "mesa":
+                            String[] mesaResults = proxyCache.getMesaCitizenReports(locationId, electionId);
+                            System.out.println("   " + i + ". Mesa " + locationId + ": " + mesaResults.length + " ciudadanos");
+                            break;
+
+                        case "municipality":
+                            String geoResult = proxyCache.getGeographicReports(locationId, "municipality", electionId);
+                            System.out.println("   " + i + ". Municipio " + locationId + ": " +
+                                    (geoResult.length() > 100 ? geoResult.substring(0, 100) + "..." : geoResult));
+                            break;
+                    }
+
+                    long endTime = System.currentTimeMillis();
+                    System.out.println("       ⏱️ Tiempo: " + (endTime - startTime) + " ms");
+
+                    // Pausa corta entre consultas
+                    Thread.sleep(500);
+                }
+
+                // Mostrar estadísticas después de cada ronda
+                System.out.println("\n📊 Estadísticas actuales del cache:");
+                String stats = proxyCache.getCacheStats();
+                String[] lines = stats.split("\n");
+                for (String line : lines) {
+                    if (line.contains("Total consultas") ||
+                            line.contains("Precarga predictiva") ||
+                            line.contains("Hit rate") ||
+                            line.contains("Patrones de consulta activos") ||
+                            line.contains(locationType)) {
+                        System.out.println("   " + line);
+                    }
+                }
+
+                if (round < 3) {
+                    System.out.println("\n⏳ Esperando 10 segundos para la siguiente ronda...");
+                    System.out.println("💡 Durante esta pausa, el sistema debería detectar el hotspot y ejecutar precarga predictiva");
+                    Thread.sleep(10000);
+                }
+            }
+
+            System.out.println("\n✅ Simulación completada!");
+            System.out.println("🔍 Revisa los logs del servidor para confirmar:");
+            System.out.println("   • Detección de hotspot");
+            System.out.println("   • Ejecución de precarga predictiva");
+            System.out.println("   • Mejora en hit rate");
+
+        } catch (Exception e) {
+            System.err.println("❌ Error en simulación: " + e.getMessage());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 }
