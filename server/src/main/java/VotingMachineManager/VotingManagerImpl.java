@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 // =================== IMPORTS ACTUALIZADOS DE VotingSystem ===================
-import VotingSystem.ConfigurationService;
+import VotingsSystem.ConfigurationService;
 
 public class VotingManagerImpl implements ConfigurationService {
 

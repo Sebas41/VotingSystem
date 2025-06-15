@@ -46,7 +46,9 @@ sourceSets {
             srcDirs = [
                     'src/main/java',           // Código fuente principal
                     '../ReportsSystem',        // Clases generadas por ReportsSystem.ice
-                    '../VotingSystem'          // Clases generadas por VotingSystem.ice
+                    '../VotingsSystem',
+                    '../VoteNotification',
+
             ]
         }
     }

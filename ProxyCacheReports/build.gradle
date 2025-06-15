@@ -18,9 +18,8 @@ sourceSets {
         java {
 
             srcDirs = ['src/main/java']
-
-
             srcDirs += ['../ReportsSystem']
+            srcDirs += ['../VoteNotification']
         }
         resources {
             srcDirs = ['src/main/resources']

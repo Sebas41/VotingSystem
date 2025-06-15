@@ -1,7 +1,7 @@
 // VotingSystem.ice - Versión simplificada con strings (patrón máquina de café)
 #pragma once
 
-module VotingSystem {
+module VotingsSystem {
     
     sequence<string> StringArray;
     sequence<int> IntSeq;

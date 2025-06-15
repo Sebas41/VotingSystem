@@ -11,19 +11,29 @@ import model.ReliableMessage;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import model.Vote;
 
+import Reports.VoteNotifierImpl;
+import model.Vote;
+import java.util.ArrayList.*;
+import java.util.logging.Logger;
+
+import Reports.VoteNotifierImpl;
 
 public class ServerControllerImpl implements ServerControllerInterface {
 
     private ElectionInterface election;
     private ConnectionDB connectionDB;
-
+    private static VoteNotifierImpl voteNotifier;
 
     public ServerControllerImpl() {
         this.connectionDB = new ConnectionDB();
         this.election = new ElectionImpl(0, new Date(), new Date(), "");
         cargarDatosPrueba();  // Aquí inicializamos datos de ejemplo
+    }
+
+    public static void setVoteNotifier(VoteNotifierImpl notifier) {
+        voteNotifier = notifier;
+        System.out.println("🔗 ServerController conectado con VoteNotifier");
     }
 
     private void cargarDatosPrueba() {
@@ -49,34 +59,74 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
     @Override
     public void registerVote(ReliableMessage newVote) {
+        System.out.println("=== Registra votante de prueba ===");
         try {
             Vote vote = newVote.getMessage();
-            //String jsonPayload = newVote.getMessage().message;
-            //Vote vote = new com.fasterxml.jackson.databind.ObjectMapper().readValue(jsonPayload, Vote.class);
-
-            //int candidateId = Integer.parseInt(vote.getVote());
             int candidateId = Integer.parseInt(vote.vote);
+
             if (!election.isElectionActive()) {
                 System.out.println("La elección no está activa. No se puede registrar el voto.");
                 return;
             }
-
-
             election.addVoteToCandidate(candidateId, vote);
             connectionDB.storeVote(vote);
-            System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
-            //System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
+            System.out.println("VOTE HAS BEEN REGISTRED");
 
-            // Verifica que la UI esté inicializada antes de actualizar
-            ServerUI ui = ServerUI.getInstance();
-            if (ui != null) {
-                //ui.showVoteInfo("Voto recibido para candidato ID: " + candidateId);
+            if (voteNotifier != null) {
+                try {
+
+                    String candidateName = getCandidateName(candidateId);
+
+                    String voteInfo = formatVoteNotification(candidateName, vote);
+
+                    voteNotifier.notifyVoteReceived(voteInfo, vote.getElection());
+
+                    System.out.println("📢 Notificación enviada: " + candidateName);
+
+                } catch (Exception e) {
+                    System.err.println("⚠️ Error enviando notificación de voto: " + e.getMessage());
+                }
+            } else {
+                System.out.println("⚠️ VoteNotifier no está conectado");
             }
+
+            System.out.println("Voto registrado exitosamente para candidato ID: " + candidateId);
+
 
         } catch (Exception e) {
             System.err.println("Error al registrar el voto: " + e.getMessage());
         }
     }
+
+    private String getCandidateName(int candidateId) {
+        try {
+            List<Candidate> candidates = election.getCandidates();
+            for (Candidate candidate : candidates) {
+                if (candidate.getId() == candidateId) {
+                    return candidate.getName();
+                }
+            }
+            // Si no se encuentra, usar un nombre genérico
+            return "Candidato " + candidateId;
+        } catch (Exception e) {
+            System.err.println("Error obteniendo nombre del candidato: " + e.getMessage());
+            return "Candidato " + candidateId;
+        }
+    }
+
+    private String formatVoteNotification(String candidateName, Vote vote) {
+        try {
+            long timestamp = vote.getDate();
+            int electionId = vote.getElection();
+
+            return candidateName + "-" + timestamp + "-" + electionId;
+
+        } catch (Exception e) {
+            System.err.println("Error formateando notificación: " + e.getMessage());
+            return candidateName + "-" + System.currentTimeMillis() + "-" + vote.getElection();
+        }
+    }
+
 
     @Override
     public String getElectionInfo() {

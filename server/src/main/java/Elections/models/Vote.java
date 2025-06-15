@@ -20,6 +20,11 @@ public class Vote  {
         return machineId;
     }
 
+    public String getMachineId() {
+        return machineId;
+    }
+
+
     public String getVote() {
         return vote;
     }

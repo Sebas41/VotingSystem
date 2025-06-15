@@ -83,7 +83,7 @@ module ReportsSystem {
          */
         StringArray getMesaCitizenDocuments(int mesaId, int electionId);
     };
-    
+
     exception ReportsException {
         string reason;
         int errorCode;

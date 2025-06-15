@@ -23,7 +23,7 @@ public class ElectionSetupTest {
         System.out.println("   Database healthy: " + healthy);
 
         if (!healthy) {
-            System.err.println("   ERROR: Database connection failed!");
+            System.err.println("ERROR: Database connection failed!");
             return;
         }
 
