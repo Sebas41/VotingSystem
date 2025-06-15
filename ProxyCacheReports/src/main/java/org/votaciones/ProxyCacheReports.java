@@ -33,7 +33,7 @@ public class ProxyCacheReports implements ReportsService {
 
     // =================== NUEVO: SISTEMA DE CACHE INTELIGENTE ===================
 
-    // 🧠 Análisis de patrones de consulta
+    //  Análisis de patrones de consulta
     private final Map<String, QueryPattern> queryPatterns = new ConcurrentHashMap<>();
     private final ScheduledExecutorService smartCacheScheduler = Executors.newScheduledThreadPool(2);
 
@@ -176,7 +176,7 @@ public class ProxyCacheReports implements ReportsService {
     // =================== CONSTRUCTOR MEJORADO ===================
     public ProxyCacheReports(ReportsServicePrx reportsServer) {
         this.reportsServer = reportsServer;
-        logger.info("🧠 ProxyCacheReports INTELIGENTE inicializado");
+        logger.info(" ProxyCacheReports INTELIGENTE inicializado");
 
         // Iniciar análisis inteligente cada 30 segundos
         smartCacheScheduler.scheduleAtFixedRate(this::analyzeAndPreload, 30, 30, TimeUnit.SECONDS);
@@ -346,8 +346,8 @@ public class ProxyCacheReports implements ReportsService {
                             ". Tipos válidos: basic, department, municipality, puesto, mesa, all");
             }
         } catch (Exception e) {
-            logger.error("❌ Error en precarga tipo '{}': {}", locationType, e.getMessage());
-            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            logger.error(" Error en precarga tipo '{}': {}", locationType, e.getMessage());
+            result.append(" ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
     }
@@ -355,7 +355,7 @@ public class ProxyCacheReports implements ReportsService {
     @Override
     public String getCacheStats(Current current) {
         StringBuilder stats = new StringBuilder();
-        stats.append("🧠 ========== ESTADÍSTICAS CACHE INTELIGENTE ==========\n");
+        stats.append(" ========== ESTADÍSTICAS CACHE INTELIGENTE ==========\n");
 
         // Estadísticas básicas del cache
         stats.append(String.format("💾 Total entradas en cache: %d\n", cache.size()));
@@ -383,7 +383,7 @@ public class ProxyCacheReports implements ReportsService {
                 .filter(p -> p.getRecentQueries() > 0)
                 .sorted((a, b) -> Integer.compare(b.getRecentQueries(), a.getRecentQueries()))
                 .limit(5)
-                .collect(Collectors.toList()); // ✅ CORRECTO
+                .collect(Collectors.toList()); //  CORRECTO
 
         if (!topHotspots.isEmpty()) {
             stats.append("\n🏆 Top Hotspots:\n");
@@ -559,7 +559,7 @@ public class ProxyCacheReports implements ReportsService {
     }
 
     /**
-     * 🧠 Análisis principal: detecta hotspots y ejecuta precarga predictiva
+     *  Análisis principal: detecta hotspots y ejecuta precarga predictiva
      */
     private void analyzeAndPreload() {
         try {
@@ -611,7 +611,7 @@ public class ProxyCacheReports implements ReportsService {
                     hotspot.markPredictiveLoad();
                     predictiveLoads.incrementAndGet();
 
-                    logger.info("✅ Precarga predictiva completada para {} {}",
+                    logger.info(" Precarga predictiva completada para {} {}",
                             hotspot.getLocationType(), hotspot.getLocationId());
 
                 } catch (Exception e) {
@@ -673,7 +673,7 @@ public class ProxyCacheReports implements ReportsService {
             return result;
 
         } catch (Exception e) {
-            logger.error("❌ Error consultando servidor para {}: {}", cacheKey, e.getMessage());
+            logger.error(" Error consultando servidor para {}: {}", cacheKey, e.getMessage());
 
             // 4. Fallback: devolver cache expirado si existe
             if (entry != null) {
@@ -710,7 +710,7 @@ public class ProxyCacheReports implements ReportsService {
             String electionKey = generateCacheKey("election", String.valueOf(electionId), "");
             cache.put(electionKey, new CacheEntry(electionReport, System.currentTimeMillis()));
             itemsPreloaded++;
-            result.append("   ✅ Reporte de elección cacheado\n");
+            result.append("    Reporte de elección cacheado\n");
 
             // 2. Elecciones disponibles
             result.append("⏳ Precargando lista de elecciones...\n");
@@ -718,7 +718,7 @@ public class ProxyCacheReports implements ReportsService {
             String electionsKey = "available_elections";
             cache.put(electionsKey, new CacheEntry(String.join("###", elections), System.currentTimeMillis()));
             itemsPreloaded++;
-            result.append("   ✅ Lista de elecciones cacheada\n");
+            result.append("    Lista de elecciones cacheada\n");
 
             // 3. Reportes geográficos principales (departamentos)
             result.append("⏳ Precargando reportes de departamentos principales...\n");
@@ -733,17 +733,17 @@ public class ProxyCacheReports implements ReportsService {
                     result.append("   ⚠️ Error con departamento ").append(deptId).append("\n");
                 }
             }
-            result.append("   ✅ Reportes geográficos principales cacheados\n");
+            result.append("    Reportes geográficos principales cacheados\n");
 
             long duration = System.currentTimeMillis() - startTime;
-            result.append(String.format("\n✅ PRECARGA BÁSICA COMPLETADA\n"));
+            result.append(String.format("\n PRECARGA BÁSICA COMPLETADA\n"));
             result.append(String.format("📊 Items precargados: %d\n", itemsPreloaded));
             result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
 
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga básica: {}", e.getMessage());
+            logger.error(" Error en precarga básica: {}", e.getMessage());
             throw e;
         }
     }
@@ -757,14 +757,14 @@ public class ProxyCacheReports implements ReportsService {
             String deptReport = reportsServer.getGeographicReports(departmentId, "department", electionId);
             String deptKey = generateCacheKey("geographic", "department_" + departmentId, String.valueOf(electionId));
             cache.put(deptKey, new CacheEntry(deptReport, System.currentTimeMillis()));
-            result.append("   ✅ Reporte geográfico cacheado\n");
+            result.append("    Reporte geográfico cacheado\n");
 
             // 2. Obtener todos los ciudadanos del departamento
             result.append("⏳ Obteniendo lista de ciudadanos del departamento...\n");
             String[] citizenDocuments = reportsServer.getDepartmentCitizenDocuments(departmentId, electionId);
 
             if (citizenDocuments.length > 0 && citizenDocuments[0].startsWith("ERROR")) {
-                result.append("   ❌ Error obteniendo ciudadanos: ").append(citizenDocuments[0]).append("\n");
+                result.append("    Error obteniendo ciudadanos: ").append(citizenDocuments[0]).append("\n");
                 return result.toString();
             }
 
@@ -801,7 +801,7 @@ public class ProxyCacheReports implements ReportsService {
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            result.append(String.format("\n✅ PRECARGA DEPARTAMENTO %d COMPLETADA\n", departmentId));
+            result.append(String.format("\n PRECARGA DEPARTAMENTO %d COMPLETADA\n", departmentId));
             result.append(String.format("📊 Ciudadanos precargados: %d/%d\n", preloadedCitizens, citizenDocuments.length));
             result.append(String.format("⏱️ Tiempo total: %d ms\n", duration));
             result.append(String.format("⚡ Promedio: %.2f ms/ciudadano\n",
@@ -810,8 +810,8 @@ public class ProxyCacheReports implements ReportsService {
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga de departamento {}: {}", departmentId, e.getMessage());
-            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            logger.error(" Error en precarga de departamento {}: {}", departmentId, e.getMessage());
+            result.append(" ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
     }
@@ -825,14 +825,14 @@ public class ProxyCacheReports implements ReportsService {
             cache.put(munKey, new CacheEntry(munReport, System.currentTimeMillis()));
 
             long duration = System.currentTimeMillis() - startTime;
-            result.append(String.format("\n✅ PRECARGA MUNICIPIO %d COMPLETADA\n", municipalityId));
+            result.append(String.format("\n PRECARGA MUNICIPIO %d COMPLETADA\n", municipalityId));
             result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
 
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga de municipio {}: {}", municipalityId, e.getMessage());
-            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            logger.error(" Error en precarga de municipio {}: {}", municipalityId, e.getMessage());
+            result.append(" ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
     }
@@ -846,15 +846,15 @@ public class ProxyCacheReports implements ReportsService {
             int preloadedCitizens = preloadCitizensBatch(citizenDocuments, electionId, result);
 
             long duration = System.currentTimeMillis() - startTime;
-            result.append(String.format("\n✅ PRECARGA PUESTO %d COMPLETADA\n", puestoId));
+            result.append(String.format("\n PRECARGA PUESTO %d COMPLETADA\n", puestoId));
             result.append(String.format("📊 Ciudadanos precargados: %d\n", preloadedCitizens));
             result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
 
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga de puesto {}: {}", puestoId, e.getMessage());
-            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            logger.error(" Error en precarga de puesto {}: {}", puestoId, e.getMessage());
+            result.append(" ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
     }
@@ -871,14 +871,14 @@ public class ProxyCacheReports implements ReportsService {
             result.append(String.format("   📊 Ciudadanos de mesa cacheados: %d\n", mesaCitizens.length));
 
             long duration = System.currentTimeMillis() - startTime;
-            result.append(String.format("\n✅ PRECARGA MESA %d COMPLETADA\n", mesaId));
+            result.append(String.format("\n PRECARGA MESA %d COMPLETADA\n", mesaId));
             result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
 
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga de mesa {}: {}", mesaId, e.getMessage());
-            result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
+            logger.error(" Error en precarga de mesa {}: {}", mesaId, e.getMessage());
+            result.append(" ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
     }
@@ -896,7 +896,7 @@ public class ProxyCacheReports implements ReportsService {
      */
     private int preloadCitizensBatch(String[] citizenDocuments, int electionId, StringBuilder result) {
         if (citizenDocuments.length > 0 && citizenDocuments[0].startsWith("ERROR")) {
-            result.append("   ❌ Error obteniendo ciudadanos: ").append(citizenDocuments[0]).append("\n");
+            result.append("    Error obteniendo ciudadanos: ").append(citizenDocuments[0]).append("\n");
             return 0;
         }
 
@@ -973,12 +973,12 @@ public class ProxyCacheReports implements ReportsService {
      */
     public void shutdown() {
         try {
-            logger.info("🛑 Cerrando sistema de cache inteligente...");
+            logger.info(" Cerrando sistema de cache inteligente...");
             smartCacheScheduler.shutdown();
             if (!smartCacheScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
                 smartCacheScheduler.shutdownNow();
             }
-            logger.info("✅ Sistema de cache inteligente cerrado correctamente");
+            logger.info(" Sistema de cache inteligente cerrado correctamente");
         } catch (InterruptedException e) {
             smartCacheScheduler.shutdownNow();
             Thread.currentThread().interrupt();

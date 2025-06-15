@@ -1,4 +1,5 @@
 package org.votaciones;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,20 +20,24 @@ import Controller.ServerControllerInterface;
 import VotingReciever.VotingReceiverImp;
 import reliableMessage.RMDestination;
 
+// ✅ IMPORTAR NUESTRO ConfigurationSender
+import configuration.ConfigurationSender;
 
 import javax.swing.*;
-
 import com.zeroc.Ice.Exception;
 
 /**
- * Servidor Electoral completo que maneja Reports, Voting, Observer y VotingReceiver
- * Patrón máquina de café con strings formateados + Patrón Observer + Reliable Messaging
+ * Servidor Electoral completo que maneja Reports, Voting, Observer, VotingReceiver y ConfigurationSender
+ * Patrón máquina de café con strings formateados + Patrón Observer + Reliable Messaging + Configuración Remota
  */
 public class Server {
 
-    // ✅ AGREGADO: Declaración de variables estáticas
+    // ✅ VARIABLES ESTÁTICAS EXISTENTES
     private static VoteNotifierImpl voteNotifier;
     private static ServerControllerInterface serverController;
+
+    // ✅ VARIABLE ESTÁTICA PARA NUESTRO CONFIGURATION SENDER
+    private static ConfigurationSender configurationSender;
 
     public static VoteNotifierImpl getVoteNotifier() {
         return voteNotifier;
@@ -42,13 +47,18 @@ public class Server {
         return serverController;
     }
 
+    // ✅ GETTER PARA CONFIGURATION SENDER
+    public static ConfigurationSender getConfigurationSender() {
+        return configurationSender;
+    }
+
     public static void main(String[] args) {
         List<String> params = new ArrayList<>();
 
         try (Communicator communicator = Util.initialize(args, "electoralserver.cfg", params)) {
 
             System.out.println("🏛️  Iniciando Servidor Electoral...");
-            System.out.println("📊 Configurando servicios Reports, Voting, Observer y VotingReceiver...");
+            System.out.println("📊 Configurando servicios Reports, Voting, Observer, VotingReceiver y ConfigurationSender...");
 
             // =================== CONFIGURACIÓN DE ADAPTERS ===================
 
@@ -56,7 +66,7 @@ public class Server {
             ObjectAdapter votingAdapter = communicator.createObjectAdapter("VotingServer");
             ObjectAdapter notifierAdapter = communicator.createObjectAdapter("VoteNotifierServer");
 
-            // ✅ AGREGADO: Adapter para VotingReceiver
+            // ✅ Adapter para VotingReceiver
             ObjectAdapter votingReceiverAdapter = communicator.createObjectAdapterWithEndpoints(
                     "VotingReceiverServer", "tcp -h localhost -p 10012"
             );
@@ -66,16 +76,9 @@ public class Server {
             System.out.println("🔌 Conectando a la base de datos...");
             ConnectionDBinterface connectionDB = new ConnectionDB();
 
-            // ✅ AGREGADO: Crear el controller del servidor
+            // ✅ Crear el controller del servidor
             System.out.println("🎮 Inicializando Controller del servidor...");
             serverController = new ServerControllerImpl();
-
-            // ✅ AGREGADO: Lanzar UI (opcional, descomenta si la necesitas)
-            /*
-            SwingUtilities.invokeLater(() -> {
-                ServerUI.launchUI(serverController);
-            });
-            */
 
             // =================== SERVICIO DE REPORTES ===================
 
@@ -88,6 +91,10 @@ public class Server {
             System.out.println("🗳️  Configurando servicio de Voting...");
             VotingManagerImpl votingManager = new VotingManagerImpl(connectionDB);
             votingAdapter.add((ConfigurationService) votingManager, Util.stringToIdentity("ConfigurationManager"));
+
+            // ✅ NUESTRO CONFIGURATION SENDER (SIMPLE)
+            System.out.println("📤 Configurando servicio de envío de configuraciones...");
+            configurationSender = new ConfigurationSender(votingManager, communicator);
 
             // =================== SERVICIO DE OBSERVER ===================
 
@@ -110,7 +117,7 @@ public class Server {
             reportsAdapter.activate();
             votingAdapter.activate();
             notifierAdapter.activate();
-            votingReceiverAdapter.activate(); // ✅ AGREGADO
+            votingReceiverAdapter.activate();
 
             // =================== INFORMACIÓN DEL SERVIDOR ===================
 
@@ -123,6 +130,10 @@ public class Server {
             System.out.println("🗳️  Servicio Voting: ACTIVO");
             System.out.println("   - Identity: ConfigurationManager");
             System.out.println("   - Formato: Strings formateados (patrón máquina de café)");
+            System.out.println();
+            System.out.println("📤 Servicio ConfigurationSender: ACTIVO");
+            System.out.println("   - Función: Envío de configuraciones a mesas de votación");
+            System.out.println("   - Mesa objetivo: 6823 (Puerto 10843)");
             System.out.println();
             System.out.println("🔔 Servicio Observer: ACTIVO");
             System.out.println("   - Identity: VoteNotifier");
@@ -138,6 +149,14 @@ public class Server {
             System.out.println("====================================================");
             System.out.println();
 
+            // ✅ NUEVA PRUEBA AUTOMÁTICA DE CONFIGURACIÓN
+            System.out.println("🧪 Iniciando prueba automática de configuración...");
+
+            // Lanzar prueba en hilo separado
+            new Thread(() -> {
+                configurationSender.testSendToMesa6823();
+            }).start();
+
             // =================== ESPERA Y SHUTDOWN ===================
 
             communicator.waitForShutdown();
@@ -152,6 +171,61 @@ public class Server {
             System.err.println("❌ Error general en el servidor electoral: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
+        }
+    }
+
+    // ✅ MÉTODOS SIMPLIFICADOS PARA USO EXTERNO
+
+    /**
+     * Envía configuración a una mesa específica
+     */
+    public static boolean sendConfigurationToMesa(int mesaId, int electionId) {
+        if (configurationSender == null) {
+            System.err.println("❌ ConfigurationSender no está inicializado");
+            return false;
+        }
+
+        System.out.println("📤 Enviando configuración a mesa " + mesaId + " para elección " + electionId);
+        return configurationSender.sendConfigurationToMachine(mesaId, electionId);
+    }
+
+    /**
+     * Verifica el estado de configuración de una mesa
+     */
+    public static String checkMesaConfigurationStatus(int mesaId) {
+        if (configurationSender == null) {
+            return "ERROR-ConfigurationSender no inicializado";
+        }
+
+        System.out.println("🔍 Verificando estado de mesa " + mesaId);
+
+        try {
+            int port = 10020 + (mesaId % 1000);
+            String endpoint = "ConfigurationReceiver:default -h localhost -p " + port;
+
+            com.zeroc.Ice.ObjectPrx base = configurationSender.communicator.stringToProxy(endpoint);
+            ConfigurationSystem.ConfigurationReceiverPrx receiver =
+                    ConfigurationSystem.ConfigurationReceiverPrx.checkedCast(base);
+
+            if (receiver != null) {
+                return receiver.getConfigurationStatus(mesaId);
+            } else {
+                return "ERROR-No se pudo conectar";
+            }
+
+        } catch (Exception e) {
+            return "ERROR-" + e.getMessage();
+        }
+    }
+
+    /**
+     * Método para pruebas manuales
+     */
+    public static void testConfiguration() {
+        if (configurationSender != null) {
+            new Thread(() -> {
+                configurationSender.testSendToMesa6823();
+            }).start();
         }
     }
 }

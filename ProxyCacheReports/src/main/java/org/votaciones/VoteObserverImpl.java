@@ -20,7 +20,7 @@ public class VoteObserverImpl implements VoteObserver {
 
     public VoteObserverImpl(ProxyCacheReports proxyCache) {
         this.proxyCache = proxyCache;
-        logger.info("🔔 VoteObserver inicializado - MODO TIEMPO REAL");
+        logger.info(" VoteObserver inicializado - MODO TIEMPO REAL");
     }
 
     @Override
@@ -114,7 +114,7 @@ public class VoteObserverImpl implements VoteObserver {
     }
 
     /**
-     * ⏰ Obtiene timestamp formateado
+     *  Obtiene timestamp formateado
      */
     private String getCurrentTimeString() {
         return new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
@@ -124,7 +124,7 @@ public class VoteObserverImpl implements VoteObserver {
     public void onElectionResultsUpdated(String resultsData, Current current) {
         try {
             logger.info("📈 Resultados de elección actualizados: {}", resultsData);
-            System.out.println("\n🔄 ========== RESULTADOS OFICIALES ACTUALIZADOS ==========");
+            System.out.println("\n ========== RESULTADOS OFICIALES ACTUALIZADOS ==========");
             System.out.println("📈 " + resultsData);
             System.out.println("===========================================================\n");
         } catch (Exception e) {
@@ -162,14 +162,12 @@ public class VoteObserverImpl implements VoteObserver {
 
         System.out.printf("📈 Total votos recibidos: %d\n", totalVotesReceived.get());
         if (lastVoteTimestamp > 0) {
-            System.out.printf("⏰ Último voto: %s\n", new java.util.Date(lastVoteTimestamp));
+            System.out.printf(" Último voto: %s\n", new java.util.Date(lastVoteTimestamp));
         }
         System.out.println("=================================================\n");
     }
 
-    /**
-     * 📈 Obtiene las estadísticas actuales como string
-     */
+
     public String getVoteStats() {
         StringBuilder stats = new StringBuilder();
         stats.append("📊 ========== ESTADÍSTICAS DE VOTOS (TIEMPO REAL) ==========\n");
@@ -178,7 +176,7 @@ public class VoteObserverImpl implements VoteObserver {
         stats.append(String.format("👥 Candidatos activos: %d\n", voteCount.size()));
 
         if (lastVoteTimestamp > 0) {
-            stats.append(String.format("⏰ Último voto: %s\n", new java.util.Date(lastVoteTimestamp)));
+            stats.append(String.format(" Último voto: %s\n", new java.util.Date(lastVoteTimestamp)));
         }
 
         stats.append("\n🗳️ Distribución de votos:\n");
@@ -198,18 +196,15 @@ public class VoteObserverImpl implements VoteObserver {
         return stats.toString();
     }
 
-    /**
-     * 🔄 Reinicia contadores
-     */
+
     public void resetCounters() {
         voteCount.clear();
         totalVotesReceived.set(0);
         lastVoteTimestamp = 0;
-        logger.info("🔄 Contadores de votos reiniciados");
-        System.out.println("\n🔄 ========== CONTADORES REINICIADOS ==========\n");
+        logger.info(" Contadores de votos reiniciados");
+        System.out.println("\n ========== CONTADORES REINICIADOS ==========\n");
     }
 
-    // Getters para acceso externo
     public Map<String, AtomicInteger> getVoteCount() {
         return new ConcurrentHashMap<>(voteCount);
     }

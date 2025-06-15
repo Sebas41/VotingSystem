@@ -5,10 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Test to setup and verify election data before running VotingMachineManager tests
- * This will diagnose and fix the "Election not ready" issue
- */
+
 public class ElectionSetupTest {
 
     public static void main(String[] args) {

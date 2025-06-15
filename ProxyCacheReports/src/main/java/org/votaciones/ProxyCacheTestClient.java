@@ -19,7 +19,7 @@ public class ProxyCacheTestClient {
     public static void main(String[] args) {
         try (Communicator communicator = Util.initialize(args)) {
 
-            System.out.println("🚀 ========== CLIENTE DE PRUEBA PROXY CACHE REPORTS ==========");
+            System.out.println(" ========== CLIENTE DE PRUEBA PROXY CACHE REPORTS ==========");
             System.out.println("🔌 Conectando al proxy cache...");
 
             // Conectar al proxy cache (no directamente al servidor)
@@ -27,11 +27,11 @@ public class ProxyCacheTestClient {
             ReportsServicePrx proxyCache = ReportsServicePrx.checkedCast(base);
 
             if (proxyCache == null) {
-                System.err.println("❌ Error: No se pudo conectar al proxy cache");
+                System.err.println(" Error: No se pudo conectar al proxy cache");
                 return;
             }
 
-            System.out.println("✅ Conectado al proxy cache exitosamente");
+            System.out.println(" Conectado al proxy cache exitosamente");
             System.out.println("📊 Todas las consultas pasarán por el cache local");
             System.out.println();
 
@@ -84,7 +84,7 @@ public class ProxyCacheTestClient {
                         running = false;
                         break;
                     default:
-                        System.out.println("❌ Opción inválida");
+                        System.out.println(" Opción inválida");
                 }
 
                 if (running) {
@@ -96,10 +96,10 @@ public class ProxyCacheTestClient {
             System.out.println("👋 Cliente finalizado");
 
         } catch (LocalException e) {
-            System.err.println("❌ Error de Ice: " + e.getMessage());
+            System.err.println(" Error de Ice: " + e.getMessage());
             e.printStackTrace();
         } catch (Exception e) {
-            System.err.println("❌ Error general: " + e.getMessage());
+            System.err.println(" Error general: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -107,28 +107,28 @@ public class ProxyCacheTestClient {
     // También agregar la opción al menú principal:
     private static void mostrarMenu() {
         System.out.println("\n📋 ========== MENÚ DE PRUEBAS ==========");
-        System.out.println("1. 👤 Consultar reporte de ciudadano");
-        System.out.println("2. 🔍 Buscar ciudadanos por nombre");
-        System.out.println("3. 🗳️  Consultar reporte de elección");
-        System.out.println("4. 🌍 Consultar reporte geográfico");
-        System.out.println("5. 📊 Consultar elecciones disponibles");
-        System.out.println("6. ⚡ Probar rendimiento del cache");
-        System.out.println("7. ✅ Validar elegibilidad de ciudadano");
-        System.out.println("8. 🏢 Consultar ciudadanos de mesa");
-        System.out.println("9. 📥 Precargar reportes (con opciones geográficas)");
-        System.out.println("10. 📊 Ver estadísticas del cache");
-        System.out.println("11. 🔧 Probar métodos auxiliares geográficos");
-        System.out.println("12. 🔥 Generar hotspot (probar cache inteligente)"); // ⭐ NUEVA OPCIÓN
-        System.out.println("0. 🚪 Salir");
+        System.out.println("1.  Consultar reporte de ciudadano");
+        System.out.println("2.  Buscar ciudadanos por nombre");
+        System.out.println("3. ️Consultar reporte de elección");
+        System.out.println("4.  Consultar reporte geográfico");
+        System.out.println("5.  Consultar elecciones disponibles");
+        System.out.println("6.  Probar rendimiento del cache");
+        System.out.println("7.  Validar elegibilidad de ciudadano");
+        System.out.println("8.  Consultar ciudadanos de mesa");
+        System.out.println("9.  Precargar reportes (con opciones geográficas)");
+        System.out.println("10. Ver estadísticas del cache");
+        System.out.println("11. Probar métodos auxiliares geográficos");
+        System.out.println("12. Generar hotspot (probar cache inteligente)"); // ⭐ NUEVA OPCIÓN
+        System.out.println("0.  Salir");
         System.out.println("==========================================");
         System.out.print("Selecciona una opción: ");
     }
     private static void testCitizenReports(ReportsServicePrx proxyCache, Scanner scanner) {
         try {
-            System.out.print("📝 Ingresa el documento del ciudadano (ej: 12345678): ");
+            System.out.print(" Ingresa el documento del ciudadano (ej: 12345678): ");
             String documento = scanner.nextLine().trim();
 
-            System.out.print("📝 Ingresa el ID de la elección (ej: 1): ");
+            System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
             System.out.println("⏳ Consultando reporte del ciudadano...");
@@ -138,27 +138,27 @@ public class ProxyCacheTestClient {
 
             long endTime = System.currentTimeMillis();
 
-            System.out.println("✅ Consulta completada en " + (endTime - startTime) + " ms");
-            System.out.println("📄 Resultado:");
+            System.out.println(" Consulta completada en " + (endTime - startTime) + " ms");
+            System.out.println(" Resultado:");
             System.out.println(result);
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
     private static void testSearchCitizens(ReportsServicePrx proxyCache, Scanner scanner) {
         try {
-            System.out.print("📝 Ingresa el nombre (o vacío para omitir): ");
+            System.out.print(" Ingresa el nombre (o vacío para omitir): ");
             String nombre = scanner.nextLine().trim();
 
-            System.out.print("📝 Ingresa el apellido (o vacío para omitir): ");
+            System.out.print(" Ingresa el apellido (o vacío para omitir): ");
             String apellido = scanner.nextLine().trim();
 
-            System.out.print("📝 Ingresa el ID de la elección (ej: 1): ");
+            System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.print("📝 Ingresa el límite de resultados (ej: 10): ");
+            System.out.print(" Ingresa el límite de resultados (ej: 10): ");
             int limit = Integer.parseInt(scanner.nextLine().trim());
 
             System.out.println("🔍 Buscando ciudadanos...");
@@ -168,7 +168,7 @@ public class ProxyCacheTestClient {
 
             long endTime = System.currentTimeMillis();
 
-            System.out.println("✅ Búsqueda completada en " + (endTime - startTime) + " ms");
+            System.out.println(" Búsqueda completada en " + (endTime - startTime) + " ms");
             System.out.println("📊 Encontrados " + results.length + " resultados:");
 
             for (int i = 0; i < Math.min(results.length, 5); i++) {
@@ -180,60 +180,60 @@ public class ProxyCacheTestClient {
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
     private static void testElectionReports(ReportsServicePrx proxyCache, Scanner scanner) {
         try {
-            System.out.print("📝 Ingresa el ID de la elección (ej: 1): ");
+            System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.println("🗳️ Consultando reporte de elección...");
+            System.out.println(" Consultando reporte de elección...");
             long startTime = System.currentTimeMillis();
 
             String result = proxyCache.getElectionReports(electionId);
 
             long endTime = System.currentTimeMillis();
 
-            System.out.println("✅ Consulta completada en " + (endTime - startTime) + " ms");
-            System.out.println("📄 Resultado:");
+            System.out.println(" Consulta completada en " + (endTime - startTime) + " ms");
+            System.out.println(" Resultado:");
             System.out.println(result);
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
     private static void testGeographicReports(ReportsServicePrx proxyCache, Scanner scanner) {
         try {
-            System.out.println("🌍 Tipos de ubicación disponibles:");
+            System.out.println(" Tipos de ubicación disponibles:");
             System.out.println("   - department (departamento)");
             System.out.println("   - municipality (municipio)");
             System.out.println("   - puesto (puesto de votación)");
 
-            System.out.print("📝 Ingresa el tipo de ubicación: ");
+            System.out.print(" Ingresa el tipo de ubicación: ");
             String locationType = scanner.nextLine().trim();
 
-            System.out.print("📝 Ingresa el ID de la ubicación (ej: 1): ");
+            System.out.print(" Ingresa el ID de la ubicación (ej: 1): ");
             int locationId = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.print("📝 Ingresa el ID de la elección (ej: 1): ");
+            System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.println("🌍 Consultando reporte geográfico...");
+            System.out.println(" Consultando reporte geográfico...");
             long startTime = System.currentTimeMillis();
 
             String result = proxyCache.getGeographicReports(locationId, locationType, electionId);
 
             long endTime = System.currentTimeMillis();
 
-            System.out.println("✅ Consulta completada en " + (endTime - startTime) + " ms");
-            System.out.println("📄 Resultado:");
+            System.out.println(" Consulta completada en " + (endTime - startTime) + " ms");
+            System.out.println(" Resultado:");
             System.out.println(result);
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
@@ -246,15 +246,15 @@ public class ProxyCacheTestClient {
 
             long endTime = System.currentTimeMillis();
 
-            System.out.println("✅ Consulta completada en " + (endTime - startTime) + " ms");
-            System.out.println("🗳️ Elecciones disponibles (" + elections.length + "):");
+            System.out.println(" Consulta completada en " + (endTime - startTime) + " ms");
+            System.out.println(" Elecciones disponibles (" + elections.length + "):");
 
             for (int i = 0; i < elections.length; i++) {
                 System.out.println("   " + (i + 1) + ". " + elections[i]);
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
@@ -267,24 +267,24 @@ public class ProxyCacheTestClient {
             int electionId = 1;
 
             // Primera consulta (cache miss)
-            System.out.println("\n🔄 Consulta 1 (cache miss esperado):");
+            System.out.println("\n Consulta 1 (cache miss esperado):");
             long start1 = System.currentTimeMillis();
             String result1 = proxyCache.getCitizenReports(documento, electionId);
             long end1 = System.currentTimeMillis();
-            System.out.println("   ⏱️ Tiempo: " + (end1 - start1) + " ms");
+            System.out.println("    Tiempo: " + (end1 - start1) + " ms");
 
             // Consultas siguientes (cache hits esperados)
             for (int i = 2; i <= 5; i++) {
-                System.out.println("\n🔄 Consulta " + i + " (cache hit esperado):");
+                System.out.println("\n Consulta " + i + " (cache hit esperado):");
                 long startI = System.currentTimeMillis();
                 String resultI = proxyCache.getCitizenReports(documento, electionId);
                 long endI = System.currentTimeMillis();
-                System.out.println("   ⏱️ Tiempo: " + (endI - startI) + " ms");
+                System.out.println("    Tiempo: " + (endI - startI) + " ms");
                 System.out.println("   📊 Mismo resultado: " + result1.equals(resultI));
             }
 
             // Prueba de múltiples consultas rápidas
-            System.out.println("\n🚀 Prueba de 10 consultas rápidas consecutivas:");
+            System.out.println("\n Prueba de 10 consultas rápidas consecutivas:");
             long rapidStart = System.currentTimeMillis();
             for (int i = 0; i < 10; i++) {
                 proxyCache.getCitizenReports(documento, electionId);
@@ -296,16 +296,16 @@ public class ProxyCacheTestClient {
             System.out.println("⚡ Promedio por consulta: " + (rapidTotal/10) + " ms");
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
     private static void testValidateCitizen(ReportsServicePrx proxyCache, Scanner scanner) {
         try {
-            System.out.print("📝 Ingresa el documento del ciudadano para validar (ej: 12345678): ");
+            System.out.print(" Ingresa el documento del ciudadano para validar (ej: 12345678): ");
             String documento = scanner.nextLine().trim();
 
-            System.out.println("✅ Validando elegibilidad del ciudadano...");
+            System.out.println(" Validando elegibilidad del ciudadano...");
             long startTime = System.currentTimeMillis();
 
             boolean isValid = proxyCache.validateCitizenEligibility(documento);
@@ -313,19 +313,19 @@ public class ProxyCacheTestClient {
             long endTime = System.currentTimeMillis();
 
             System.out.println("⚡ Validación completada en " + (endTime - startTime) + " ms");
-            System.out.println("📊 Resultado: " + (isValid ? "✅ ELEGIBLE" : "❌ NO ELEGIBLE"));
+            System.out.println("📊 Resultado: " + (isValid ? " ELEGIBLE" : " NO ELEGIBLE"));
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
     private static void testMesaCitizenReports(ReportsServicePrx proxyCache, Scanner scanner) {
         try {
-            System.out.print("📝 Ingresa el ID de la mesa (ej: 1): ");
+            System.out.print(" Ingresa el ID de la mesa (ej: 1): ");
             int mesaId = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.print("📝 Ingresa el ID de la elección (ej: 1): ");
+            System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
             System.out.println("🏢 Consultando ciudadanos de la mesa...");
@@ -335,7 +335,7 @@ public class ProxyCacheTestClient {
 
             long endTime = System.currentTimeMillis();
 
-            System.out.println("✅ Consulta completada en " + (endTime - startTime) + " ms");
+            System.out.println(" Consulta completada en " + (endTime - startTime) + " ms");
             System.out.println("👥 Ciudadanos en la mesa " + mesaId + " (" + results.length + "):");
 
             for (int i = 0; i < Math.min(results.length, 3); i++) {
@@ -347,13 +347,13 @@ public class ProxyCacheTestClient {
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
     private static void testPreloadReports(ReportsServicePrx proxyCache, Scanner scanner) {
         try {
-            System.out.print("📝 Ingresa el ID de la elección (ej: 1): ");
+            System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
             System.out.println("\n📋 Tipos de precarga disponibles:");
@@ -364,12 +364,12 @@ public class ProxyCacheTestClient {
             System.out.println("   mesa       - Todos los ciudadanos de una mesa");
             System.out.println("   all        - Precarga completa del sistema");
 
-            System.out.print("\n📝 Selecciona el tipo de precarga: ");
+            System.out.print("\n Selecciona el tipo de precarga: ");
             String locationType = scanner.nextLine().trim().toLowerCase();
 
             int locationId = 0;
             if (!locationType.equals("basic") && !locationType.equals("all")) {
-                System.out.print("📝 Ingresa el ID de la ubicación: ");
+                System.out.print(" Ingresa el ID de la ubicación: ");
                 locationId = Integer.parseInt(scanner.nextLine().trim());
             }
 
@@ -380,19 +380,19 @@ public class ProxyCacheTestClient {
 
             long startTime = System.currentTimeMillis();
 
-            // ✅ USAR EL NUEVO MÉTODO CON 3 PARÁMETROS
+            //  USAR EL NUEVO MÉTODO CON 3 PARÁMETROS
             String result = proxyCache.preloadReports(electionId, locationType, locationId);
 
             long endTime = System.currentTimeMillis();
 
-            System.out.println("✅ Precarga completada en " + (endTime - startTime) + " ms");
+            System.out.println(" Precarga completada en " + (endTime - startTime) + " ms");
             System.out.println("\n📊 RESULTADO DETALLADO:");
             System.out.println("=" + "=".repeat(50));
             System.out.println(result);
             System.out.println("=" + "=".repeat(50));
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
@@ -407,7 +407,7 @@ public class ProxyCacheTestClient {
             System.out.println("=".repeat(60));
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
@@ -419,10 +419,10 @@ public class ProxyCacheTestClient {
             System.out.println("3. Documentos de puesto");
             System.out.println("4. Documentos de mesa");
 
-            System.out.print("📝 Selecciona una opción (1-4): ");
+            System.out.print(" Selecciona una opción (1-4): ");
             int option = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.print("📝 Ingresa el ID de la elección (ej: 1): ");
+            System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
             String[] results = null;
@@ -430,42 +430,42 @@ public class ProxyCacheTestClient {
 
             switch (option) {
                 case 1:
-                    System.out.print("📝 Ingresa el ID del departamento: ");
+                    System.out.print(" Ingresa el ID del departamento: ");
                     int deptId = Integer.parseInt(scanner.nextLine().trim());
                     System.out.println("🏛️ Obteniendo documentos del departamento " + deptId + "...");
                     results = proxyCache.getDepartmentCitizenDocuments(deptId, electionId);
                     break;
 
                 case 2:
-                    System.out.print("📝 Ingresa el ID del municipio: ");
+                    System.out.print(" Ingresa el ID del municipio: ");
                     int munId = Integer.parseInt(scanner.nextLine().trim());
                     System.out.println("🏙️ Obteniendo documentos del municipio " + munId + "...");
                     results = proxyCache.getMunicipalityCitizenDocuments(munId, electionId);
                     break;
 
                 case 3:
-                    System.out.print("📝 Ingresa el ID del puesto: ");
+                    System.out.print(" Ingresa el ID del puesto: ");
                     int puestoId = Integer.parseInt(scanner.nextLine().trim());
-                    System.out.println("🗳️ Obteniendo documentos del puesto " + puestoId + "...");
+                    System.out.println(" Obteniendo documentos del puesto " + puestoId + "...");
                     results = proxyCache.getPuestoCitizenDocuments(puestoId, electionId);
                     break;
 
                 case 4:
-                    System.out.print("📝 Ingresa el ID de la mesa: ");
+                    System.out.print(" Ingresa el ID de la mesa: ");
                     int mesaId = Integer.parseInt(scanner.nextLine().trim());
                     System.out.println("📋 Obteniendo documentos de la mesa " + mesaId + "...");
                     results = proxyCache.getMesaCitizenDocuments(mesaId, electionId);
                     break;
 
                 default:
-                    System.out.println("❌ Opción inválida");
+                    System.out.println(" Opción inválida");
                     return;
             }
 
             long endTime = System.currentTimeMillis();
 
             if (results != null) {
-                System.out.println("✅ Consulta completada en " + (endTime - startTime) + " ms");
+                System.out.println(" Consulta completada en " + (endTime - startTime) + " ms");
                 System.out.println("📊 Documentos encontrados: " + results.length);
 
                 // Mostrar los primeros 10 documentos
@@ -480,7 +480,7 @@ public class ProxyCacheTestClient {
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println(" Error: " + e.getMessage());
         }
     }
 
@@ -489,23 +489,23 @@ public class ProxyCacheTestClient {
             System.out.println("🔥 ========== GENERADOR DE HOTSPOTS ==========");
             System.out.println("Este test simula actividad intensa para activar la precarga predictiva");
 
-            System.out.print("📝 Ingresa el tipo de ubicación (puesto/mesa/municipality): ");
+            System.out.print(" Ingresa el tipo de ubicación (puesto/mesa/municipality): ");
             String locationType = scanner.nextLine().trim().toLowerCase();
 
-            System.out.print("📝 Ingresa el ID de la ubicación (ej: 1): ");
+            System.out.print(" Ingresa el ID de la ubicación (ej: 1): ");
             int locationId = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.print("📝 Número de consultas a simular (ej: 5): ");
+            System.out.print(" Número de consultas a simular (ej: 5): ");
             int numQueries = Integer.parseInt(scanner.nextLine().trim());
 
             int electionId = 1;
 
-            System.out.println("\n🚀 Iniciando simulación de hotspot...");
-            System.out.println("⏰ Haciendo " + numQueries + " consultas cada 10 segundos");
-            System.out.println("👀 Observa los logs del servidor para ver la detección del hotspot");
+            System.out.println("\n Iniciando simulación de hotspot...");
+            System.out.println(" Haciendo " + numQueries + " consultas cada 10 segundos");
+            System.out.println(" Observa los logs del servidor para ver la detección del hotspot");
 
             for (int round = 1; round <= 3; round++) {
-                System.out.println("\n🔄 Ronda " + round + " de consultas:");
+                System.out.println("\n Ronda " + round + " de consultas:");
 
                 for (int i = 1; i <= numQueries; i++) {
                     long startTime = System.currentTimeMillis();
@@ -529,7 +529,7 @@ public class ProxyCacheTestClient {
                     }
 
                     long endTime = System.currentTimeMillis();
-                    System.out.println("       ⏱️ Tiempo: " + (endTime - startTime) + " ms");
+                    System.out.println("        Tiempo: " + (endTime - startTime) + " ms");
 
                     // Pausa corta entre consultas
                     Thread.sleep(500);
@@ -556,14 +556,14 @@ public class ProxyCacheTestClient {
                 }
             }
 
-            System.out.println("\n✅ Simulación completada!");
+            System.out.println("\n Simulación completada!");
             System.out.println("🔍 Revisa los logs del servidor para confirmar:");
             System.out.println("   • Detección de hotspot");
             System.out.println("   • Ejecución de precarga predictiva");
             System.out.println("   • Mejora en hit rate");
 
         } catch (Exception e) {
-            System.err.println("❌ Error en simulación: " + e.getMessage());
+            System.err.println(" Error en simulación: " + e.getMessage());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

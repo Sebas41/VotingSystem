@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-// =================== IMPORTS ACTUALIZADOS DE VotingSystem ===================
+
 import VotingsSystem.ConfigurationService;
 
 public class VotingManagerImpl implements ConfigurationService {
@@ -17,17 +17,15 @@ public class VotingManagerImpl implements ConfigurationService {
     private final ConnectionDBinterface connectionDB;
     private static final String PACKAGE_VERSION = "1.0";
 
-    // Delimitadores para formatear strings (como en máquina de café)
-    private static final String FIELD_SEPARATOR = "-";     // Para separar campos
-    private static final String RECORD_SEPARATOR = "#";    // Para separar registros
-    private static final String ARRAY_SEPARATOR = "|";     // Para separar arrays
+    private static final String FIELD_SEPARATOR = "-";
+    private static final String RECORD_SEPARATOR = "#";
+    private static final String ARRAY_SEPARATOR = "|";
 
     public VotingManagerImpl(ConnectionDBinterface connectionDB) {
         this.connectionDB = connectionDB;
         logger.info("VotingManagerImpl initialized for Ice communication with string formatting");
     }
 
-    // =================== MÉTODOS @Override SIMPLIFICADOS ===================
 
     @Override
     public String getConfiguration(int mesaId, int electionId, Current current) {

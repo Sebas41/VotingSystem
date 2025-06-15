@@ -48,12 +48,12 @@ public class ProxyCacheServer {
             ReportsServicePrx reportsServer = ReportsServicePrx.checkedCast(base);
 
             if (reportsServer == null) {
-                System.err.println("❌ Error: No se pudo conectar al servidor Reports en puerto 9001");
+                System.err.println(" Error: No se pudo conectar al servidor Reports en puerto 9001");
                 System.err.println("💡 Asegúrate de que el servidor principal esté ejecutándose");
                 return;
             }
 
-            System.out.println("✅ Conectado al servidor Reports principal");
+            System.out.println(" Conectado al servidor Reports principal");
 
             // =================== CONFIGURACIÓN DEL PROXY CACHE ===================
 
@@ -70,14 +70,14 @@ public class ProxyCacheServer {
 
             // =================== NUEVO: CONFIGURACIÓN DEL OBSERVER ===================
 
-            System.out.println("🔔 Configurando sistema Observer...");
+            System.out.println(" Configurando sistema Observer...");
 
             // Conectar al VoteNotifier del servidor central
             ObjectPrx notifierBase = communicator.stringToProxy("VoteNotifier:default -h localhost -p 9002");
             VoteNotifierPrx voteNotifier = VoteNotifierPrx.checkedCast(notifierBase);
 
             if (voteNotifier != null) {
-                System.out.println("✅ Conectado al VoteNotifier del servidor central");
+                System.out.println(" Conectado al VoteNotifier del servidor central");
 
                 // Crear adapter para el observer (puerto dinámico)
                 observerAdapter = communicator.createObjectAdapterWithEndpoints(
@@ -102,11 +102,11 @@ public class ProxyCacheServer {
                 int electionId = 1;
                 voteNotifier.registerObserver(observerProxy, electionId);
 
-                System.out.println("🔔 Registrado como observer para elección " + electionId);
+                System.out.println(" Registrado como observer para elección " + electionId);
                 System.out.println("📊 Ahora recibirás notificaciones de votos en tiempo real!");
 
             } else {
-                System.err.println("⚠️ No se pudo conectar al VoteNotifier");
+                System.err.println(" No se pudo conectar al VoteNotifier");
                 System.err.println("💡 El proxy funcionará sin notificaciones de votos");
             }
 
@@ -114,7 +114,7 @@ public class ProxyCacheServer {
 
             adapter.activate();
 
-            System.out.println("\n✅ ========== PROXY CACHE + OBSERVER INICIADO ==========");
+            System.out.println("\n ========== PROXY CACHE + OBSERVER INICIADO ==========");
             System.out.println("🔧 Proxy Cache: localhost:9999");
             System.out.println("🔗 Servidor Backend: localhost:9001");
             System.out.println("📡 VoteNotifier: localhost:9002");
@@ -124,7 +124,7 @@ public class ProxyCacheServer {
             System.out.println("   • Precarga geográfica");
             System.out.println("   • Fallback a cache expirado");
             System.out.println("   • Estadísticas detalladas");
-            System.out.println("   • 🔔 Notificaciones de votos en tiempo real");
+            System.out.println("   •  Notificaciones de votos en tiempo real");
             System.out.println();
 
             // =================== LIMPIEZA AUTOMÁTICA DEL CACHE ===================
@@ -155,10 +155,10 @@ public class ProxyCacheServer {
                 }, 30, 30, TimeUnit.SECONDS);
             }
 
-            System.out.println("🧹 Limpieza automática del cache: cada 2 minutos");
-            System.out.println("📊 Estadísticas de votos: cada 30 segundos");
-            System.out.println("⏳ Esperando conexiones de clientes en puerto 9999...");
-            System.out.println("🗳️ Esperando notificaciones de votos del servidor...");
+            System.out.println(" Limpieza automática del cache: cada 2 minutos");
+            System.out.println(" Estadísticas de votos: cada 30 segundos");
+            System.out.println(" Esperando conexiones de clientes en puerto 9999...");
+            System.out.println(" Esperando notificaciones de votos del servidor...");
             System.out.println("================================================");
             System.out.println();
 
@@ -170,7 +170,7 @@ public class ProxyCacheServer {
                 System.out.println("🔍 Prueba de conectividad exitosa");
                 System.out.println("📊 Elecciones disponibles: " + elections.length);
             } catch (Exception e) {
-                System.err.println("⚠️ Advertencia: Error en prueba de conectividad: " + e.getMessage());
+                System.err.println(" Advertencia: Error en prueba de conectividad: " + e.getMessage());
             }
 
             // Mostrar comandos disponibles
@@ -217,11 +217,11 @@ public class ProxyCacheServer {
             System.out.println("👋 Proxy Cache + Observer finalizado");
 
         } catch (LocalException e) {
-            System.err.println("❌ Error de Ice en proxy cache: " + e.getMessage());
+            System.err.println(" Error de Ice en proxy cache: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         } catch (Exception e) {
-            System.err.println("❌ Error general en proxy cache: " + e.getMessage());
+            System.err.println(" Error general en proxy cache: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         } finally {
