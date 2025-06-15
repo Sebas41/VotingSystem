@@ -4,6 +4,8 @@ import ConnectionDB.ConnectionDBinterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.zeroc.Ice.Current;
+
+import java.security.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -147,7 +149,7 @@ public class VotingManagerImpl implements ConfigurationService {
             // 1. Mesa info: mesaId-mesaConsecutive-puestoId-puestoNombre-puestoDireccion-municipioId-municipioNombre-departamentoId-departamentoNombre-totalCiudadanos
             config.append(formatMesaInfoString(mesaInfoMap)).append(RECORD_SEPARATOR);
 
-            // 2. Election info: id-nombre-estado-fechaInicio-fechaFin
+            // ✅ 2. Election info: id-nombre-estado-fechaInicio-fechaFin-jornadaInicio-jornadaFin
             config.append(formatElectionInfoString(electionInfoMap)).append(RECORD_SEPARATOR);
 
             // 3. Candidates: candidate1|candidate2|candidate3
@@ -161,6 +163,9 @@ public class VotingManagerImpl implements ConfigurationService {
 
             logger.info("Machine configuration string generated for mesa {} - {} citizens, {} candidates",
                     mesaId, citizensMap.size(), candidatesMap.size());
+
+            // ✅ NUEVO: Log adicional para horarios de jornada
+            logger.info("Election {} includes voting schedule restrictions", electionId);
 
             return config.toString();
 
@@ -346,24 +351,42 @@ public class VotingManagerImpl implements ConfigurationService {
     }
 
     private String formatElectionInfoString(Map<String, Object> electionInfoMap) {
-        // Formato: id-nombre-estado-fechaInicio-fechaFin
-        long fechaInicio = 0L;
-        long fechaFin = 0L;
+        // ✅ IMPORTACIÓN CORREGIDA: usar java.sql.Timestamp
+        java.sql.Timestamp fechaInicio = (java.sql.Timestamp) electionInfoMap.get("fecha_inicio");
+        java.sql.Timestamp fechaFin = (java.sql.Timestamp) electionInfoMap.get("fecha_fin");
 
-        // Convert Timestamp to long
-        if (electionInfoMap.get("fecha_inicio") instanceof java.sql.Timestamp) {
-            fechaInicio = ((java.sql.Timestamp) electionInfoMap.get("fecha_inicio")).getTime();
-        }
-        if (electionInfoMap.get("fecha_fin") instanceof java.sql.Timestamp) {
-            fechaFin = ((java.sql.Timestamp) electionInfoMap.get("fecha_fin")).getTime();
-        }
+        // ✅ CONSTANTES PARA HORARIOS DE JORNADA
+        final int JORNADA_HORA_INICIO = 8;   // 8:00 AM
+        final int JORNADA_HORA_FIN = 18;     // 6:00 PM
 
+        // ✅ CALCULAR HORARIOS FIJOS DE JORNADA
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(fechaInicio); // ✅ Usar directamente el Timestamp
+
+        // Jornada: 8:00 AM - 6:00 PM del día de la elección
+        cal.set(Calendar.HOUR_OF_DAY, JORNADA_HORA_INICIO);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        long jornadaInicio = cal.getTimeInMillis();
+
+        cal.set(Calendar.HOUR_OF_DAY, JORNADA_HORA_FIN);
+        long jornadaFin = cal.getTimeInMillis();
+
+        // ✅ LOGGING PARA DEBUG
+        logger.debug("🗳️ Horarios de jornada calculados para elección {}:", electionInfoMap.get("id"));
+        logger.debug("   - Inicio: {} ({})", new Date(jornadaInicio), jornadaInicio);
+        logger.debug("   - Fin: {} ({})", new Date(jornadaFin), jornadaFin);
+
+        // ✅ FORMATO EXTENDIDO: id-nombre-estado-fechaInicio-fechaFin-jornadaInicio-jornadaFin
         return String.join(FIELD_SEPARATOR,
                 String.valueOf(electionInfoMap.get("id")),
                 String.valueOf(electionInfoMap.get("nombre")),
                 String.valueOf(electionInfoMap.get("estado")),
-                String.valueOf(fechaInicio),
-                String.valueOf(fechaFin)
+                String.valueOf(fechaInicio.getTime()),
+                String.valueOf(fechaFin.getTime()),
+                String.valueOf(jornadaInicio),    // ✅ NUEVO: Hora inicio jornada
+                String.valueOf(jornadaFin)        // ✅ NUEVO: Hora fin jornada
         );
     }
 

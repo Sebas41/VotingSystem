@@ -22,6 +22,7 @@ import java.util.Properties;
 /**
  * Implementación del servicio de configuración para mesas de votación
  * Recibe configuraciones del servidor y actualiza automáticamente la mesa
+ * ✅ ACTUALIZADO: Incluye soporte para horarios de jornada electoral
  */
 public class ConfigurationReceiverImpl implements ConfigurationReceiver {
 
@@ -173,21 +174,40 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
     }
 
     /**
-     * ✅ MEJORADO: Procesa información de elección y candidatos con creación de directorios
+     * ✅ ACTUALIZADO: Procesa información de elección y candidatos CON HORARIOS DE JORNADA
      */
     private boolean processElectionAndCandidates(String electionInfo, String candidatesInfo) {
         try {
             // Parsear información de la elección
             String[] electionParts = electionInfo.split(FIELD_SEPARATOR);
-            if (electionParts.length < 5) {
-                System.out.println("❌ Formato de elección inválido");
+
+            // ✅ VALIDAR NUEVO FORMATO: debe tener al menos 7 campos
+            if (electionParts.length < 7) {
+                System.out.println("❌ Formato de elección inválido - se esperan 7 campos, recibidos: " + electionParts.length);
+                System.out.println("   Formato esperado: id-nombre-estado-fechaInicio-fechaFin-jornadaInicio-jornadaFin");
+
+                // ✅ COMPATIBILIDAD: Si solo tiene 5 campos (formato anterior), usar sin horarios
+                if (electionParts.length >= 5) {
+                    System.out.println("⚠️ Usando formato anterior sin horarios de jornada");
+                    return processElectionAndCandidatesLegacy(electionInfo, candidatesInfo);
+                }
+
                 return false;
             }
 
             int electionId = Integer.parseInt(electionParts[0]);
             String electionName = electionParts[1];
+            String electionStatus = electionParts[2];
+            long fechaInicio = Long.parseLong(electionParts[3]);
+            long fechaFin = Long.parseLong(electionParts[4]);
+
+            // ✅ NUEVOS CAMPOS: Horarios de jornada electoral
+            long jornadaInicio = Long.parseLong(electionParts[5]);
+            long jornadaFin = Long.parseLong(electionParts[6]);
 
             System.out.println("🗳️ Procesando elección: " + electionName + " (ID: " + electionId + ")");
+            System.out.println("📅 Estado: " + electionStatus);
+            System.out.println("⏰ Horario de jornada: " + new java.util.Date(jornadaInicio) + " - " + new java.util.Date(jornadaFin));
 
             // Parsear candidatos
             List<Candidate> candidates = new ArrayList<>();
@@ -212,8 +232,13 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                 System.out.println("   - " + c.toString());
             }
 
-            // Crear objeto Election y guardarlo
-            Election election = new Election(electionId, candidates);
+            // ✅ CREAR OBJETO ELECTION CON HORARIOS DE JORNADA
+            Election election = new Election(electionId, candidates, jornadaInicio, jornadaFin);
+
+            // ✅ Verificar estado de votación
+            String votingStatus = election.getVotingStatus();
+            System.out.println("🔍 Estado de votación: " + votingStatus);
+            System.out.println("📋 " + election.getFormattedSchedule());
 
             // ✅ MEJORADO: Asegurar que el directorio existe después de la limpieza
             File file = new File(ELECTION_JSON_PATH);
@@ -232,6 +257,58 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
 
         } catch (Exception e) {
             System.err.println("❌ Error procesando elección y candidatos: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Método de compatibilidad para formato anterior (sin horarios)
+     */
+    private boolean processElectionAndCandidatesLegacy(String electionInfo, String candidatesInfo) {
+        try {
+            String[] electionParts = electionInfo.split(FIELD_SEPARATOR);
+
+            int electionId = Integer.parseInt(electionParts[0]);
+            String electionName = electionParts[1];
+
+            System.out.println("🗳️ Procesando elección (formato legacy): " + electionName + " (ID: " + electionId + ")");
+            System.out.println("⚠️ Sin horarios de jornada - votación siempre disponible");
+
+            // Parsear candidatos (igual que antes)
+            List<Candidate> candidates = new ArrayList<>();
+
+            if (!candidatesInfo.trim().isEmpty()) {
+                String[] candidateStrings = candidatesInfo.split(ARRAY_SEPARATOR);
+
+                for (String candidateStr : candidateStrings) {
+                    String[] candidateParts = candidateStr.split(CANDIDATE_SEPARATOR);
+                    if (candidateParts.length >= 3) {
+                        int candidateId = Integer.parseInt(candidateParts[0]);
+                        String candidateName = candidateParts[1];
+                        String candidateParty = candidateParts[2];
+
+                        candidates.add(new Candidate(candidateId, candidateName, candidateParty));
+                    }
+                }
+            }
+
+            // Crear elección sin horarios (usa constructor original)
+            Election election = new Election(electionId, candidates);
+
+            // Guardar archivo
+            File file = new File(ELECTION_JSON_PATH);
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file, election);
+            System.out.println("✅ Archivo election.json actualizado (formato legacy)");
+
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error procesando elección legacy: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -377,10 +454,6 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
             System.err.println("⚠️ Error procesando info de mesa: " + e.getMessage());
         }
     }
-
-
-
-
 
     /**
      * Procesa metadata de la configuración

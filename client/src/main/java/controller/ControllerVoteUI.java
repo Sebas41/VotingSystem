@@ -29,6 +29,7 @@ import java.util.Properties;
  * - Persistencia del estado de configuración
  * - Recarga automática de repositorios
  * - Manejo robusto de errores
+ * - ✅ NUEVO: Validación de horarios de jornada electoral
  */
 public class ControllerVoteUI {
     // =================== COMPONENTES PRINCIPALES ===================
@@ -167,6 +168,9 @@ public class ControllerVoteUI {
 
             if (election != null && election.getCandidates() != null) {
                 System.out.println("🗳️ Elección cargada: " + election.getCandidates().size() + " candidatos");
+
+                // ✅ NUEVO: Mostrar información de horarios si están disponibles
+                logElectionScheduleInfo();
             } else {
                 System.out.println("⚠️ No hay datos de elección disponibles");
             }
@@ -174,6 +178,25 @@ public class ControllerVoteUI {
         } catch (Exception e) {
             System.err.println("❌ Error recargando repositorios de datos: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Registra información sobre los horarios de la elección
+     */
+    private void logElectionScheduleInfo() {
+        if (election != null) {
+            String votingStatus = election.getVotingStatus();
+            System.out.println("🗳️ Estado de jornada electoral: " + votingStatus);
+            System.out.println("📋 " + election.getFormattedSchedule());
+
+            if (votingStatus.equals("NO_INICIADA")) {
+                long timeUntilOpen = election.getTimeUntilOpen();
+                System.out.println("⏳ Tiempo hasta apertura: " + formatTimeRemaining(timeUntilOpen));
+            } else if (votingStatus.equals("ABIERTA")) {
+                long timeUntilClose = election.getTimeUntilClose();
+                System.out.println("⏳ Tiempo hasta cierre: " + formatTimeRemaining(timeUntilClose));
+            }
         }
     }
 
@@ -242,7 +265,7 @@ public class ControllerVoteUI {
     }
 
     /**
-     * ✅ NUEVO: Maneja el proceso de login de forma separada
+     * ✅ ACTUALIZADO: Maneja el proceso de login CON VALIDACIÓN DE HORARIOS
      */
     private void handleLogin() {
         try {
@@ -255,6 +278,25 @@ public class ControllerVoteUI {
                 return;
             }
 
+            // ✅ NUEVA VALIDACIÓN: Verificar horarios de jornada electoral
+            if (election != null) {
+                String votingStatus = election.getVotingStatus();
+
+                if (!votingStatus.equals("ABIERTA") && !votingStatus.equals("SIN_HORARIO")) {
+                    if (votingStatus.equals("NO_INICIADA")) {
+                        long timeUntilOpen = election.getTimeUntilOpen();
+                        String timeMessage = formatTimeRemaining(timeUntilOpen);
+                        ui.showLoginMessage("La jornada electoral aún no ha iniciado. Inicia en: " + timeMessage, true);
+                        System.out.println("❌ Intento de login fuera de horario - Jornada no iniciada");
+                    } else if (votingStatus.equals("CERRADA")) {
+                        ui.showLoginMessage("La jornada electoral ha terminado. Gracias por su participación.", true);
+                        System.out.println("❌ Intento de login fuera de horario - Jornada cerrada");
+                    }
+                    return;
+                }
+            }
+
+            // Validaciones existentes
             if (!authVoter.authenticate(id, password)) {
                 ui.showLoginMessage("Credenciales incorrectas.", true);
                 return;
@@ -272,6 +314,7 @@ public class ControllerVoteUI {
 
             currentVoterId = id;
             ui.showLoginMessage("Autenticación exitosa. Redirigiendo a votación...", false);
+            System.out.println("✅ Login exitoso para votante: " + id);
             ui.showVotePanel();
 
         } catch (Exception ex) {
@@ -280,7 +323,9 @@ public class ControllerVoteUI {
         }
     }
 
-
+    /**
+     * ✅ ACTUALIZADO: Maneja el voto CON DOBLE VALIDACIÓN DE HORARIOS
+     */
     private void handleVote() {
         try {
             String candidateId = ui.getSelectedCandidateId();
@@ -289,7 +334,25 @@ public class ControllerVoteUI {
                 return;
             }
 
-            // ✅ Verificaciones de seguridad
+            // ✅ DOBLE VALIDACIÓN DE HORARIO (seguridad adicional)
+            if (election != null) {
+                String votingStatus = election.getVotingStatus();
+
+                if (!votingStatus.equals("ABIERTA") && !votingStatus.equals("SIN_HORARIO")) {
+                    if (votingStatus.equals("CERRADA")) {
+                        ui.showVoteMessage("La jornada electoral ha terminado durante su sesión.", true);
+                        System.out.println("❌ Intento de voto fuera de horario - Jornada cerrada durante sesión");
+                        ui.resetToLoginAfterVote();
+                    } else {
+                        ui.showVoteMessage("La votación no está disponible en este momento.", true);
+                        System.out.println("❌ Intento de voto fuera de horario - Estado: " + votingStatus);
+                        ui.resetToLoginAfterVote();
+                    }
+                    return;
+                }
+            }
+
+            // ✅ Verificaciones de seguridad existentes
             if (election == null) {
                 ui.showVoteMessage("Error: No hay elección configurada.", true);
                 return;
@@ -309,6 +372,7 @@ public class ControllerVoteUI {
             voteRepo.save(vote);
             authVoter.markAsVoted(currentVoterId);
 
+            System.out.println("✅ Voto registrado exitosamente - Votante: " + currentVoterId + ", Candidato: " + candidateId);
             ui.showVoteMessage("Gracias por votar. Su elección ha sido registrada.", false);
             ui.resetToLoginAfterVote();
 
@@ -319,12 +383,35 @@ public class ControllerVoteUI {
     }
 
     /**
-     * ✅ NUEVO: Actualiza la UI con los datos actuales
+     * ✅ NUEVO: Formatea tiempo restante en formato legible
+     */
+    private String formatTimeRemaining(long milliseconds) {
+        if (milliseconds <= 0) {
+            return "0 minutos";
+        }
+
+        long hours = milliseconds / (1000 * 60 * 60);
+        long minutes = (milliseconds % (1000 * 60 * 60)) / (1000 * 60);
+
+        if (hours > 0) {
+            return hours + " horas y " + minutes + " minutos";
+        } else {
+            return minutes + " minutos";
+        }
+    }
+
+    /**
+     * ✅ ACTUALIZADO: Actualiza la UI con los datos actuales INCLUYENDO ESTADO DE VOTACIÓN
      */
     private void updateUIWithCurrentData() {
         if (election != null && election.getCandidates() != null && !election.getCandidates().isEmpty()) {
             ui.setCandidates(election.getCandidates());
             System.out.println("📊 UI actualizada con " + election.getCandidates().size() + " candidatos");
+
+            // ✅ MOSTRAR ESTADO DE JORNADA ELECTORAL
+            String votingStatus = election.getVotingStatus();
+            System.out.println("🗳️ Estado de jornada electoral: " + votingStatus);
+            System.out.println("📋 " + election.getFormattedSchedule());
 
             if (isConfiguredFromServer) {
                 System.out.println("✅ Mesa configurada desde servidor (versión: " + lastConfigurationVersion + ")");
@@ -359,6 +446,9 @@ public class ControllerVoteUI {
                 // ✅ 4. Mostrar mensaje de éxito en la UI
                 ui.showLoginMessage("✅ Configuración actualizada desde el servidor.", false);
 
+                // ✅ 5. Registrar información de horarios actualizados
+                logElectionScheduleInfo();
+
                 System.out.println("🎉 Configuración completada exitosamente");
 
             } else {
@@ -378,6 +468,29 @@ public class ControllerVoteUI {
      */
     public int getMachineId() {
         return configurationReceiver != null ? configurationReceiver.getMachineId() : -1;
+    }
+
+    /**
+     * ✅ NUEVO: Método para verificar si la votación está disponible
+     */
+    public boolean isVotingAvailable() {
+        if (election == null) {
+            return false;
+        }
+
+        String status = election.getVotingStatus();
+        return status.equals("ABIERTA") || status.equals("SIN_HORARIO");
+    }
+
+    /**
+     * ✅ NUEVO: Método para obtener el estado actual de la jornada
+     */
+    public String getCurrentVotingStatus() {
+        if (election == null) {
+            return "NO_CONFIGURADA";
+        }
+
+        return election.getVotingStatus();
     }
 
     /**
@@ -404,11 +517,11 @@ public class ControllerVoteUI {
         }
     }
 
+    // =================== MÉTODOS DE ACCESO ===================
 
     public boolean isConfiguredFromServer() {
         return isConfiguredFromServer;
     }
-
 
     public String getConfigurationVersion() {
         return lastConfigurationVersion;
@@ -417,5 +530,28 @@ public class ControllerVoteUI {
     public void forceReloadConfiguration() {
         System.out.println("🔄 Forzando recarga de configuración...");
         onConfigurationUpdated();
+    }
+
+    /**
+     * ✅ NUEVO: Obtiene la elección actual (para debugging/testing)
+     */
+    public Election getCurrentElection() {
+        return election;
+    }
+
+    /**
+     * ✅ NUEVO: Método para debugging de horarios
+     */
+    public void debugScheduleInfo() {
+        if (election != null) {
+            System.out.println("🐛 DEBUG - Información de horarios:");
+            System.out.println("   - Estado: " + election.getVotingStatus());
+            System.out.println("   - Horario: " + election.getFormattedSchedule());
+            System.out.println("   - Inicio: " + new java.util.Date(election.getVotingStartTime()));
+            System.out.println("   - Fin: " + new java.util.Date(election.getVotingEndTime()));
+            System.out.println("   - Ahora: " + new java.util.Date());
+        } else {
+            System.out.println("🐛 DEBUG - No hay elección configurada");
+        }
     }
 }
