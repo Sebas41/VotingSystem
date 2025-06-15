@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+
 /**
  * Implementación del servicio de configuración para mesas de votación
  * Recibe configuraciones del servidor y actualiza automáticamente la mesa
@@ -26,8 +27,9 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
 
 
     private static final String MACHINE_CONFIG_FILE = "machine.properties"; // Buscar en resources
-    private static final String VOTERS_JSON_PATH = "data/voters.json";       // Relativo al working directory
-    private static final String ELECTION_JSON_PATH = "data/election.json";   // Relativo al working directory
+    private static final String VOTERS_JSON_PATH = "client/data/voters.json";       // ✅ CORREGIDO
+    private static final String ELECTION_JSON_PATH = "client/data/election.json";   // Relativo al working directory
+    private static final String CONFIG_STATE_FILE = "client/config/configuration_state.properties";
 
     private static final String FIELD_SEPARATOR = "-";
     private static final String RECORD_SEPARATOR = "#";
@@ -71,6 +73,9 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                 return false;
             }
 
+            // ✅ NUEVO: Limpiar automáticamente archivos previos antes de procesar
+            cleanupPreviousConfiguration();
+
             // Parsear y aplicar configuración
             boolean success = parseAndApplyConfiguration(configurationData);
 
@@ -90,6 +95,193 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
 
         } catch (Exception e) {
             System.err.println("❌ Error procesando configuración: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Limpia automáticamente todos los archivos de configuración previos
+     */
+    private void cleanupPreviousConfiguration() {
+        System.out.println("🧹 Limpiando configuración previa...");
+
+        try {
+            // Lista de archivos a limpiar
+            String[] filesToClean = {
+                    VOTERS_JSON_PATH,
+                    ELECTION_JSON_PATH,
+                    CONFIG_STATE_FILE,
+                    "client/data/votes_list.kryo",  // ✅ También limpiar votos previos
+                    "client/config/configuration_state.properties"
+            };
+
+            int cleanedFiles = 0;
+            int totalFiles = 0;
+
+            for (String filePath : filesToClean) {
+                File file = new File(filePath);
+                totalFiles++;
+
+                if (file.exists()) {
+                    if (file.delete()) {
+                        cleanedFiles++;
+                        System.out.println("   🗑️ Eliminado: " + filePath);
+                    } else {
+                        System.out.println("   ⚠️ No se pudo eliminar: " + filePath);
+                    }
+                } else {
+                    System.out.println("   ➖ No existe: " + filePath);
+                }
+            }
+
+            // ✅ También limpiar directorios vacíos si existen
+            cleanupEmptyDirectories();
+
+            System.out.println("🧹 Limpieza completada: " + cleanedFiles + "/" + totalFiles + " archivos eliminados");
+
+        } catch (Exception e) {
+            System.err.println("⚠️ Error durante limpieza: " + e.getMessage());
+            // No fallar por errores de limpieza, continuar con la configuración
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Limpia directorios vacíos después de eliminar archivos
+     */
+    private void cleanupEmptyDirectories() {
+        try {
+            // Intentar limpiar directorios que podrían quedar vacíos
+            String[] dirsToCheck = {
+                    "client/data",
+                    "client/config"
+            };
+
+            for (String dirPath : dirsToCheck) {
+                File dir = new File(dirPath);
+                if (dir.exists() && dir.isDirectory()) {
+                    File[] files = dir.listFiles();
+                    if (files != null && files.length == 0) {
+                        // Directorio vacío, pero NO lo eliminamos porque lo necesitamos
+                        System.out.println("   📁 Directorio vacío mantenido: " + dirPath);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Error limpiando directorios: " + e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ MEJORADO: Procesa información de elección y candidatos con creación de directorios
+     */
+    private boolean processElectionAndCandidates(String electionInfo, String candidatesInfo) {
+        try {
+            // Parsear información de la elección
+            String[] electionParts = electionInfo.split(FIELD_SEPARATOR);
+            if (electionParts.length < 5) {
+                System.out.println("❌ Formato de elección inválido");
+                return false;
+            }
+
+            int electionId = Integer.parseInt(electionParts[0]);
+            String electionName = electionParts[1];
+
+            System.out.println("🗳️ Procesando elección: " + electionName + " (ID: " + electionId + ")");
+
+            // Parsear candidatos
+            List<Candidate> candidates = new ArrayList<>();
+
+            if (!candidatesInfo.trim().isEmpty()) {
+                String[] candidateStrings = candidatesInfo.split(ARRAY_SEPARATOR);
+
+                for (String candidateStr : candidateStrings) {
+                    String[] candidateParts = candidateStr.split(CANDIDATE_SEPARATOR);
+                    if (candidateParts.length >= 3) {
+                        int candidateId = Integer.parseInt(candidateParts[0]);
+                        String candidateName = candidateParts[1];
+                        String candidateParty = candidateParts[2];
+
+                        candidates.add(new Candidate(candidateId, candidateName, candidateParty));
+                    }
+                }
+            }
+
+            System.out.println("👥 Candidatos procesados: " + candidates.size());
+            for (Candidate c : candidates) {
+                System.out.println("   - " + c.toString());
+            }
+
+            // Crear objeto Election y guardarlo
+            Election election = new Election(electionId, candidates);
+
+            // ✅ MEJORADO: Asegurar que el directorio existe después de la limpieza
+            File file = new File(ELECTION_JSON_PATH);
+            if (!file.getParentFile().exists()) {
+                boolean dirsCreated = file.getParentFile().mkdirs();
+                if (dirsCreated) {
+                    System.out.println("📁 Directorio creado: " + file.getParentFile().getAbsolutePath());
+                }
+            }
+
+            // Guardar como JSON con formato limpio
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file, election);
+
+            System.out.println("✅ Archivo election.json actualizado en: " + file.getAbsolutePath());
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error procesando elección y candidatos: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * ✅ MEJORADO: Procesa ciudadanos/votantes con creación de directorios
+     */
+    private boolean processVoters(String citizensInfo) {
+        try {
+            List<Voter> voters = new ArrayList<>();
+
+            if (!citizensInfo.trim().isEmpty()) {
+                String[] citizenStrings = citizensInfo.split(ARRAY_SEPARATOR);
+
+                for (String citizenStr : citizenStrings) {
+                    String[] citizenParts = citizenStr.split(CANDIDATE_SEPARATOR);
+                    if (citizenParts.length >= 4) {
+                        String citizenId = citizenParts[1]; // documento
+                        String firstName = citizenParts[2];
+                        String lastName = citizenParts[3];
+                        String fullName = firstName + " " + lastName;
+
+                        // Generar contraseña por defecto (puedes cambiar esta lógica)
+                        String password = "pass" + citizenId.substring(Math.max(0, citizenId.length() - 4));
+
+                        voters.add(new Voter(citizenId, fullName, password, AlreadyVote.NO));
+                    }
+                }
+            }
+
+            System.out.println("👤 Votantes procesados: " + voters.size());
+
+            // ✅ MEJORADO: Asegurar que el directorio existe después de la limpieza
+            File file = new File(VOTERS_JSON_PATH);
+            if (!file.getParentFile().exists()) {
+                boolean dirsCreated = file.getParentFile().mkdirs();
+                if (dirsCreated) {
+                    System.out.println("📁 Directorio creado: " + file.getParentFile().getAbsolutePath());
+                }
+            }
+
+            // Guardar como JSON con formato limpio
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file, voters);
+
+            System.out.println("✅ Archivo voters.json actualizado en: " + file.getAbsolutePath());
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error procesando votantes: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -186,110 +378,9 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
         }
     }
 
-    /**
-     * Procesa información de elección y candidatos, actualiza election.json
-     */
-    private boolean processElectionAndCandidates(String electionInfo, String candidatesInfo) {
-        try {
-            // Parsear información de la elección
-            String[] electionParts = electionInfo.split(FIELD_SEPARATOR);
-            if (electionParts.length < 5) {
-                System.out.println("❌ Formato de elección inválido");
-                return false;
-            }
 
-            int electionId = Integer.parseInt(electionParts[0]);
-            String electionName = electionParts[1];
 
-            System.out.println("🗳️ Procesando elección: " + electionName + " (ID: " + electionId + ")");
 
-            // Parsear candidatos
-            List<Candidate> candidates = new ArrayList<>();
-
-            if (!candidatesInfo.trim().isEmpty()) {
-                String[] candidateStrings = candidatesInfo.split(ARRAY_SEPARATOR);
-
-                for (String candidateStr : candidateStrings) {
-                    String[] candidateParts = candidateStr.split(CANDIDATE_SEPARATOR);
-                    if (candidateParts.length >= 3) {
-                        int candidateId = Integer.parseInt(candidateParts[0]);
-                        String candidateName = candidateParts[1];
-                        String candidateParty = candidateParts[2];
-
-                        candidates.add(new Candidate(candidateId, candidateName, candidateParty));
-                    }
-                }
-            }
-
-            System.out.println("👥 Candidatos procesados: " + candidates.size());
-            for (Candidate c : candidates) {
-                System.out.println("   - " + c.toString());
-            }
-
-            // Crear objeto Election y guardarlo
-            Election election = new Election(electionId, candidates);
-
-            // Asegurar que el directorio existe
-            File file = new File(ELECTION_JSON_PATH);
-            file.getParentFile().mkdirs();
-
-            // Guardar como JSON
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file, election);
-
-            System.out.println("✅ Archivo election.json actualizado en: " + file.getAbsolutePath());
-            return true;
-
-        } catch (Exception e) {
-            System.err.println("❌ Error procesando elección y candidatos: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * Procesa ciudadanos/votantes, actualiza voters.json
-     */
-    private boolean processVoters(String citizensInfo) {
-        try {
-            List<Voter> voters = new ArrayList<>();
-
-            if (!citizensInfo.trim().isEmpty()) {
-                String[] citizenStrings = citizensInfo.split(ARRAY_SEPARATOR);
-
-                for (String citizenStr : citizenStrings) {
-                    String[] citizenParts = citizenStr.split(CANDIDATE_SEPARATOR);
-                    if (citizenParts.length >= 4) {
-                        String citizenId = citizenParts[1]; // documento
-                        String firstName = citizenParts[2];
-                        String lastName = citizenParts[3];
-                        String fullName = firstName + " " + lastName;
-
-                        // Generar contraseña por defecto (puedes cambiar esta lógica)
-                        String password = "pass" + citizenId.substring(Math.max(0, citizenId.length() - 4));
-
-                        voters.add(new Voter(citizenId, fullName, password, AlreadyVote.NO));
-                    }
-                }
-            }
-
-            System.out.println("👤 Votantes procesados: " + voters.size());
-
-            // Asegurar que el directorio existe
-            File file = new File(VOTERS_JSON_PATH);
-            file.getParentFile().mkdirs();
-
-            // Guardar como JSON
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file, voters);
-
-            System.out.println("✅ Archivo voters.json actualizado en: " + file.getAbsolutePath());
-            return true;
-
-        } catch (Exception e) {
-            System.err.println("❌ Error procesando votantes: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
 
     /**
      * Procesa metadata de la configuración

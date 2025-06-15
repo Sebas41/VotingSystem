@@ -1,20 +1,19 @@
 {
-  "electionId": 1,
-  "candidates": [
-    {
-      "id": 1,
-      "name": "Candidato A",
-      "politicalParty": "Partido A"
-    },
-    {
-      "id": 2,
-      "name": "Candidato B",
-      "politicalParty": "Partido B"
-    },
-    {
-      "id": 3,
-      "name": "Candidato C",
-      "politicalParty": "Partido C"
-    }
-  ]
+  "electionId" : 1,
+  "candidates" : [ {
+    "id" : 1,
+    "name" : "Juan Pérez",
+    "party" : "Partido A",
+    "politicalParty" : "Partido A"
+  }, {
+    "id" : 2,
+    "name" : "María García",
+    "party" : "Partido B",
+    "politicalParty" : "Partido B"
+  }, {
+    "id" : 3,
+    "name" : "Carlos López",
+    "party" : "Partido C",
+    "politicalParty" : "Partido C"
+  } ]
 }
