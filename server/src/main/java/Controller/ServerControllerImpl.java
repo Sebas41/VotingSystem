@@ -197,9 +197,8 @@ public class ServerControllerImpl implements ServerControllerInterface {
             // Actualizar cache
             clearElectionCache();
 
-            String message = remoteSuccess ?
-                    "Estado cambiado exitosamente en servidor y mesas remotas" :
-                    "Estado cambiado en servidor (algunas mesas remotas fallaron)";
+            String message = remoteSuccess ? "Estado cambiado exitosamente en servidor y mesas remotas"
+                    : "Estado cambiado en servidor (algunas mesas remotas fallaron)";
 
             logger.info("✅ Estado de elección {} cambiado a {}", electionId, newStatus);
 
@@ -386,7 +385,8 @@ public class ServerControllerImpl implements ServerControllerInterface {
             for (Integer mesaId : mesaIds) {
                 try {
                     boolean success = configurationSender.sendConfigurationToMachine(mesaId, electionId);
-                    if (success) successCount++;
+                    if (success)
+                        successCount++;
 
                     // Pequeña pausa para no saturar la red
                     Thread.sleep(100);
@@ -406,7 +406,8 @@ public class ServerControllerImpl implements ServerControllerInterface {
                             "successCount", successCount, "successRate", successRate));
 
         } catch (Exception e) {
-            logger.error("❌ Error enviando configuraciones a departamento {} para elección {}", departmentId, electionId, e);
+            logger.error("❌ Error enviando configuraciones a departamento {} para elección {}", departmentId,
+                    electionId, e);
             return ElectionResult.error("Error configurando departamento: " + e.getMessage());
         }
     }
@@ -635,16 +636,14 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     "reportsManager", reportsManager != null ? "ACTIVE" : "INACTIVE",
                     "votingManager", votingManager != null ? "ACTIVE" : "INACTIVE",
                     "voteNotifier", voteNotifier != null ? "ACTIVE" : "INACTIVE",
-                    "configurationSender", configurationSender != null ? "ACTIVE" : "INACTIVE"
-            ));
+                    "configurationSender", configurationSender != null ? "ACTIVE" : "INACTIVE"));
 
             // Estado de la elección actual
             status.put("currentElection", Map.of(
                     "isActive", currentElection.isElectionActive(),
                     "isClosed", currentElection.isElectionClosed(),
                     "status", currentElection.getElectionStatus().name(),
-                    "info", currentElection.getElectionInfo()
-            ));
+                    "info", currentElection.getElectionInfo()));
 
             // Estadísticas de observers
             if (voteNotifier != null) {
@@ -675,8 +674,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
             diagnostic.put("database", Map.of(
                     "healthy", dbHealthy,
                     "poolStats", connectionDB.getPoolStats(),
-                    "metrics", connectionDB.getPerformanceMetrics()
-            ));
+                    "metrics", connectionDB.getPerformanceMetrics()));
 
             if (!dbHealthy) {
                 issues.add("Base de datos no está saludable");
@@ -687,8 +685,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
             boolean electionReady = connectionDB.validateElectionDataCompleteness(1); // Usar elección de prueba
             diagnostic.put("election", Map.of(
                     "dataComplete", electionReady,
-                    "status", currentElection.getElectionStatus().name()
-            ));
+                    "status", currentElection.getElectionStatus().name()));
 
             if (!electionReady) {
                 issues.add("Datos de elección incompletos");
@@ -700,8 +697,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                 // Aquí se podría hacer un diagnóstico real de conectividad
                 diagnostic.put("configurations", Map.of(
                         "senderActive", true,
-                        "note", "Diagnóstico de mesas remotas disponible"
-                ));
+                        "note", "Diagnóstico de mesas remotas disponible"));
             } else {
                 issues.add("ConfigurationSender no está disponible");
                 recommendations.add("Configurar el sistema de envío de configuraciones");
@@ -713,8 +709,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     "issuesFound", issues.size(),
                     "issues", issues,
                     "recommendations", recommendations,
-                    "overallHealth", issues.isEmpty() ? "HEALTHY" : "NEEDS_ATTENTION"
-            ));
+                    "overallHealth", issues.isEmpty() ? "HEALTHY" : "NEEDS_ATTENTION"));
 
             logger.info("✅ Diagnóstico completado - {} issues encontrados", issues.size());
 
@@ -744,14 +739,12 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     "freeMemory", runtime.freeMemory(),
                     "usedMemory", runtime.totalMemory() - runtime.freeMemory(),
                     "maxMemory", runtime.maxMemory(),
-                    "availableProcessors", runtime.availableProcessors()
-            ));
+                    "availableProcessors", runtime.availableProcessors()));
 
             // Estadísticas de cache
             stats.put("cache", Map.of(
                     "size", systemCache.size(),
-                    "keys", new ArrayList<>(systemCache.keySet())
-            ));
+                    "keys", new ArrayList<>(systemCache.keySet())));
 
             // Timestamp
             stats.put("timestamp", new Date());
@@ -778,7 +771,8 @@ public class ServerControllerImpl implements ServerControllerInterface {
      * Configura el VoteNotifier (si se necesita desde fuera)
      */
     public void setVoteNotifier(VoteNotifierImpl voteNotifier) {
-        // No es necesario ya que se inicializa en el constructor, pero se deja para compatibilidad
+        // No es necesario ya que se inicializa en el constructor, pero se deja para
+        // compatibilidad
         logger.info("🔔 VoteNotifier configurado en el controller");
     }
 
@@ -838,7 +832,6 @@ public class ServerControllerImpl implements ServerControllerInterface {
         systemCache.remove("candidates_" + electionId);
     }
 
-
     private String formatVoteNotification(String candidateName, Vote vote) {
 
         return candidateName + "-" + vote.getDate() + "-" + vote.getElection();
@@ -875,10 +868,21 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
 
         // Getters
-        public boolean isSuccess() { return success; }
-        public String getMessage() { return message; }
-        public Map<String, Object> getData() { return data; }
-        public Date getTimestamp() { return timestamp; }
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public Map<String, Object> getData() {
+            return data;
+        }
+
+        public Date getTimestamp() {
+            return timestamp;
+        }
 
         @Override
         public String toString() {
