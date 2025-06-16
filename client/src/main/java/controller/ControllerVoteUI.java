@@ -56,8 +56,8 @@ public class ControllerVoteUI {
     private void initIceCommunication() throws Exception {
         mapper = new ObjectMapper();
         com = Util.initialize();
-        rm = RMSourcePrx.checkedCast(com.stringToProxy("Sender:tcp -h 192.168.131.24 -p 10010"));
-        dest = RMDestinationPrx.uncheckedCast(com.stringToProxy("Service:tcp -h 192.168.131.21 -p 10012"));
+        rm = RMSourcePrx.checkedCast(com.stringToProxy("Sender:tcp -h 192.168.131.104 -p 10010"));
+        dest = RMDestinationPrx.uncheckedCast(com.stringToProxy("Service:tcp -h 192.168.131.101 -p 10012"));
         ip = InetAddress.getLocalHost();
     }
 
@@ -175,7 +175,7 @@ public class ControllerVoteUI {
 
             configurationAdapter = com.createObjectAdapterWithEndpoints(
                     "ConfigurationReceiver",
-                    "tcp -h 192.168.131.22 -p 10843"
+                    "tcp -h 192.168.131.102 -p 10843"
             );
 
             configurationReceiver = new ConfigurationReceiverImpl(this);

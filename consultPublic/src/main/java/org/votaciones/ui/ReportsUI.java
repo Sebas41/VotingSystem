@@ -17,7 +17,7 @@ public class ReportsUI {
             System.out.println("========== CLIENTE DE CONSULTA PÚBLICA ==========");
             System.out.println("Conectando al proxy cache...");
 
-            service.connect("192.168.131.23", 9999);
+            service.connect("192.168.131.103", 9999);
 
             System.out.println("Conectado al proxy cache exitosamente");
             System.out.println("Todas las consultas pasarán por el cache local");

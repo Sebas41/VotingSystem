@@ -34,11 +34,11 @@ public class ProxyCacheServer {
             System.out.println("========== SERVIDOR PROXY CACHE + OBSERVER ==========");
             System.out.println("Conectando al servidor principal...");
 
-            ObjectPrx base = communicator.stringToProxy("ReportsManager:default -h 192.168.131.21 -p 9001");
+            ObjectPrx base = communicator.stringToProxy("ReportsManager:default -h 192.168.131.101 -p 9001");
             ReportsServicePrx reportsServer = ReportsServicePrx.checkedCast(base);
 
             if (reportsServer == null) {
-                System.err.println("Error: No se pudo conectar al servidor Reports en 192.168.131.21:9001");
+                System.err.println("Error: No se pudo conectar al servidor Reports en 192.168.131.101:9001");
                 System.err.println("Asegúrate de que el servidor principal esté ejecutándose");
                 return;
             }
@@ -46,7 +46,7 @@ public class ProxyCacheServer {
             System.out.println("Conectado al servidor Reports principal");
 
             ObjectAdapter adapter = communicator.createObjectAdapterWithEndpoints(
-                    "ProxyCacheAdapter", "default -h 192.168.131.23 -p 9999"
+                    "ProxyCacheAdapter", "default -h 192.168.131.103 -p 9999"
             );
 
             ProxyCacheReports proxyCache = new ProxyCacheReports(reportsServer);
@@ -55,14 +55,14 @@ public class ProxyCacheServer {
 
             System.out.println("Configurando sistema Observer...");
 
-            ObjectPrx notifierBase = communicator.stringToProxy("VoteNotifier:default -h 192.168.131.21 -p 9002");
+            ObjectPrx notifierBase = communicator.stringToProxy("VoteNotifier:default -h 192.168.131.101 -p 9002");
             VoteNotifierPrx voteNotifier = VoteNotifierPrx.checkedCast(notifierBase);
 
             if (voteNotifier != null) {
                 System.out.println("Conectado al VoteNotifier del servidor central");
 
                 observerAdapter = communicator.createObjectAdapterWithEndpoints(
-                        "VoteObserverAdapter", "default -h 192.168.131.23"
+                        "VoteObserverAdapter", "default -h 192.168.131.103"
                 );
 
                 voteObserver = new VoteObserverImpl(proxyCache);
@@ -86,9 +86,9 @@ public class ProxyCacheServer {
             adapter.activate();
 
             System.out.println("\n========== PROXY CACHE + OBSERVER INICIADO ==========");
-            System.out.println("    Proxy Cache: 192.168.131.23:9999");
-            System.out.println("    Servidor Backend: 192.168.131.21:9001");
-            System.out.println("    VoteNotifier: 192.168.131.21:9002");
+            System.out.println("    Proxy Cache: 192.168.131.103:9999");
+            System.out.println("    Servidor Backend: 192.168.131.101:9001");
+            System.out.println("    VoteNotifier: 192.168.131.101:9002");
             System.out.println("    Cache TTL: 5 minutos");
             System.out.println("    Funcionalidades:");
             System.out.println("   - Cache local inteligente");

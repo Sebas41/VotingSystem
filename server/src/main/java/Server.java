@@ -61,7 +61,7 @@ public class Server {
             ObjectAdapter votingAdapter = communicator.createObjectAdapter("VotingServer");
             ObjectAdapter notifierAdapter = communicator.createObjectAdapter("VoteNotifierServer");
             ObjectAdapter votingReceiverAdapter = communicator.createObjectAdapterWithEndpoints(
-                    "VotingReceiverServer", "tcp -h 192.168.131.21 -p 10012"
+                    "VotingReceiverServer", "tcp -h 192.168.131.101 -p 10012"
             );
 
             ConnectionDBinterface connectionDB = new ConnectionDB();
@@ -310,7 +310,7 @@ public class Server {
         }
 
         try {
-            String endpoint = "ConfigurationReceiver:default -h 192.168.131.22 -p " + MESA_6823_PORT;
+            String endpoint = "ConfigurationReceiver:default -h 192.168.131.102 -p " + MESA_6823_PORT;
             ObjectPrx base = configurationSender.communicator.stringToProxy(endpoint);
             ConfigurationSystem.ConfigurationReceiverPrx receiver =
                     ConfigurationSystem.ConfigurationReceiverPrx.checkedCast(base);

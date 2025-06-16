@@ -34,8 +34,8 @@ public class ReliableServer {
         job.start();
 
         System.out.println("========== RELIABLE SERVER INICIADO ==========");
-        System.out.println("Escuchando en: 192.168.131.24:10010");
-        System.out.println("Servidor destino: 192.168.131.21:10012");
+        System.out.println("Escuchando en: 192.168.131.104:10010");
+        System.out.println("Servidor destino: 192.168.131.101:10012");
         System.out.println("Estado: ACTIVO");
         System.out.println("==============================================");
     }
