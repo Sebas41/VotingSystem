@@ -1,3 +1,13 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.zeroc.gradle.ice-builder.slice' version '1.5.0'
+}
+
+group = 'com.electoral'
+version = '1.0.0'
+
 slice {
     java {
         files = [file("../Service.ice")]
@@ -19,6 +29,12 @@ dependencies{
     implementation 'ch.qos.logback:logback-classic:1.5.3'
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 sourceSets {
     main {
         java {
@@ -30,11 +46,109 @@ sourceSets {
     }
 }
 
+application {
+    mainClass = 'Client'
+}
+
+// =================== CONFIGURACIÓN DE FAT JAR ===================
+shadowJar {
+    archiveClassifier.set('')
+    archiveVersion.set('1.0.0')
+    archiveBaseName.set('client-fat')
+
+    manifest {
+        attributes(
+                'Main-Class': 'Client',
+                'Implementation-Title': 'Electoral Client',
+                'Implementation-Version': project.version
+        )
+    }
+
+    // Incluir recursos
+    from('src/main/resources') {
+        into('/')
+    }
+
+    // Incluir archivos de configuración
+    from('config') {
+        into('config')
+    }
+
+    // Resolver conflictos de archivos duplicados
+    mergeServiceFiles()
+
+    // Excluir archivos problemáticos
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/MANIFEST.MF'
+
+    // Incluir dependencias transitivas
+    configurations = [project.configurations.runtimeClasspath]
+
+    // Transformaciones específicas para Kryo si es necesario
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer)
+
+    doLast {
+        println "Client Fat JAR creado: ${archiveFile.get().asFile.absolutePath}"
+        println "Tamaño: ${archiveFile.get().asFile.length() / (1024 * 1024)} MB"
+    }
+}
+
+// Hacer que 'build' genere el fat jar por defecto
+build.dependsOn shadowJar
+
+// =================== TAREAS ADICIONALES ===================
+// JAR normal (sin dependencias)
 jar {
     manifest {
         attributes(
-                "Main-Class": project.name.capitalize(),
+                "Main-Class": "Client",
                 "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
         )
     }
+    archiveClassifier.set('thin')
 }
+
+// Nueva tarea para probar el fat jar
+task runFatJar(type: JavaExec) {
+    group = 'application'
+    description = 'Ejecuta el client fat jar generado'
+    classpath = files("${buildDir}/libs/client-fat-1.0.0.jar")
+    mainClass = 'Client'
+    dependsOn shadowJar
+}
+
+// Tarea para ejecutar el cliente normalmente
+task runClient(type: JavaExec) {
+    group = 'application'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'Client'
+}
+
+// Verificar slice generation
+task verifySliceGeneration {
+    group = 'verification'
+    description = 'Verifica que las clases Ice se hayan generado correctamente'
+    dependsOn compileSliceJava
+    doLast {
+        def generatedDir = file("${buildDir}/generated-src/slice2java")
+        if (generatedDir.exists()) {
+            println "Clases Ice generadas en: ${generatedDir}"
+            fileTree(dir: generatedDir, include: '**/*.java').each {
+                println "   - ${it.name}"
+            }
+        } else {
+            println "Advertencia: No se encontraron clases Ice generadas"
+        }
+    }
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:unchecked', '-Xlint:deprecation']
+    dependsOn verifySliceGeneration
+}
+
+// Asegurar que el slice se compile antes del shadowJar
+shadowJar.dependsOn compileSliceJava
