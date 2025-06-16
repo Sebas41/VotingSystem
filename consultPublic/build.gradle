@@ -1,38 +1,30 @@
 plugins {
     id 'java'
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
-group = 'org.example'
-version = 'unspecified'
+group = 'com.electoral'
+version = '1.0.0'
 
 repositories {
     mavenCentral()
 }
 
 java {
-    sourceCompatibility = '11'
-    targetCompatibility = '11'
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    implementation 'com.zeroc:ice:3.7.10'
-    implementation 'org.slf4j:slf4j-api:1.7.36'
-    implementation 'ch.qos.logback:logback-classic:1.2.12'
-    implementation 'ch.qos.logback:logback-core:1.2.12'
+    implementation 'com.zeroc:ice:3.7.2'
+    implementation 'org.slf4j:slf4j-api:2.0.12'
+    implementation 'ch.qos.logback:logback-classic:1.5.3'
+    implementation 'ch.qos.logback:logback-core:1.5.3'
     implementation project(':ProxyCacheReports')
-}
-
-test {
-    useJUnitPlatform()
-}
-
-slice {
-    java {
-        srcDir = 'src/main/slice'
-    }
 }
 
 sourceSets {
@@ -50,49 +42,215 @@ application {
     mainClass = 'org.votaciones.ConsultPublicClient'
 }
 
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
-}
-
-// Configuración para Ice
+// =================== CONFIGURACIÓN PARA ICE ===================
 task generateIce {
+    group = 'build'
+    description = 'Genera clases Java desde archivos .ice'
     doLast {
-        def sliceDir = file('slice')
+        def sliceDir = file('src/main/slice')
         def outputDir = file('build/generated-src')
         outputDir.mkdirs()
 
-        exec {
-            workingDir sliceDir
-            commandLine 'slice2java', '--output-dir', outputDir, 'ConsultPublic.ice'
+        if (!sliceDir.exists()) {
+            println "Directorio slice no encontrado: ${sliceDir.absolutePath}"
+            return
+        }
+
+        fileTree(dir: sliceDir, include: '*.ice').each { iceFile ->
+            println "Generando clases desde: ${iceFile.name}"
+            exec {
+                workingDir sliceDir
+                commandLine 'slice2java', '--output-dir', outputDir.absolutePath, iceFile.name
+            }
         }
     }
 }
 
-// Configuración del JAR
+// =================== CONFIGURACIÓN DE FAT JAR ===================
+shadowJar {
+    archiveClassifier.set('')
+    archiveVersion.set('1.0.0')
+    archiveBaseName.set('consultPublic-fat')
+
+    manifest {
+        attributes(
+                'Main-Class': 'org.votaciones.ConsultPublicClient',
+                'Implementation-Title': 'Consult Public Client',
+                'Implementation-Version': project.version
+        )
+    }
+
+    // Incluir recursos
+    from('src/main/resources') {
+        into('/')
+    }
+
+    // Incluir archivos de configuración
+    from('config') {
+        into('config')
+    }
+
+    // Resolver conflictos de archivos duplicados
+    mergeServiceFiles()
+
+    // Excluir archivos problemáticos
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/MANIFEST.MF'
+
+    // Incluir dependencias transitivas
+    configurations = [project.configurations.runtimeClasspath]
+
+    // Transformaciones específicas
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer)
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer) {
+        resource = 'reference.conf'
+    }
+
+    doLast {
+        println "ConsultPublic Fat JAR creado: ${archiveFile.get().asFile.absolutePath}"
+        println "Tamaño: ${archiveFile.get().asFile.length() / (1024 * 1024)} MB"
+    }
+}
+
+// Hacer que 'build' genere el fat jar por defecto
+build.dependsOn shadowJar
+
+// =================== JAR NORMAL (LEGACY SUPPORT) ===================
+jar {
+    manifest {
+        attributes(
+                "Main-Class": "org.votaciones.ConsultPublicClient",
+                "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
+        )
+    }
+    archiveClassifier.set('thin')
+}
+
+// Mantener la tarea fatJar original para compatibilidad
 task fatJar(type: Jar) {
     group = 'build'
-    description = 'Crea un JAR con todas las dependencias'
-    
+    description = 'Crea un JAR con todas las dependencias (LEGACY - usar shadowJar)'
+
     manifest {
         attributes 'Main-Class': 'org.votaciones.ConsultPublicClient'
     }
-    
-    archiveBaseName = 'consultPublic'
+
+    archiveBaseName = 'consultPublic-legacy'
     archiveVersion = '1.0'
-    archiveClassifier = ''
-    
+    archiveClassifier = 'legacy'
+
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-    
+
     with jar
-    
+
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-// Configuración de tareas
+// =================== TAREAS ADICIONALES ===================
+task runFatJar(type: JavaExec) {
+    group = 'application'
+    description = 'Ejecuta el consultPublic fat jar generado'
+    classpath = files("${buildDir}/libs/consultPublic-fat-1.0.0.jar")
+    mainClass = 'org.votaciones.ConsultPublicClient'
+    dependsOn shadowJar
+}
+
+task runConsultPublic(type: JavaExec) {
+    group = 'application'
+    description = 'Ejecuta el cliente normalmente'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.votaciones.ConsultPublicClient'
+}
+
+task verifySliceGeneration {
+    group = 'verification'
+    description = 'Verifica que las clases Ice se hayan generado correctamente'
+    dependsOn generateIce
+    doLast {
+        def generatedDir = file("build/generated-src")
+        if (generatedDir.exists()) {
+            println "Clases Ice generadas en: ${generatedDir}"
+            fileTree(dir: generatedDir, include: '**/*.java').each {
+                println "   - ${it.name}"
+            }
+        } else {
+            println "Advertencia: No se encontraron clases Ice generadas"
+        }
+
+        // Verificar archivos .ice
+        def sliceDir = file("src/main/slice")
+        if (sliceDir.exists()) {
+            fileTree(dir: sliceDir, include: '*.ice').each { iceFile ->
+                println "Archivo Ice encontrado: ${iceFile.name}"
+            }
+        } else {
+            println "Error: Directorio src/main/slice no encontrado"
+        }
+    }
+}
+
+task verifyProjectStructure {
+    group = 'verification'
+    description = 'Verifica que todos los archivos necesarios estén presentes'
+    doLast {
+        println "Verificando estructura del proyecto consultPublic:"
+
+        def mainFiles = [
+                'src/main/slice',
+                'src/main/java',
+                'src/main/resources'
+        ]
+
+        mainFiles.each { fileName ->
+            def file = file(fileName)
+            if (file.exists()) {
+                println "   ✓ ${fileName}"
+            } else {
+                println "   ✗ ${fileName} - NO ENCONTRADO"
+            }
+        }
+
+        def javaFiles = fileTree(dir: 'src/main/java', include: '**/*.java')
+        println "\nArchivos Java principales encontrados:"
+        javaFiles.each { println "   - ${it.name}" }
+    }
+}
+
+task verifyProxyCacheReports {
+    group = 'verification'
+    description = 'Verifica que el proyecto ProxyCacheReports esté disponible'
+    doLast {
+        try {
+            def proxyCacheProject = project(':ProxyCacheReports')
+            println "Proyecto ProxyCacheReports encontrado: ${proxyCacheProject.projectDir}"
+        } catch (Exception e) {
+            println "Error: Proyecto ProxyCacheReports no encontrado"
+            println "Asegúrate de que esté incluido en settings.gradle"
+            throw e
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:unchecked', '-Xlint:deprecation']
+}
+
+// Configuración de tareas (mantener dependencias originales)
 compileJava.dependsOn generateIce
-build.dependsOn fatJar
+compileJava.dependsOn verifyProjectStructure
+compileJava.dependsOn verifyProxyCacheReports
+
+// Asegurar que el shadowJar dependa de la generación Ice
+shadowJar.dependsOn generateIce
 
 // Configuración de limpieza
 clean {
@@ -100,7 +258,7 @@ clean {
     delete 'bin'
 }
 
-// Configurar dependencias de tareas
-distZip.dependsOn fatJar
-distTar.dependsOn fatJar
-startScripts.dependsOn fatJar
+// Configurar dependencias de tareas (mantener compatibilidad)
+distZip.dependsOn shadowJar
+distTar.dependsOn shadowJar
+startScripts.dependsOn shadowJar

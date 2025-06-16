@@ -23,7 +23,7 @@ public class ConnectionDB implements ConnectionDBinterface {
             HikariConfig config = new HikariConfig();
 
             // Database connection settings
-            config.setJdbcUrl("jdbc:postgresql://localhost:5432/votaciones");
+            config.setJdbcUrl("jdbc:postgresql://192.168.131.101:5432/suppe");
             config.setUsername("postgres");
             config.setPassword("postgres");
             config.setDriverClassName("org.postgresql.Driver");

@@ -1,25 +1,41 @@
-
 plugins {
     id 'java'
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
-group = 'org.votaciones'
-version = '1.0'
-sourceCompatibility = '11'
-targetCompatibility = '11'
+group = 'com.electoral'
+version = '1.0.0'
 
-application {
-    mainClass = 'org.votaciones.ProxyCacheServer'
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.zeroc:ice:3.7.2'
+    implementation 'org.slf4j:slf4j-api:2.0.12'
+    implementation 'ch.qos.logback:logback-classic:1.5.3'
+    implementation 'ch.qos.logback:logback-core:1.5.3'
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:4.6.1'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 sourceSets {
     main {
         java {
-
-            srcDirs = ['src/main/java']
-            srcDirs += ['../ReportsSystem']
-            srcDirs += ['../VoteNotification']
+            srcDirs = [
+                    'src/main/java',
+                    '../ReportsSystem',
+                    '../VoteNotification'
+            ]
         }
         resources {
             srcDirs = ['src/main/resources']
@@ -35,70 +51,75 @@ sourceSets {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation 'com.zeroc:ice:3.7.10'
-
-    implementation 'org.slf4j:slf4j-api:1.7.36'
-    implementation 'ch.qos.logback:logback-classic:1.2.12'
-    implementation 'ch.qos.logback:logback-core:1.2.12'
-
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
-
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:4.6.1'
-}
-
-compileJava {
-    options.encoding = 'UTF-8'
-    options.compilerArgs += ['-Xlint:unchecked', '-Xlint:deprecation']
-}
-
-compileTestJava {
-    options.encoding = 'UTF-8'
-}
-
-
-task runProxyCache(type: JavaExec) {
-    group = 'application'
-    description = 'Ejecuta el ProxyCache de Reports'
-    classpath = sourceSets.main.runtimeClasspath
+application {
     mainClass = 'org.votaciones.ProxyCacheServer'
-
-
-    args = ['--Ice.Config=src/main/resources/proxycache.cfg']
-
-
-    jvmArgs = ['-Xmx512m', '-Xms256m']
 }
 
+// =================== CONFIGURACIÓN DE FAT JAR ===================
+shadowJar {
+    archiveClassifier.set('')
+    archiveVersion.set('1.0.0')
+    archiveBaseName.set('proxycache-reports-fat')
 
-task cleanCache {
-    group = 'development'
-    description = 'Limpia archivos de cache y logs'
+    manifest {
+        attributes(
+                'Main-Class': 'org.votaciones.ProxyCacheServer',
+                'Implementation-Title': 'ProxyCache Reports',
+                'Implementation-Version': project.version,
+                'Built-By': System.getProperty('user.name'),
+                'Built-Date': new Date().toString()
+        )
+    }
+
+    // Incluir recursos
+    from('src/main/resources') {
+        into('/')
+    }
+
+    // Incluir archivos de configuración
+    from('.') {
+        include 'proxycache.cfg'
+        into('/')
+    }
+
+    // Incluir directorios de configuración
+    from('config') {
+        into('config')
+    }
+
+    // Resolver conflictos de archivos duplicados
+    mergeServiceFiles()
+
+    // Excluir archivos problemáticos
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/MANIFEST.MF'
+
+    // Incluir dependencias transitivas
+    configurations = [project.configurations.runtimeClasspath]
+
+    // Transformaciones específicas
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer)
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer) {
+        resource = 'reference.conf'
+    }
+
     doLast {
-        delete fileTree(dir: 'data', include: '**/*')
-        delete fileTree(dir: 'logs', include: '**/*')
-        println '🧹 Cache y logs limpiados'
+        println "ProxyCacheReports Fat JAR creado: ${archiveFile.get().asFile.absolutePath}"
+        println "Tamaño: ${archiveFile.get().asFile.length() / (1024 * 1024)} MB"
     }
 }
 
+// Hacer que 'build' genere el fat jar por defecto
+build.dependsOn shadowJar
 
-task checkConnection(type: JavaExec) {
-    group = 'verification'
-    description = 'Verifica conexión al servidor principal de Reports'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'org.votaciones.ConnectionTest'
-    args = ['--Ice.Config=src/main/resources/proxycache.cfg']
-}
-
-
+// =================== TAREAS EXISTENTES ACTUALIZADAS ===================
+// JAR normal (sin dependencias)
 jar {
     archiveBaseName = 'proxycache-reports'
-    archiveVersion = '1.0'
+    archiveVersion = '1.0.0'
+    archiveClassifier.set('thin')
 
     manifest {
         attributes(
@@ -111,27 +132,41 @@ jar {
     }
 }
 
-// =================== CONFIGURACIÓN DE FAT JAR ===================
-task fatJar(type: Jar) {
-    group = 'build'
-    description = 'Crea un JAR ejecutable con todas las dependencias'
-    archiveBaseName = 'proxycache-reports-standalone'
-    archiveVersion = '1.0'
+// Nueva tarea para probar el fat jar
+task runFatJar(type: JavaExec) {
+    group = 'application'
+    description = 'Ejecuta el proxycache fat jar generado'
+    classpath = files("${buildDir}/libs/proxycache-reports-fat-1.0.0.jar")
+    mainClass = 'org.votaciones.ProxyCacheServer'
+    dependsOn shadowJar
+}
 
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+task runProxyCache(type: JavaExec) {
+    group = 'application'
+    description = 'Ejecuta el ProxyCache de Reports'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.votaciones.ProxyCacheServer'
+    args = ['--Ice.Config=src/main/resources/proxycache.cfg']
+    jvmArgs = ['-Xmx512m', '-Xms256m']
+}
 
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-
-    manifest {
-        attributes(
-                'Main-Class': 'org.votaciones.ProxyCacheServer',
-                'Implementation-Title': 'ProxyCache Reports Standalone',
-                'Implementation-Version': version
-        )
+task cleanCache {
+    group = 'development'
+    description = 'Limpia archivos de cache y logs'
+    doLast {
+        delete fileTree(dir: 'data', include: '**/*')
+        delete fileTree(dir: 'logs', include: '**/*')
+        println '🧹 Cache y logs limpiados'
     }
 }
 
+task checkConnection(type: JavaExec) {
+    group = 'verification'
+    description = 'Verifica conexión al servidor principal de Reports'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.votaciones.ConnectionTest'
+    args = ['--Ice.Config=src/main/resources/proxycache.cfg']
+}
 
 task developmentRun(type: JavaExec) {
     group = 'development'
@@ -140,42 +175,15 @@ task developmentRun(type: JavaExec) {
     mainClass = 'org.votaciones.ProxyCacheServer'
     args = ['--Ice.Config=src/main/resources/proxycache.cfg']
 
-    // Habilitar debug
     jvmArgs = [
             '-Xmx512m',
             '-Xms256m',
             '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005'
     ]
 
-    // Variables de entorno para desarrollo
     environment 'PROXY_CACHE_ENV', 'development'
     environment 'LOG_LEVEL', 'DEBUG'
 }
-
-distributions {
-    main {
-        distributionBaseName = 'proxycache-reports'
-        contents {
-            from jar
-            from configurations.runtimeClasspath
-            from 'src/main/resources'
-            into('bin') {
-                from 'scripts'
-                fileMode = 0755
-            }
-        }
-    }
-}
-
-
-test {
-    useJUnit()
-    testLogging {
-        events "passed", "skipped", "failed"
-        exceptionFormat "full"
-    }
-}
-
 
 task verifyIceClasses {
     group = 'verification'
@@ -197,13 +205,74 @@ task verifyIceClasses {
     }
 }
 
+// Tarea para verificar la estructura del proyecto
+task verifyProjectStructure {
+    group = 'verification'
+    description = 'Verifica que todos los archivos necesarios estén presentes'
+    doLast {
+        println "Verificando estructura del proyecto ProxyCacheReports:"
 
-compileJava.dependsOn verifyIceClasses
-build.dependsOn fatJar
+        def mainFiles = [
+                'src/main/java',
+                'src/main/resources/proxycache.cfg',
+                '../ReportsSystem',
+                '../VoteNotification'
+        ]
 
+        mainFiles.each { fileName ->
+            def file = file(fileName)
+            if (file.exists()) {
+                println "   ✓ ${fileName}"
+            } else {
+                println "   ✗ ${fileName} - NO ENCONTRADO"
+            }
+        }
+
+        def javaFiles = fileTree(dir: 'src/main/java', include: '**/*.java')
+        println "\nArchivos Java principales encontrados:"
+        javaFiles.each { println "   - ${it.name}" }
+    }
+}
+
+distributions {
+    main {
+        distributionBaseName = 'proxycache-reports'
+        contents {
+            from shadowJar
+            from 'src/main/resources'
+            into('bin') {
+                from 'scripts'
+                fileMode = 0755
+            }
+        }
+    }
+}
+
+test {
+    useJUnit()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:unchecked', '-Xlint:deprecation']
+    dependsOn verifyIceClasses
+    dependsOn verifyProjectStructure
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+// Asegurar que las verificaciones se ejecuten antes del shadowJar
+shadowJar.dependsOn verifyIceClasses
 
 clean {
     delete 'data'
     delete 'logs'
     delete 'cache'
+    delete 'build'
 }
