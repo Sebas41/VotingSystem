@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="11" />
+    <bytecodeTargetLevel target="17" />
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="reliable-message-example.ProxyCacheReports.main" options="-Xlint:unchecked -Xlint:deprecation" />
+      <module name="reliable-message-example.client.main" options="-Xlint:unchecked -Xlint:deprecation" />
+      <module name="reliable-message-example.consultPublic" options="-Xlint:unchecked -Xlint:deprecation" />
+      <module name="reliable-message-example.consultPublic.main" options="-Xlint:unchecked -Xlint:deprecation" />
+      <module name="reliable-message-example.consultPublic.test" options="-Xlint:unchecked -Xlint:deprecation" />
+      <module name="reliable-message-example.reliableServer.main" options="-Xlint:unchecked -Xlint:deprecation" />
       <module name="reliable-message-example.server.main" options="-Xlint:unchecked -Xlint:deprecation" />
     </option>
   </component>
