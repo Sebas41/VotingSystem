@@ -9,15 +9,10 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Prueba Automática del Sistema de Cache Inteligente
- * Simula diferentes escenarios de consulta para activar la precarga predictiva
- */
 public class AutomatedCacheTest {
 
     private static final Logger logger = LoggerFactory.getLogger(AutomatedCacheTest.class);
 
-    // 1000 IDs de ciudadanos para pruebas
     private static final String[] CITIZEN_IDS = {
             "15050547", "15050548", "15050549", "15050550", "15050551", "15050552", "15050553", "15050554", "15050555", "15050556",
             "15050557", "15050558", "15050559", "15050560", "15050561", "15050562", "15050563", "15050564", "15050565", "15050566",
@@ -124,61 +119,46 @@ public class AutomatedCacheTest {
     public static void main(String[] args) {
         try (Communicator communicator = Util.initialize(args)) {
 
-            System.out.println("🚀 ========== PRUEBA AUTOMÁTICA CACHE INTELIGENTE ==========");
-            System.out.println("🧪 Ejecutando escenarios para activar precarga predictiva");
-            System.out.println("📊 Ciudadanos disponibles para prueba: " + CITIZEN_IDS.length);
+            System.out.println("========== PRUEBA AUTOMÁTICA CACHE INTELIGENTE ==========");
+            System.out.println("Ejecutando escenarios para activar precarga predictiva");
+            System.out.println("Ciudadanos disponibles para prueba: " + CITIZEN_IDS.length);
 
-            // Conectar al proxy cache
             ObjectPrx base = communicator.stringToProxy("ProxyCacheReports:default -h localhost -p 9999");
             ReportsServicePrx proxyCache = ReportsServicePrx.checkedCast(base);
 
             if (proxyCache == null) {
-                System.err.println("❌ Error: No se pudo conectar al proxy cache");
+                System.err.println("Error: No se pudo conectar al proxy cache");
                 return;
             }
 
-            System.out.println("✅ Conectado al proxy cache");
-            System.out.println("⏰ Iniciando pruebas automáticas...\n");
+            System.out.println("Conectado al proxy cache");
+            System.out.println("Iniciando pruebas automáticas...\n");
 
-            // Ejecutar todos los escenarios de prueba
             AutomatedCacheTest test = new AutomatedCacheTest();
 
-            // Estadísticas iniciales
             test.showInitialStats(proxyCache);
-
-            // Escenario 1: Simulación de hotspot concentrado
             test.runHotspotScenario(proxyCache);
-
-            // Pausa para análisis
             test.waitForAnalysis("primera ronda de hotspots");
-
-            // Escenario 2: Dispersión aleatoria
             test.runRandomScenario(proxyCache);
-
-            // Pausa para análisis
             test.waitForAnalysis("consultas aleatorias");
-
-            // Escenario 3: Simulación de carga alta
             test.runHighLoadScenario(proxyCache);
-
-            // Estadísticas finales
             test.showFinalStats(proxyCache);
 
-            System.out.println("\n✅ ========== PRUEBA AUTOMÁTICA COMPLETADA ==========");
-            System.out.println("📋 Revisa los logs del servidor para confirmar:");
-            System.out.println("   🔥 Detección de hotspots");
-            System.out.println("   📥 Ejecución de precarga predictiva");
-            System.out.println("   📈 Mejora en hit rate");
+            System.out.println("\n========== PRUEBA AUTOMÁTICA COMPLETADA ==========");
+            System.out.println("Revisa los logs del servidor para confirmar:");
+            System.out.println("   - Detección de hotspots");
+            System.out.println("   - Ejecución de precarga predictiva");
+            System.out.println("   - Mejora en hit rate");
 
         } catch (Exception e) {
-            System.err.println("❌ Error en prueba automática: " + e.getMessage());
+            System.err.println("Error en prueba automática: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void showInitialStats(ReportsServicePrx proxyCache) {
         try {
-            System.out.println("📊 ========== ESTADÍSTICAS INICIALES ==========");
+            System.out.println("========== ESTADÍSTICAS INICIALES ==========");
             String stats = proxyCache.getCacheStats();
             String[] lines = stats.split("\n");
             for (String line : lines) {
@@ -196,16 +176,15 @@ public class AutomatedCacheTest {
     }
 
     private void runHotspotScenario(ReportsServicePrx proxyCache) {
-        System.out.println("🔥 ========== ESCENARIO 1: SIMULACIÓN DE HOTSPOT ==========");
-        System.out.println("🎯 Consultando los primeros 50 ciudadanos 4 veces cada uno");
+        System.out.println("========== ESCENARIO 1: SIMULACIÓN DE HOTSPOT ==========");
+        System.out.println("Consultando los primeros 50 ciudadanos 4 veces cada uno");
 
         int electionId = 1;
         long totalTime = 0;
         int totalQueries = 0;
 
-        // Consultar los primeros 50 ciudadanos múltiples veces para crear hotspot
         for (int round = 1; round <= 4; round++) {
-            System.out.println("\n🔄 Ronda " + round + " de consultas intensivas:");
+            System.out.println("\nRonda " + round + " de consultas intensivas:");
 
             for (int i = 0; i < 50; i++) {
                 try {
@@ -220,10 +199,9 @@ public class AutomatedCacheTest {
                     totalQueries++;
 
                     if (i % 10 == 0) {
-                        System.out.println("   📝 Consulta " + (i + 1) + ": " + documento + " (" + queryTime + " ms)");
+                        System.out.println(" Consulta " + (i + 1) + ": " + documento + " (" + queryTime + " ms)");
                     }
 
-                    // Pausa pequeña entre consultas
                     Thread.sleep(100);
 
                 } catch (Exception | InterruptedException e) {
@@ -231,16 +209,16 @@ public class AutomatedCacheTest {
                 }
             }
 
-            System.out.println("   ⏱️ Ronda " + round + " completada - Promedio: " +
+            System.out.println("Ronda " + round + " completada - Promedio: " +
                     (totalTime / totalQueries) + " ms/consulta");
         }
 
-        System.out.println("✅ Escenario hotspot completado: " + totalQueries + " consultas en " + totalTime + " ms");
+        System.out.println("Escenario hotspot completado: " + totalQueries + " consultas en " + totalTime + " ms");
     }
 
     private void runRandomScenario(ReportsServicePrx proxyCache) {
-        System.out.println("\n🎲 ========== ESCENARIO 2: CONSULTAS ALEATORIAS ==========");
-        System.out.println("🔀 Consultando 100 ciudadanos aleatorios para dispersar el cache");
+        System.out.println("\n========== ESCENARIO 2: CONSULTAS ALEATORIAS ==========");
+        System.out.println("Consultando 100 ciudadanos aleatorios para dispersar el cache");
 
         int electionId = 1;
         Random random = new Random();
@@ -248,7 +226,6 @@ public class AutomatedCacheTest {
 
         for (int i = 0; i < 100; i++) {
             try {
-                // Seleccionar ciudadano aleatorio
                 String documento = CITIZEN_IDS[random.nextInt(CITIZEN_IDS.length)];
                 long startTime = System.currentTimeMillis();
 
@@ -259,7 +236,7 @@ public class AutomatedCacheTest {
                 totalTime += queryTime;
 
                 if (i % 25 == 0) {
-                    System.out.println("   🎯 Consulta aleatoria " + (i + 1) + ": " + documento + " (" + queryTime + " ms)");
+                    System.out.println("Consulta aleatoria " + (i + 1) + ": " + documento + " (" + queryTime + " ms)");
                 }
 
                 Thread.sleep(50);
@@ -269,20 +246,19 @@ public class AutomatedCacheTest {
             }
         }
 
-        System.out.println("✅ Escenario aleatorio completado: 100 consultas en " + totalTime + " ms");
+        System.out.println("Escenario aleatorio completado: 100 consultas en " + totalTime + " ms");
     }
 
     private void runHighLoadScenario(ReportsServicePrx proxyCache) {
-        System.out.println("\n⚡ ========== ESCENARIO 3: CARGA ALTA ==========");
-        System.out.println("🚀 Simulando carga alta con consultas rápidas concentradas");
+        System.out.println("\n========== ESCENARIO 3: CARGA ALTA ==========");
+        System.out.println("Simulando carga alta con consultas rápidas concentradas");
 
         int electionId = 1;
         long totalTime = 0;
         int totalQueries = 0;
 
-        // Consultas rápidas de ciudadanos del rango 100-200 para crear otro hotspot
         for (int round = 1; round <= 3; round++) {
-            System.out.println("\n💨 Ronda rápida " + round + ":");
+            System.out.println("\nRonda rápida " + round + ":");
 
             for (int i = 100; i < 150; i++) {
                 try {
@@ -297,10 +273,9 @@ public class AutomatedCacheTest {
                     totalQueries++;
 
                     if (i % 20 == 0) {
-                        System.out.println("   ⚡ Consulta rápida " + (i + 1) + ": " + documento + " (" + queryTime + " ms)");
+                        System.out.println("Consulta rápida " + (i + 1) + ": " + documento + " (" + queryTime + " ms)");
                     }
 
-                    // Sin pausa para simular carga alta
 
                 } catch (Exception e) {
                     System.err.println("Error en carga alta: " + e.getMessage());
@@ -308,22 +283,22 @@ public class AutomatedCacheTest {
             }
         }
 
-        System.out.println("✅ Escenario carga alta completado: " + totalQueries + " consultas en " + totalTime + " ms");
+        System.out.println("Escenario carga alta completado: " + totalQueries + " consultas en " + totalTime + " ms");
     }
 
     private void waitForAnalysis(String description) {
         try {
-            System.out.println("\n⏳ Esperando 35 segundos para análisis automático después de " + description + "...");
-            System.out.println("💡 Durante esta pausa, el sistema debería:");
-            System.out.println("   🔍 Analizar patrones de consulta");
-            System.out.println("   🔥 Detectar hotspots");
-            System.out.println("   📥 Ejecutar precarga predictiva");
+            System.out.println("\nEsperando 35 segundos para análisis automático después de " + description + "...");
+            System.out.println("Durante esta pausa, el sistema debería:");
+            System.out.println("   - Analizar patrones de consulta");
+            System.out.println("   - Detectar hotspots");
+            System.out.println("   - Ejecutar precarga predictiva");
 
             for (int i = 35; i > 0; i--) {
-                System.out.print("\r⏰ " + i + " segundos restantes...");
+                System.out.print("\r" + i + " segundos restantes...");
                 Thread.sleep(1000);
             }
-            System.out.println("\r✅ Pausa de análisis completada");
+            System.out.println("\rPausa de análisis completada");
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -332,14 +307,13 @@ public class AutomatedCacheTest {
 
     private void showFinalStats(ReportsServicePrx proxyCache) {
         try {
-            System.out.println("\n📊 ========== ESTADÍSTICAS FINALES ==========");
+            System.out.println("\n========== ESTADÍSTICAS FINALES ==========");
             String stats = proxyCache.getCacheStats();
 
             System.out.println(stats);
 
-            // Extraer métricas clave para resumen
             String[] lines = stats.split("\n");
-            System.out.println("\n🎯 ========== RESUMEN DE RESULTADOS ==========");
+            System.out.println("\n========== RESUMEN DE RESULTADOS ==========");
 
             for (String line : lines) {
                 if (line.contains("Total consultas") ||
@@ -355,17 +329,17 @@ public class AutomatedCacheTest {
 
             // Buscar hotspots detectados
             boolean foundHotspots = false;
-            System.out.println("\n🔥 Hotspots detectados:");
+            System.out.println("\nHotspots detectados:");
             for (String line : lines) {
-                if (line.contains("🔥") || line.contains("hotspot")) {
+                if (line.contains(" ") || line.contains("hotspot")) {
                     System.out.println("   " + line.trim());
                     foundHotspots = true;
                 }
             }
 
             if (!foundHotspots) {
-                System.out.println("   ⚠️ No se detectaron hotspots en las estadísticas");
-                System.out.println("   💡 Revisa los logs del servidor para confirmar detección");
+                System.out.println("No se detectaron hotspots en las estadísticas");
+                System.out.println("Revisa los logs del servidor para confirmar detección");
             }
 
         } catch (Exception e) {
@@ -373,25 +347,21 @@ public class AutomatedCacheTest {
         }
     }
 
-    /**
-     * Prueba específica para generar hotspot de mesa
-     */
     private void runMesaHotspotTest(ReportsServicePrx proxyCache) {
-        System.out.println("\n📋 ========== PRUEBA ESPECÍFICA: HOTSPOT DE MESA ==========");
+        System.out.println("\n========== PRUEBA ESPECÍFICA: HOTSPOT DE MESA ==========");
 
         try {
-            // Simular consultas intensivas de una mesa específica
-            int mesaId = 34203; // Mesa de ejemplo
+            int mesaId = 34203; 
             int electionId = 1;
 
-            System.out.println("🎯 Generando hotspot para mesa " + mesaId);
+            System.out.println("Generando hotspot para mesa " + mesaId);
 
             for (int i = 0; i < 5; i++) {
                 long startTime = System.currentTimeMillis();
                 String[] results = proxyCache.getMesaCitizenReports(mesaId, electionId);
                 long endTime = System.currentTimeMillis();
 
-                System.out.println("   📋 Consulta mesa " + (i + 1) + ": " +
+                System.out.println("Consulta mesa " + (i + 1) + ": " +
                         results.length + " ciudadanos (" + (endTime - startTime) + " ms)");
 
                 Thread.sleep(500);
@@ -404,11 +374,9 @@ public class AutomatedCacheTest {
         }
     }
 
-    /**
-     * Prueba específica para generar hotspot geográfico
-     */
+
     private void runGeographicHotspotTest(ReportsServicePrx proxyCache) {
-        System.out.println("\n🌍 ========== PRUEBA ESPECÍFICA: HOTSPOT GEOGRÁFICO ==========");
+        System.out.println("\n========== PRUEBA ESPECÍFICA: HOTSPOT GEOGRÁFICO ==========");
 
         try {
             int locationId = 1;
@@ -416,14 +384,14 @@ public class AutomatedCacheTest {
             String[] locationTypes = {"municipality", "puesto", "department"};
 
             for (String locationType : locationTypes) {
-                System.out.println("🗺️ Generando hotspot para " + locationType + " " + locationId);
+                System.out.println("Generando hotspot para " + locationType + " " + locationId);
 
                 for (int i = 0; i < 4; i++) {
                     long startTime = System.currentTimeMillis();
                     String result = proxyCache.getGeographicReports(locationId, locationType, electionId);
                     long endTime = System.currentTimeMillis();
 
-                    System.out.println("   🌍 Consulta " + locationType + " " + (i + 1) + ": " +
+                    System.out.println("Consulta " + locationType + " " + (i + 1) + ": " +
                             (endTime - startTime) + " ms");
 
                     Thread.sleep(300);
@@ -435,28 +403,23 @@ public class AutomatedCacheTest {
         }
     }
 
-    /**
-     * Método principal extendido con más opciones
-     */
     public static void runExtendedTests(String[] args) {
         try (Communicator communicator = Util.initialize(args)) {
 
-            System.out.println("🚀 ========== PRUEBAS EXTENDIDAS CACHE INTELIGENTE ==========");
+            System.out.println("========== PRUEBAS EXTENDIDAS CACHE INTELIGENTE ==========");
 
-            // Conectar al proxy cache
             ObjectPrx base = communicator.stringToProxy("ProxyCacheReports:default -h localhost -p 9999");
             ReportsServicePrx proxyCache = ReportsServicePrx.checkedCast(base);
 
             if (proxyCache == null) {
-                System.err.println("❌ Error: No se pudo conectar al proxy cache");
+                System.err.println("Error: No se pudo conectar al proxy cache");
                 return;
             }
 
-            System.out.println("✅ Conectado al proxy cache");
+            System.out.println("Conectado al proxy cache");
 
             AutomatedCacheTest test = new AutomatedCacheTest();
 
-            // Ejecutar todas las pruebas
             test.showInitialStats(proxyCache);
             test.runHotspotScenario(proxyCache);
             test.waitForAnalysis("hotspot de ciudadanos");
@@ -473,26 +436,24 @@ public class AutomatedCacheTest {
 
             test.showFinalStats(proxyCache);
 
-            System.out.println("\n✅ ========== TODAS LAS PRUEBAS COMPLETADAS ==========");
+            System.out.println("\n========== TODAS LAS PRUEBAS COMPLETADAS ==========");
 
         } catch (Exception e) {
-            System.err.println("❌ Error en pruebas extendidas: " + e.getMessage());
+            System.err.println("Error en pruebas extendidas: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    /**
-     * Prueba de rendimiento comparativo
-     */
+
     private void runPerformanceComparison(ReportsServicePrx proxyCache) {
-        System.out.println("\n⚡ ========== COMPARACIÓN DE RENDIMIENTO ==========");
+        System.out.println("\n========== COMPARACIÓN DE RENDIMIENTO ==========");
 
         int electionId = 1;
         List<Long> coldTimes = new ArrayList<>();
         List<Long> warmTimes = new ArrayList<>();
 
         // Consultas en frío (primeras consultas)
-        System.out.println("🥶 Midiendo rendimiento en frío...");
+        System.out.println("Midiendo rendimiento en frío...");
         for (int i = 500; i < 520; i++) {
             try {
                 String documento = CITIZEN_IDS[i];
@@ -506,8 +467,7 @@ public class AutomatedCacheTest {
             }
         }
 
-        // Consultas en caliente (repetir las mismas)
-        System.out.println("🔥 Midiendo rendimiento en caliente...");
+        System.out.println("Midiendo rendimiento en caliente...");
         for (int i = 500; i < 520; i++) {
             try {
                 String documento = CITIZEN_IDS[i];
@@ -521,14 +481,13 @@ public class AutomatedCacheTest {
             }
         }
 
-        // Calcular estadísticas
         double coldAvg = coldTimes.stream().mapToLong(Long::longValue).average().orElse(0);
         double warmAvg = warmTimes.stream().mapToLong(Long::longValue).average().orElse(0);
         double improvement = ((coldAvg - warmAvg) / coldAvg) * 100;
 
-        System.out.println("📊 Resultados de rendimiento:");
-        System.out.println("   🥶 Promedio en frío: " + String.format("%.1f", coldAvg) + " ms");
-        System.out.println("   🔥 Promedio en caliente: " + String.format("%.1f", warmAvg) + " ms");
-        System.out.println("   📈 Mejora: " + String.format("%.1f", improvement) + "%");
+        System.out.println("Resultados de rendimiento:");
+        System.out.println("   - Promedio en frío: " + String.format("%.1f", coldAvg) + " ms");
+        System.out.println("   - Promedio en caliente: " + String.format("%.1f", warmAvg) + " ms");
+        System.out.println("   - Mejora: " + String.format("%.1f", improvement) + "%");
     }
 }

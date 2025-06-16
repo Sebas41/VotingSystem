@@ -58,23 +58,21 @@ public class ElectionSetupTest {
         if (electionInfo == null) {
             System.out.println("   Creating test election...");
 
-            // ✅ CORREGIDO: Crear elección para HOY con horarios apropiados
             java.util.Calendar cal = java.util.Calendar.getInstance();
 
-            // Fecha de inicio: HOY a las 00:00:00
+
             cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
             cal.set(java.util.Calendar.MINUTE, 0);
             cal.set(java.util.Calendar.SECOND, 0);
             cal.set(java.util.Calendar.MILLISECOND, 0);
             Date startDate = cal.getTime();
 
-            // Fecha de fin: HOY a las 23:59:59
             cal.set(java.util.Calendar.HOUR_OF_DAY, 23);
             cal.set(java.util.Calendar.MINUTE, 59);
             cal.set(java.util.Calendar.SECOND, 59);
             Date endDate = cal.getTime();
 
-            // ✅ INFORMACIÓN PARA DEBUG
+
             System.out.println("    Configurando elección para HOY:");
             System.out.println("     - Inicio elección: " + startDate);
             System.out.println("     - Fin elección: " + endDate);
@@ -85,7 +83,6 @@ public class ElectionSetupTest {
             electionInfo = db.getElectionInfo(testElectionId);
             System.out.println("   Election created: " + (electionInfo != null));
 
-            // ✅ VERIFICAR HORARIOS GENERADOS
             if (electionInfo != null) {
                 System.out.println("    Elección creada exitosamente");
                 System.out.println("     - El servidor calculará jornada: 08:00 - 18:00");

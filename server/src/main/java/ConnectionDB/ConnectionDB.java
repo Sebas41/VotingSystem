@@ -11,11 +11,7 @@ import java.util.*;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Complete optimized ConnectionDB implementation using HikariCP
- * Designed for high-performance operations with 100M citizen records
- * MAINTAINS ALL EXISTING FUNCTIONALITY with enhanced performance
- */
+
 public class ConnectionDB implements ConnectionDBinterface {
 
     private static final Logger logger = LoggerFactory.getLogger(ConnectionDB.class);
@@ -62,9 +58,7 @@ public class ConnectionDB implements ConnectionDBinterface {
         logger.info("ConnectionDB instance created using HikariCP pool");
     }
 
-    /**
-     * Get a connection from the pool
-     */
+
     private Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
@@ -747,9 +741,7 @@ public class ConnectionDB implements ConnectionDBinterface {
         return metrics;
     }
 
-    /**
-     * Shutdown the connection pool - call this when application closes
-     */
+
     public static void shutdown() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
@@ -1310,9 +1302,7 @@ public class ConnectionDB implements ConnectionDBinterface {
         return citizens;
     }
 
-    /**
-     * Obtiene todos los ciudadanos de un municipio específico
-     */
+
     @Override
     public List<Map<String, Object>> getCitizensByMunicipality(int municipalityId) {
         List<Map<String, Object>> citizens = new ArrayList<>();
@@ -1377,9 +1367,7 @@ public class ConnectionDB implements ConnectionDBinterface {
         return citizens;
     }
 
-    /**
-     * Obtiene todos los ciudadanos de un puesto de votación específico
-     */
+
     @Override
     public List<Map<String, Object>> getCitizensByPuesto(int puestoId) {
         List<Map<String, Object>> citizens = new ArrayList<>();

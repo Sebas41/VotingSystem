@@ -8,12 +8,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * 📋 GESTOR DE CONFIGURACIÓN DE MESAS DE VOTACIÓN
- *
- * Maneja la información de conexión de las mesas registradas desde archivo properties.
- * Solo las mesas configuradas en el archivo pueden recibir configuraciones.
- */
+
 public class MesaConfigurationManager {
 
     private static final Logger logger = LoggerFactory.getLogger(MesaConfigurationManager.class);
@@ -39,14 +34,10 @@ public class MesaConfigurationManager {
         loadConfiguration();
     }
 
-    // =================== CARGA DE CONFIGURACIÓN ===================
 
-    /**
-     * Carga la configuración desde el archivo properties
-     */
     private void loadConfiguration() {
         try {
-            logger.info("📋 Cargando configuración de mesas desde: {}", configFilePath);
+            logger.info(" Cargando configuración de mesas desde: {}", configFilePath);
 
             // Intentar cargar desde el classpath primero
             InputStream inputStream = getClass().getClassLoader().getResourceAsStream(configFilePath);
@@ -57,7 +48,7 @@ public class MesaConfigurationManager {
                 if (configFile.exists()) {
                     inputStream = new FileInputStream(configFile);
                 } else {
-                    logger.warn("⚠️ Archivo de configuración no encontrado: {}", configFilePath);
+                    logger.warn(" Archivo de configuración no encontrado: {}", configFilePath);
                     createDefaultConfigFile();
                     return;
                 }
@@ -69,17 +60,15 @@ public class MesaConfigurationManager {
             // Parsear y cachear la información de las mesas
             parseAndCacheMesaInfo();
 
-            logger.info("✅ Configuración cargada exitosamente - {} mesas registradas", mesasCache.size());
+            logger.info(" Configuración cargada exitosamente - {} mesas registradas", mesasCache.size());
 
         } catch (Exception e) {
-            logger.error("❌ Error cargando configuración de mesas: {}", e.getMessage(), e);
+            logger.error(" Error cargando configuración de mesas: {}", e.getMessage(), e);
             createDefaultConfigFile();
         }
     }
 
-    /**
-     * Parsea las propiedades y crea el cache de mesas
-     */
+
     private void parseAndCacheMesaInfo() {
         mesasCache.clear();
 
@@ -103,11 +92,11 @@ public class MesaConfigurationManager {
 
                 if (mesaInfo != null) {
                     mesasCache.put(mesaId, mesaInfo);
-                    logger.debug("📋 Mesa {} registrada: {}:{}", mesaId, mesaInfo.getIp(), mesaInfo.getPort());
+                    logger.debug(" Mesa {} registrada: {}:{}", mesaId, mesaInfo.getIp(), mesaInfo.getPort());
                 }
 
             } catch (NumberFormatException e) {
-                logger.warn("⚠️ ID de mesa inválido: {}", mesaIdStr);
+                logger.warn(" ID de mesa inválido: {}", mesaIdStr);
             }
         }
     }
@@ -125,7 +114,7 @@ public class MesaConfigurationManager {
         String activeStr = mesaProperties.getProperty(prefix + "active", "true");
 
         if (ip == null || portStr == null) {
-            logger.warn("⚠️ Configuración incompleta para mesa {}", mesaId);
+            logger.warn(" Configuración incompleta para mesa {}", mesaId);
             return null;
         }
 
@@ -137,7 +126,7 @@ public class MesaConfigurationManager {
             return new MesaInfo(mesaId, ip, port, name, department, active);
 
         } catch (NumberFormatException e) {
-            logger.error("❌ Error parseando configuración de mesa {}: {}", mesaId, e.getMessage());
+            logger.error(" Error parseando configuración de mesa {}: {}", mesaId, e.getMessage());
             return null;
         }
     }
@@ -147,7 +136,7 @@ public class MesaConfigurationManager {
      */
     private void createDefaultConfigFile() {
         try {
-            logger.info("📝 Creando archivo de configuración por defecto...");
+            logger.info(" Creando archivo de configuración por defecto...");
 
             Properties defaultProps = new Properties();
             defaultProps.setProperty("mesa.6823.ip", "localhost");
@@ -168,65 +157,49 @@ public class MesaConfigurationManager {
             this.mesaProperties.putAll(defaultProps);
             parseAndCacheMesaInfo();
 
-            logger.info("✅ Archivo de configuración por defecto creado: {}", configFilePath);
+            logger.info(" Archivo de configuración por defecto creado: {}", configFilePath);
 
         } catch (Exception e) {
-            logger.error("❌ Error creando configuración por defecto: {}", e.getMessage(), e);
+            logger.error(" Error creando configuración por defecto: {}", e.getMessage(), e);
         }
     }
 
-    // =================== MÉTODOS PÚBLICOS ===================
 
-    /**
-     * Obtiene la información de una mesa específica
-     */
     public MesaInfo getMesaInfo(int mesaId) {
         return mesasCache.get(mesaId);
     }
 
-    /**
-     * Verifica si una mesa está registrada y activa
-     */
+
     public boolean isMesaRegistered(int mesaId) {
         MesaInfo mesaInfo = mesasCache.get(mesaId);
         return mesaInfo != null && mesaInfo.isActive();
     }
 
-    /**
-     * Obtiene todas las mesas registradas
-     */
+
     public Collection<MesaInfo> getAllMesas() {
         return new ArrayList<>(mesasCache.values());
     }
 
-    /**
-     * Obtiene todas las mesas activas
-     */
+
     public List<MesaInfo> getActiveMesas() {
         return mesasCache.values().stream()
                 .filter(MesaInfo::isActive)
                 .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     }
 
-    /**
-     * Obtiene mesas por departamento
-     */
+
     public List<MesaInfo> getMesasByDepartment(int departmentId) {
         return mesasCache.values().stream()
                 .filter(mesa -> mesa.getDepartment() == departmentId && mesa.isActive())
                 .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     }
 
-    /**
-     * Obtiene los IDs de todas las mesas registradas
-     */
+
     public List<Integer> getAllMesaIds() {
         return new ArrayList<>(mesasCache.keySet());
     }
 
-    /**
-     * Obtiene los IDs de las mesas activas
-     */
+
     public List<Integer> getActiveMesaIds() {
         return mesasCache.values().stream()
                 .filter(MesaInfo::isActive)
@@ -234,27 +207,20 @@ public class MesaConfigurationManager {
                 .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     }
 
-    /**
-     * Recarga la configuración desde el archivo
-     */
+
     public void reloadConfiguration() {
-        logger.info("🔄 Recargando configuración de mesas...");
+        logger.info(" Recargando configuración de mesas...");
         loadConfiguration();
     }
 
-    /**
-     * Obtiene estadísticas de la configuración
-     */
-    /**
-     * Obtiene estadísticas de la configuración
-     */
+
     public Map<String, Object> getConfigurationStats() {
         Map<String, Object> stats = new HashMap<>();
 
         long totalMesas = mesasCache.size();
         long activeMesas = mesasCache.values().stream().mapToLong(mesa -> mesa.isActive() ? 1 : 0).sum();
 
-        // ✅ CORRECCIÓN: Usar Collectors.groupingBy() en lugar del collect() manual
+        //  CORRECCIÓN: Usar Collectors.groupingBy() en lugar del collect() manual
         Map<Integer, Long> mesasByDepartment = mesasCache.values().stream()
                 .filter(MesaInfo::isActive)
                 .collect(Collectors.groupingBy(MesaInfo::getDepartment, Collectors.counting()));
@@ -269,11 +235,9 @@ public class MesaConfigurationManager {
         return stats;
     }
 
-    // =================== CLASE INTERNA MESAINFO ===================
 
-    /**
-     * Información de configuración de una mesa de votación
-     */
+
+
     public static class MesaInfo {
         private final int id;
         private final String ip;

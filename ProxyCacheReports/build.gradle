@@ -185,13 +185,13 @@ task verifyIceClasses {
         def reportsServicePrxFile = file('../ReportsSystem/ReportsServicePrx.java')
 
         if (!reportsServiceFile.exists()) {
-            throw new GradleException('❌ No se encontró ReportsService.java en ../ReportsSystem/')
+            throw new GradleException('No se encontró ReportsService.java en ../ReportsSystem/')
         }
         if (!reportsServicePrxFile.exists()) {
-            throw new GradleException('❌ No se encontró ReportsServicePrx.java en ../ReportsSystem/')
+            throw new GradleException('No se encontró ReportsServicePrx.java en ../ReportsSystem/')
         }
 
-        println '✅ Clases Ice encontradas correctamente'
+        println 'Clases Ice encontradas correctamente'
         println "   - ${reportsServiceFile.absolutePath}"
         println "   - ${reportsServicePrxFile.absolutePath}"
     }

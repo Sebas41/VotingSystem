@@ -15,52 +15,35 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * ProxyCache INTELIGENTE completo para Reports
- * Sistema de cache predictivo basado en patrones de uso
- */
 public class ProxyCacheReports implements ReportsService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProxyCacheReports.class);
 
-    // =================== CONEXIÓN AL SERVIDOR ===================
     private final ReportsServicePrx reportsServer;
 
-    // =================== CACHE LOCAL TRADICIONAL ===================
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
-    private static final long CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+    private static final long CACHE_TTL_MS = 5 * 60 * 1000; 
     private static final int CACHE_TTL_MINUTES = 5;
 
-    // =================== NUEVO: SISTEMA DE CACHE INTELIGENTE ===================
 
-    //  Análisis de patrones de consulta
     private final Map<String, QueryPattern> queryPatterns = new ConcurrentHashMap<>();
     private final ScheduledExecutorService smartCacheScheduler = Executors.newScheduledThreadPool(2);
 
-    // 📊 Métricas del sistema inteligente
     private final AtomicLong totalQueries = new AtomicLong(0);
     private final AtomicLong predictiveLoads = new AtomicLong(0);
     private final AtomicLong cacheHits = new AtomicLong(0);
     private final AtomicLong cacheMisses = new AtomicLong(0);
 
-    // ⚙️ Configuración del cache inteligente
-    private static final long ANALYSIS_WINDOW_MS = 10 * 60 * 1000; // 10 minutos
-    private static final long SHORT_BURST_WINDOW_MS = 2 * 60 * 1000; // 2 minutos
+    private static final long ANALYSIS_WINDOW_MS = 10 * 60 * 1000; 
+    private static final long SHORT_BURST_WINDOW_MS = 2 * 60 * 1000; 
 
-    // 🎯 Umbrales de activación
-    private static final int PUESTO_THRESHOLD = 3;      // 3+ consultas → precargar puesto
-    private static final int MUNICIPALITY_THRESHOLD = 5; // 5+ consultas → precargar municipio
-    private static final int DEPARTMENT_THRESHOLD = 8;   // 8+ consultas → precargar departamento
+    private static final int PUESTO_THRESHOLD = 3;     
+    private static final int MUNICIPALITY_THRESHOLD = 5;
+    private static final int DEPARTMENT_THRESHOLD = 8;   
 
-    // 🔥 Umbrales de intensidad (consultas por minuto)
-    private static final double HIGH_INTENSITY = 2.0;    // 2+ consultas/min → alta prioridad
-    private static final double MEDIUM_INTENSITY = 1.0;  // 1+ consultas/min → media prioridad
+    private static final double HIGH_INTENSITY = 2.0;    
+    private static final double MEDIUM_INTENSITY = 1.0;  
 
-    // =================== CLASES AUXILIARES ===================
-
-    /**
-     * Entrada del cache tradicional
-     */
     private static class CacheEntry {
         private final String data;
         private final long timestamp;
@@ -78,9 +61,6 @@ public class ProxyCacheReports implements ReportsService {
         }
     }
 
-    /**
-     * Patrón de consulta por ubicación geográfica
-     */
     private static class QueryPattern {
         private final Queue<Long> timestamps = new LinkedList<>();
         private final AtomicInteger totalQueries = new AtomicInteger(0);
@@ -99,7 +79,6 @@ public class ProxyCacheReports implements ReportsService {
             timestamps.offer(now);
             totalQueries.incrementAndGet();
 
-            // Limpiar timestamps antiguos (fuera de ventana de análisis)
             while (!timestamps.isEmpty() &&
                     (now - timestamps.peek()) > ANALYSIS_WINDOW_MS) {
                 timestamps.poll();
@@ -108,7 +87,6 @@ public class ProxyCacheReports implements ReportsService {
 
         public synchronized int getRecentQueries() {
             long now = System.currentTimeMillis();
-            // Limpiar timestamps antiguos
             while (!timestamps.isEmpty() &&
                     (now - timestamps.peek()) > ANALYSIS_WINDOW_MS) {
                 timestamps.poll();
@@ -129,13 +107,12 @@ public class ProxyCacheReports implements ReportsService {
 
         public double getIntensity() {
             int recentQueries = getRecentQueries();
-            return recentQueries / (ANALYSIS_WINDOW_MS / 60000.0); // queries per minute
+            return recentQueries / (ANALYSIS_WINDOW_MS / 60000.0); 
         }
 
         public boolean needsPredictiveLoad() {
             long now = System.currentTimeMillis();
 
-            // No precargar si ya se hizo recientemente (últimos 3 minutos)
             if ((now - lastPredictiveLoad) < (3 * 60 * 1000)) {
                 return false;
             }
@@ -144,7 +121,6 @@ public class ProxyCacheReports implements ReportsService {
             int burstQueries = getBurstQueries();
             double intensity = getIntensity();
 
-            // Detectar hotspot por tipo de ubicación
             switch (locationType.toLowerCase()) {
                 case "puesto":
                     return burstQueries >= PUESTO_THRESHOLD || intensity >= HIGH_INTENSITY;
@@ -155,7 +131,7 @@ public class ProxyCacheReports implements ReportsService {
                 case "departamento":
                     return recentQueries >= DEPARTMENT_THRESHOLD;
                 case "mesa":
-                    return burstQueries >= 2; // Mesa más sensible
+                    return burstQueries >= 2; 
                 default:
                     return false;
             }
@@ -173,27 +149,22 @@ public class ProxyCacheReports implements ReportsService {
         public boolean isHotspot() { return isHotspot; }
     }
 
-    // =================== CONSTRUCTOR MEJORADO ===================
     public ProxyCacheReports(ReportsServicePrx reportsServer) {
         this.reportsServer = reportsServer;
         logger.info(" ProxyCacheReports INTELIGENTE inicializado");
 
-        // Iniciar análisis inteligente cada 30 segundos
         smartCacheScheduler.scheduleAtFixedRate(this::analyzeAndPreload, 30, 30, TimeUnit.SECONDS);
 
-        // Limpieza de patrones antiguos cada 5 minutos
         smartCacheScheduler.scheduleAtFixedRate(this::cleanOldPatterns, 5, 5, TimeUnit.MINUTES);
 
-        logger.info("⚡ Sistema de cache inteligente ACTIVO - Análisis cada 30s");
+        logger.info("Sistema de cache inteligente ACTIVO - Análisis cada 30s");
     }
 
-    // =================== MÉTODOS PRINCIPALES CON ANÁLISIS ===================
 
     @Override
     public String getCitizenReports(String documento, int electionId, Current current) {
         totalQueries.incrementAndGet();
 
-        // 🔍 Analizar patrón de consulta de ciudadano
         analyzeCitizenQuery(documento, electionId);
 
         String cacheKey = generateCacheKey("citizen", documento, String.valueOf(electionId));
@@ -224,7 +195,6 @@ public class ProxyCacheReports implements ReportsService {
     public String[] getMesaCitizenReports(int mesaId, int electionId, Current current) {
         totalQueries.incrementAndGet();
 
-        // 🔍 Analizar patrón de consulta de mesa
         analyzeLocationQuery("mesa", mesaId, electionId);
 
         String cacheKey = generateCacheKey("mesa", String.valueOf(mesaId), String.valueOf(electionId));
@@ -242,7 +212,6 @@ public class ProxyCacheReports implements ReportsService {
 
     @Override
     public boolean validateCitizenEligibility(String documento, Current current) {
-        // No se cachea por seguridad - siempre consultar servidor
         try {
             logger.debug("Validando elegibilidad para documento: {}", documento);
             return reportsServer.validateCitizenEligibility(documento);
@@ -282,7 +251,6 @@ public class ProxyCacheReports implements ReportsService {
 
     @Override
     public boolean areReportsReady(int electionId, Current current) {
-        // No se cachea - siempre consultar servidor
         try {
             logger.debug("Verificando si reportes están listos para elección: {}", electionId);
             return reportsServer.areReportsReady(electionId);
@@ -296,7 +264,6 @@ public class ProxyCacheReports implements ReportsService {
     public String getGeographicReports(int locationId, String locationType, int electionId, Current current) {
         totalQueries.incrementAndGet();
 
-        // 🔍 Analizar patrón de consulta geográfica
         analyzeLocationQuery(locationType, locationId, electionId);
 
         String cacheKey = generateCacheKey("geographic", locationType + "_" + locationId, String.valueOf(electionId));
@@ -307,7 +274,6 @@ public class ProxyCacheReports implements ReportsService {
     }
 
     public void preloadReports(int electionId, Current current) {
-        // Método legacy - llama al nuevo método con tipo "basic"
         try {
             String result = preloadReports(electionId, "basic", 0, current);
             logger.info("Precarga legacy completada: {}", result.substring(0, Math.min(result.length(), 100)));
@@ -318,13 +284,13 @@ public class ProxyCacheReports implements ReportsService {
 
     @Override
     public String preloadReports(int electionId, String locationType, int locationId, Current current) {
-        logger.info("📥 Iniciando precarga tipo '{}' para elección {} (ubicación ID: {})",
+        logger.info("Iniciando precarga tipo '{}' para elección {} (ubicación ID: {})",
                 locationType, electionId, locationId);
 
         long startTime = System.currentTimeMillis();
         StringBuilder result = new StringBuilder();
-        result.append("🚀 ========== PRECARGA DE REPORTES ==========\n");
-        result.append(String.format("📊 Elección: %d | Tipo: %s | Ubicación: %d\n\n",
+        result.append("========== PRECARGA DE REPORTES ==========\n");
+        result.append(String.format("Elección: %d | Tipo: %s | Ubicación: %d\n\n",
                 electionId, locationType, locationId));
 
         try {
@@ -357,46 +323,40 @@ public class ProxyCacheReports implements ReportsService {
         StringBuilder stats = new StringBuilder();
         stats.append(" ========== ESTADÍSTICAS CACHE INTELIGENTE ==========\n");
 
-        // Estadísticas básicas del cache
-        stats.append(String.format("💾 Total entradas en cache: %d\n", cache.size()));
-        stats.append(String.format("🔄 TTL configurado: %d minutos\n", CACHE_TTL_MINUTES));
+        stats.append(String.format("Total entradas en cache: %d\n", cache.size()));
+        stats.append(String.format("TTL configurado: %d minutos\n", CACHE_TTL_MINUTES));
 
-        // Estadísticas del sistema inteligente
-        stats.append("\n📊 Sistema Inteligente:\n");
-        stats.append(String.format("   🔍 Total consultas: %d\n", totalQueries.get()));
-        stats.append(String.format("   ⚡ Precarga predictiva: %d\n", predictiveLoads.get()));
-        stats.append(String.format("   📈 Cache hits: %d\n", cacheHits.get()));
-        stats.append(String.format("   📉 Cache misses: %d\n", cacheMisses.get()));
+        stats.append("\nSistema Inteligente:\n");
+        stats.append(String.format("Total consultas: %d\n", totalQueries.get()));
+        stats.append(String.format("Precarga predictiva: %d\n", predictiveLoads.get()));
+        stats.append(String.format("Cache hits: %d\n", cacheHits.get()));
+        stats.append(String.format("Cache misses: %d\n", cacheMisses.get()));
 
         long totalCacheRequests = cacheHits.get() + cacheMisses.get();
         if (totalCacheRequests > 0) {
             double hitRate = (cacheHits.get() * 100.0) / totalCacheRequests;
-            stats.append(String.format("   🎯 Hit rate: %.1f%%\n", hitRate));
+            stats.append(String.format("Hit rate: %.1f%%\n", hitRate));
         }
 
-        // Patrones activos
-        stats.append(String.format("\n🔥 Patrones de consulta activos: %d\n", queryPatterns.size()));
+        stats.append(String.format("\nPatrones de consulta activos: %d\n", queryPatterns.size()));
 
-        // Top hotspots
-        // Top hotspots
         List<QueryPattern> topHotspots = queryPatterns.values().stream()
                 .filter(p -> p.getRecentQueries() > 0)
                 .sorted((a, b) -> Integer.compare(b.getRecentQueries(), a.getRecentQueries()))
                 .limit(5)
-                .collect(Collectors.toList()); //  CORRECTO
+                .collect(Collectors.toList()); 
 
         if (!topHotspots.isEmpty()) {
-            stats.append("\n🏆 Top Hotspots:\n");
+            stats.append("\nTop Hotspots:\n");
             for (int i = 0; i < topHotspots.size(); i++) {
                 QueryPattern pattern = topHotspots.get(i);
                 stats.append(String.format("   %d. %s %d: %d consultas (%.1f/min)%s\n",
                         i + 1, pattern.getLocationType(), pattern.getLocationId(),
                         pattern.getRecentQueries(), pattern.getIntensity(),
-                        pattern.isHotspot() ? " 🔥" : ""));
+                        pattern.isHotspot() ? " " : ""));
             }
         }
 
-        // Análisis por tipo de cache
         Map<String, Integer> typeCount = new HashMap<>();
         Map<String, Long> typeSize = new HashMap<>();
 
@@ -409,7 +369,7 @@ public class ProxyCacheReports implements ReportsService {
             typeSize.merge(type, size, Long::sum);
         }
 
-        stats.append("\n📋 Cache por tipo de contenido:\n");
+        stats.append("\nCache por tipo de contenido:\n");
         for (Map.Entry<String, Integer> entry : typeCount.entrySet()) {
             String type = entry.getKey();
             int count = entry.getValue();
@@ -419,18 +379,15 @@ public class ProxyCacheReports implements ReportsService {
                     type, count, size / 1024.0));
         }
 
-        // Memoria utilizada
         long totalSize = cache.values().stream().mapToLong(e -> e.getData().length()).sum();
-        stats.append(String.format("\n💾 Memoria total utilizada: %.2f MB\n", totalSize / (1024.0 * 1024.0)));
+        stats.append(String.format("\nMemoria total utilizada: %.2f MB\n", totalSize / (1024.0 * 1024.0)));
 
         return stats.toString();
     }
 
-    // =================== MÉTODOS AUXILIARES GEOGRÁFICOS ===================
 
     @Override
     public String[] getDepartmentCitizenDocuments(int departmentId, int electionId, Current current) {
-        // Analizar consulta de departamento
         analyzeLocationQuery("department", departmentId, electionId);
 
         logger.debug("Proxy: getDepartmentCitizenDocuments para departamento {} elección {}", departmentId, electionId);
@@ -447,7 +404,6 @@ public class ProxyCacheReports implements ReportsService {
 
     @Override
     public String[] getMunicipalityCitizenDocuments(int municipalityId, int electionId, Current current) {
-        // Analizar consulta de municipio
         analyzeLocationQuery("municipality", municipalityId, electionId);
 
         logger.debug("Proxy: getMunicipalityCitizenDocuments para municipio {} elección {}", municipalityId, electionId);
@@ -464,7 +420,6 @@ public class ProxyCacheReports implements ReportsService {
 
     @Override
     public String[] getPuestoCitizenDocuments(int puestoId, int electionId, Current current) {
-        // Analizar consulta de puesto
         analyzeLocationQuery("puesto", puestoId, electionId);
 
         logger.debug("Proxy: getPuestoCitizenDocuments para puesto {} elección {}", puestoId, electionId);
@@ -481,7 +436,6 @@ public class ProxyCacheReports implements ReportsService {
 
     @Override
     public String[] getMesaCitizenDocuments(int mesaId, int electionId, Current current) {
-        // Analizar consulta de mesa
         analyzeLocationQuery("mesa", mesaId, electionId);
 
         logger.debug("Proxy: getMesaCitizenDocuments para mesa {} elección {}", mesaId, electionId);
@@ -496,19 +450,13 @@ public class ProxyCacheReports implements ReportsService {
         }
     }
 
-    // =================== NUEVO: MÉTODOS DE ANÁLISIS INTELIGENTE ===================
 
-    /**
-     * 🔍 Analiza consultas de ciudadanos para detectar patrones por mesa/puesto
-     */
     private void analyzeCitizenQuery(String documento, int electionId) {
         try {
-            // Intentar extraer información geográfica del cache
             String citizenKey = generateCacheKey("citizen", documento, String.valueOf(electionId));
             CacheEntry entry = cache.get(citizenKey);
 
             if (entry != null) {
-                // Extraer información geográfica del reporte cacheado
                 extractLocationFromCitizenReport(entry.getData(), electionId);
             }
 
@@ -517,9 +465,6 @@ public class ProxyCacheReports implements ReportsService {
         }
     }
 
-    /**
-     * 🗺️ Analiza consultas de ubicaciones geográficas
-     */
     private void analyzeLocationQuery(String locationType, int locationId, int electionId) {
         String patternKey = generatePatternKey(locationType, locationId, electionId);
 
@@ -528,27 +473,21 @@ public class ProxyCacheReports implements ReportsService {
 
         pattern.addQuery();
 
-        logger.debug("📊 Patrón actualizado: {} {} - {} consultas recientes",
+        logger.debug("Patrón actualizado: {} {} - {} consultas recientes",
                 locationType, locationId, pattern.getRecentQueries());
     }
 
-    /**
-     * 🔬 Extrae información geográfica de reportes de ciudadanos
-     */
     private void extractLocationFromCitizenReport(String citizenReport, int electionId) {
         try {
-            // El reporte tiene formato: CITIZEN_DATA#LOCATION_DATA#ELECTION_DATA#...
             String[] parts = citizenReport.split("#");
             if (parts.length >= 2) {
                 String locationData = parts[1];
                 String[] locationParts = locationData.split("-");
 
                 if (locationParts.length >= 10) {
-                    // Formato: deptId-deptNombre-munId-munNombre-puestoId-puestoNombre-...-mesaId-...
                     int puestoId = Integer.parseInt(locationParts[4]);
                     int mesaId = Integer.parseInt(locationParts[8]);
 
-                    // Analizar patrones de puesto y mesa
                     analyzeLocationQuery("puesto", puestoId, electionId);
                     analyzeLocationQuery("mesa", mesaId, electionId);
                 }
@@ -558,32 +497,27 @@ public class ProxyCacheReports implements ReportsService {
         }
     }
 
-    /**
-     *  Análisis principal: detecta hotspots y ejecuta precarga predictiva
-     */
     private void analyzeAndPreload() {
         try {
-            logger.debug("🔄 Iniciando análisis de patrones...");
+            logger.debug("Iniciando análisis de patrones...");
 
             List<QueryPattern> hotspotsDetected = new ArrayList<>();
 
-            // Analizar cada patrón de consulta
             for (QueryPattern pattern : queryPatterns.values()) {
                 if (pattern.needsPredictiveLoad()) {
                     hotspotsDetected.add(pattern);
-                    logger.info("🔥 HOTSPOT detectado: {} {} ({} consultas, intensidad: {:.1f})",
+                    logger.info("HOTSPOT detectado: {} {} ({} consultas, intensidad: {:.1f})",
                             pattern.getLocationType(), pattern.getLocationId(),
                             pattern.getRecentQueries(), pattern.getIntensity());
                 }
             }
 
-            // Ejecutar precarga predictiva para hotspots
             for (QueryPattern hotspot : hotspotsDetected) {
                 executePredictivePreload(hotspot);
             }
 
             if (hotspotsDetected.size() > 0) {
-                logger.info("⚡ Análisis completado: {} hotspots procesados", hotspotsDetected.size());
+                logger.info("Análisis completado: {} hotspots procesados", hotspotsDetected.size());
             }
 
         } catch (Exception e) {
@@ -591,18 +525,13 @@ public class ProxyCacheReports implements ReportsService {
         }
     }
 
-    /**
-     * 🚀 Ejecuta precarga predictiva para un hotspot detectado
-     */
     private void executePredictivePreload(QueryPattern hotspot) {
         try {
-            // Obtener la elección más común (usar 1 por defecto)
-            int electionId = 1; // TODO: Mejorar para detectar elección más consultada
+            int electionId = 1; 
 
-            logger.info("📥 Ejecutando precarga predictiva: {} {}",
+            logger.info("Ejecutando precarga predictiva: {} {}",
                     hotspot.getLocationType(), hotspot.getLocationId());
 
-            // Ejecutar precarga en background
             smartCacheScheduler.submit(() -> {
                 try {
                     String result = preloadReports(electionId, hotspot.getLocationType(),
@@ -624,9 +553,6 @@ public class ProxyCacheReports implements ReportsService {
         }
     }
 
-    /**
-     * 🧹 Limpia patrones antiguos para optimizar memoria
-     */
     private void cleanOldPatterns() {
         try {
             int initialSize = queryPatterns.size();
@@ -638,7 +564,7 @@ public class ProxyCacheReports implements ReportsService {
 
             int removedPatterns = initialSize - queryPatterns.size();
             if (removedPatterns > 0) {
-                logger.debug("🧹 Limpieza de patrones: {} patrones antiguos removidos", removedPatterns);
+                logger.debug("Limpieza de patrones: {} patrones antiguos removidos", removedPatterns);
             }
 
         } catch (Exception e) {
@@ -646,38 +572,29 @@ public class ProxyCacheReports implements ReportsService {
         }
     }
 
-    // =================== MÉTODOS HELPER MEJORADOS ===================
-
-    /**
-     * Cache con estadísticas mejoradas
-     */
     private String getFromCacheWithStats(String cacheKey, ServerCall serverCall) {
-        // 1. Verificar cache local primero
         CacheEntry entry = cache.get(cacheKey);
         if (entry != null && !entry.isExpired(CACHE_TTL_MS)) {
             cacheHits.incrementAndGet();
-            logger.debug("📈 Cache HIT para: {}", cacheKey);
+            logger.debug("Cache HIT para: {}", cacheKey);
             return entry.getData();
         }
 
-        // 2. Cache miss - consultar servidor
         cacheMisses.incrementAndGet();
         try {
-            logger.debug("📉 Cache MISS para: {} - consultando servidor", cacheKey);
+            logger.debug("Cache MISS para: {} - consultando servidor", cacheKey);
             String result = serverCall.call();
 
-            // 3. Guardar en cache local
             cache.put(cacheKey, new CacheEntry(result, System.currentTimeMillis()));
 
-            logger.info("💾 Resultado cacheado para: {}", cacheKey);
+            logger.info("Resultado cacheado para: {}", cacheKey);
             return result;
 
         } catch (Exception e) {
             logger.error(" Error consultando servidor para {}: {}", cacheKey, e.getMessage());
 
-            // 4. Fallback: devolver cache expirado si existe
             if (entry != null) {
-                logger.warn("⚠️ Usando cache expirado como fallback para: {}", cacheKey);
+                logger.warn("Usando cache expirado como fallback para: {}", cacheKey);
                 return entry.getData();
             }
 
@@ -697,32 +614,28 @@ public class ProxyCacheReports implements ReportsService {
         return type + "_" + id1 + "_" + id2;
     }
 
-    // =================== MÉTODOS DE PRECARGA ORIGINALES ===================
 
     private String preloadBasicReports(int electionId, StringBuilder result, long startTime) {
         try {
-            result.append("📋 PRECARGA BÁSICA\n");
+            result.append("PRECARGA BÁSICA\n");
             int itemsPreloaded = 0;
 
-            // 1. Reporte general de la elección
-            result.append("⏳ Precargando reporte de elección...\n");
+            result.append("Precargando reporte de elección...\n");
             String electionReport = reportsServer.getElectionReports(electionId);
             String electionKey = generateCacheKey("election", String.valueOf(electionId), "");
             cache.put(electionKey, new CacheEntry(electionReport, System.currentTimeMillis()));
             itemsPreloaded++;
             result.append("    Reporte de elección cacheado\n");
 
-            // 2. Elecciones disponibles
-            result.append("⏳ Precargando lista de elecciones...\n");
+            result.append("Precargando lista de elecciones...\n");
             String[] elections = reportsServer.getAvailableElections();
             String electionsKey = "available_elections";
             cache.put(electionsKey, new CacheEntry(String.join("###", elections), System.currentTimeMillis()));
             itemsPreloaded++;
             result.append("    Lista de elecciones cacheada\n");
 
-            // 3. Reportes geográficos principales (departamentos)
-            result.append("⏳ Precargando reportes de departamentos principales...\n");
-            int[] mainDepartments = {1, 2, 3, 5}; // IDs de departamentos principales
+            result.append("Precargando reportes de departamentos principales...\n");
+            int[] mainDepartments = {1, 2, 3, 5}; 
             for (int deptId : mainDepartments) {
                 try {
                     String geoReport = reportsServer.getGeographicReports(deptId, "department", electionId);
@@ -730,15 +643,15 @@ public class ProxyCacheReports implements ReportsService {
                     cache.put(geoKey, new CacheEntry(geoReport, System.currentTimeMillis()));
                     itemsPreloaded++;
                 } catch (Exception e) {
-                    result.append("   ⚠️ Error con departamento ").append(deptId).append("\n");
+                    result.append("Error con departamento ").append(deptId).append("\n");
                 }
             }
-            result.append("    Reportes geográficos principales cacheados\n");
+            result.append("Reportes geográficos principales cacheados\n");
 
             long duration = System.currentTimeMillis() - startTime;
             result.append(String.format("\n PRECARGA BÁSICA COMPLETADA\n"));
-            result.append(String.format("📊 Items precargados: %d\n", itemsPreloaded));
-            result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
+            result.append(String.format("Items precargados: %d\n", itemsPreloaded));
+            result.append(String.format("Tiempo: %d ms\n", duration));
 
             return result.toString();
 
@@ -750,28 +663,25 @@ public class ProxyCacheReports implements ReportsService {
 
     private String preloadDepartmentReports(int electionId, int departmentId, StringBuilder result, long startTime) {
         try {
-            result.append(String.format("🏛️ PRECARGA DEPARTAMENTO %d\n", departmentId));
+            result.append(String.format("PRECARGA DEPARTAMENTO %d\n", departmentId));
 
-            // 1. Precargar reporte geográfico del departamento
-            result.append("⏳ Precargando reporte geográfico del departamento...\n");
+            result.append("Precargando reporte geográfico del departamento...\n");
             String deptReport = reportsServer.getGeographicReports(departmentId, "department", electionId);
             String deptKey = generateCacheKey("geographic", "department_" + departmentId, String.valueOf(electionId));
             cache.put(deptKey, new CacheEntry(deptReport, System.currentTimeMillis()));
-            result.append("    Reporte geográfico cacheado\n");
+            result.append("Reporte geográfico cacheado\n");
 
-            // 2. Obtener todos los ciudadanos del departamento
-            result.append("⏳ Obteniendo lista de ciudadanos del departamento...\n");
+            result.append("Obteniendo lista de ciudadanos del departamento...\n");
             String[] citizenDocuments = reportsServer.getDepartmentCitizenDocuments(departmentId, electionId);
 
             if (citizenDocuments.length > 0 && citizenDocuments[0].startsWith("ERROR")) {
-                result.append("    Error obteniendo ciudadanos: ").append(citizenDocuments[0]).append("\n");
+                result.append("Error obteniendo ciudadanos: ").append(citizenDocuments[0]).append("\n");
                 return result.toString();
             }
 
-            result.append(String.format("   📊 Encontrados %d ciudadanos\n", citizenDocuments.length));
+            result.append(String.format("Encontrados %d ciudadanos\n", citizenDocuments.length));
 
-            // 3. Precargar reportes de ciudadanos en lotes
-            result.append("⏳ Precargando reportes de ciudadanos...\n");
+            result.append("Precargando reportes de ciudadanos...\n");
             int preloadedCitizens = 0;
             int batchSize = 100;
 
@@ -793,18 +703,17 @@ public class ProxyCacheReports implements ReportsService {
                     }
                 }
 
-                // Log de progreso cada lote
-                if (i % (batchSize * 4) == 0) { // Log cada 4 lotes
-                    result.append(String.format("   📈 Progreso: %d/%d ciudadanos\n",
+                if (i % (batchSize * 4) == 0) { 
+                    result.append(String.format("Progreso: %d/%d ciudadanos\n",
                             Math.min(batchEnd, citizenDocuments.length), citizenDocuments.length));
                 }
             }
 
             long duration = System.currentTimeMillis() - startTime;
             result.append(String.format("\n PRECARGA DEPARTAMENTO %d COMPLETADA\n", departmentId));
-            result.append(String.format("📊 Ciudadanos precargados: %d/%d\n", preloadedCitizens, citizenDocuments.length));
-            result.append(String.format("⏱️ Tiempo total: %d ms\n", duration));
-            result.append(String.format("⚡ Promedio: %.2f ms/ciudadano\n",
+            result.append(String.format("Ciudadanos precargados: %d/%d\n", preloadedCitizens, citizenDocuments.length));
+            result.append(String.format("Tiempo total: %d ms\n", duration));
+            result.append(String.format("Promedio: %.2f ms/ciudadano\n",
                     duration / (double) Math.max(preloadedCitizens, 1)));
 
             return result.toString();
@@ -817,7 +726,7 @@ public class ProxyCacheReports implements ReportsService {
     }
 
     private String preloadMunicipalityReports(int electionId, int municipalityId, StringBuilder result, long startTime) {
-        result.append(String.format("🏙️ PRECARGA MUNICIPIO %d\n", municipalityId));
+        result.append(String.format("PRECARGA MUNICIPIO %d\n", municipalityId));
 
         try {
             String munReport = reportsServer.getGeographicReports(municipalityId, "municipality", electionId);
@@ -826,7 +735,7 @@ public class ProxyCacheReports implements ReportsService {
 
             long duration = System.currentTimeMillis() - startTime;
             result.append(String.format("\n PRECARGA MUNICIPIO %d COMPLETADA\n", municipalityId));
-            result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
+            result.append(String.format("Tiempo: %d ms\n", duration));
 
             return result.toString();
 
@@ -839,16 +748,15 @@ public class ProxyCacheReports implements ReportsService {
 
     private String preloadPuestoReports(int electionId, int puestoId, StringBuilder result, long startTime) {
         try {
-            result.append(String.format("🗳️ PRECARGA PUESTO %d\n", puestoId));
+            result.append(String.format("PRECARGA PUESTO %d\n", puestoId));
 
-            // Obtener y precargar ciudadanos del puesto
             String[] citizenDocuments = reportsServer.getPuestoCitizenDocuments(puestoId, electionId);
             int preloadedCitizens = preloadCitizensBatch(citizenDocuments, electionId, result);
 
             long duration = System.currentTimeMillis() - startTime;
             result.append(String.format("\n PRECARGA PUESTO %d COMPLETADA\n", puestoId));
-            result.append(String.format("📊 Ciudadanos precargados: %d\n", preloadedCitizens));
-            result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
+            result.append(String.format("Ciudadanos precargados: %d\n", preloadedCitizens));
+            result.append(String.format("Tiempo: %d ms\n", duration));
 
             return result.toString();
 
@@ -861,18 +769,17 @@ public class ProxyCacheReports implements ReportsService {
 
     private String preloadMesaReports(int electionId, int mesaId, StringBuilder result, long startTime) {
         try {
-            result.append(String.format("📋 PRECARGA MESA %d\n", mesaId));
+            result.append(String.format("PRECARGA MESA %d\n", mesaId));
 
-            // Precargar ciudadanos de la mesa
             String[] mesaCitizens = reportsServer.getMesaCitizenReports(mesaId, electionId);
             String mesaKey = generateCacheKey("mesa", String.valueOf(mesaId), String.valueOf(electionId));
             cache.put(mesaKey, new CacheEntry(String.join("###", mesaCitizens), System.currentTimeMillis()));
 
-            result.append(String.format("   📊 Ciudadanos de mesa cacheados: %d\n", mesaCitizens.length));
+            result.append(String.format("Ciudadanos de mesa cacheados: %d\n", mesaCitizens.length));
 
             long duration = System.currentTimeMillis() - startTime;
             result.append(String.format("\n PRECARGA MESA %d COMPLETADA\n", mesaId));
-            result.append(String.format("⏱️ Tiempo: %d ms\n", duration));
+            result.append(String.format("Tiempo: %d ms\n", duration));
 
             return result.toString();
 
@@ -884,16 +791,12 @@ public class ProxyCacheReports implements ReportsService {
     }
 
     private String preloadAllReports(int electionId, StringBuilder result, long startTime) {
-        result.append("🌐 PRECARGA COMPLETA DEL SISTEMA\n");
-        result.append("⚠️ ADVERTENCIA: Esta operación puede tomar mucho tiempo\n\n");
+        result.append("PRECARGA COMPLETA DEL SISTEMA\n");
+        result.append("ADVERTENCIA: Esta operación puede tomar mucho tiempo\n\n");
 
-        // Solo precarga básica por ahora
         return preloadBasicReports(electionId, result, startTime);
     }
 
-    /**
-     * Precarga ciudadanos en lotes
-     */
     private int preloadCitizensBatch(String[] citizenDocuments, int electionId, StringBuilder result) {
         if (citizenDocuments.length > 0 && citizenDocuments[0].startsWith("ERROR")) {
             result.append("    Error obteniendo ciudadanos: ").append(citizenDocuments[0]).append("\n");
@@ -903,7 +806,7 @@ public class ProxyCacheReports implements ReportsService {
         int preloadedCitizens = 0;
         int batchSize = 50;
 
-        result.append(String.format("⏳ Precargando %d ciudadanos...\n", citizenDocuments.length));
+        result.append(String.format("Precargando %d ciudadanos...\n", citizenDocuments.length));
 
         for (int i = 0; i < citizenDocuments.length; i += batchSize) {
             int batchEnd = Math.min(i + batchSize, citizenDocuments.length);
@@ -923,8 +826,8 @@ public class ProxyCacheReports implements ReportsService {
                 }
             }
 
-            if (i % (batchSize * 4) == 0) { // Log cada 4 lotes
-                result.append(String.format("   📈 Progreso: %d/%d\n",
+            if (i % (batchSize * 4) == 0) { 
+                result.append(String.format("Progreso: %d/%d\n",
                         Math.min(batchEnd, citizenDocuments.length), citizenDocuments.length));
             }
         }
@@ -932,17 +835,11 @@ public class ProxyCacheReports implements ReportsService {
         return preloadedCitizens;
     }
 
-    // =================== INTERFAZ FUNCIONAL HELPER ===================
     @FunctionalInterface
     private interface ServerCall {
         String call() throws Exception;
     }
 
-    // =================== MÉTODOS DE MANTENIMIENTO ===================
-
-    /**
-     * Limpia el cache expirado
-     */
     public void cleanExpiredCache() {
         long now = System.currentTimeMillis();
         AtomicInteger cleaned = new AtomicInteger();
@@ -956,29 +853,23 @@ public class ProxyCacheReports implements ReportsService {
         });
 
         if (cleaned.get() > 0) {
-            logger.info("🧹 Cache limpiado: {} entradas expiradas removidas", cleaned);
+            logger.info("Cache limpiado: {} entradas expiradas removidas", cleaned);
         }
     }
 
-    /**
-     * Limpiar todo el cache
-     */
     public void clearCache() {
         cache.clear();
-        logger.info("🗑️ Cache completamente limpiado");
+        logger.info("Cache completamente limpiado");
     }
 
-    /**
-     * Método para cerrar el sistema inteligente correctamente
-     */
     public void shutdown() {
         try {
-            logger.info(" Cerrando sistema de cache inteligente...");
+            logger.info("Cerrando sistema de cache inteligente...");
             smartCacheScheduler.shutdown();
             if (!smartCacheScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
                 smartCacheScheduler.shutdownNow();
             }
-            logger.info(" Sistema de cache inteligente cerrado correctamente");
+            logger.info("Sistema de cache inteligente cerrado correctamente");
         } catch (InterruptedException e) {
             smartCacheScheduler.shutdownNow();
             Thread.currentThread().interrupt();

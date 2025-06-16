@@ -22,29 +22,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 🏛️ CONTROLADOR PRINCIPAL DEL SISTEMA ELECTORAL
- *
- * Este controller integra toda la lógica de negocio del sistema electoral,
- * proporcionando una interfaz pública limpia y coherente para:
- *
- * - Gestión de Elecciones y Candidatos
- * - Control de Estados y Configuraciones
- * - Generación de Reportes y Consultas
- * - Monitoreo y Diagnósticos del Sistema
- * - Comunicación con Mesas de Votación
- *
- * ✅ PATRONES IMPLEMENTADOS:
- * - Facade Pattern: Simplifica acceso a múltiples subsistemas
- * - Observer Pattern: Notificaciones en tiempo real
- * - Strategy Pattern: Diferentes tipos de reportes
- * - Builder Pattern: Construcción de configuraciones complejas
- */
+
 public class ServerControllerImpl implements ServerControllerInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerControllerImpl.class);
 
-    // =================== COMPONENTES PRINCIPALES ===================
     private final ConnectionDBinterface connectionDB;
     private final ElectionInterface currentElection;
     private final ReportsManagerImpl reportsManager;
@@ -52,16 +34,13 @@ public class ServerControllerImpl implements ServerControllerInterface {
     private final VoteNotifierImpl voteNotifier;
     private ConfigurationSender configurationSender;
 
-    // =================== CONFIGURACIÓN Y CACHE ===================
     private final Map<String, Object> systemCache = new ConcurrentHashMap<>();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
-    // Estados del sistema
     private boolean systemInitialized = false;
     private String systemStatus = "INITIALIZING";
     private Date lastSystemCheck = new Date();
 
-    // =================== CONSTRUCTOR ===================
 
     public ServerControllerImpl() {
         try {
@@ -69,17 +48,17 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
             // 1. Inicializar base de datos
             this.connectionDB = new ConnectionDB();
-            logger.info("✅ Base de datos conectada");
+            logger.info(" Base de datos conectada");
 
             // 2. Inicializar elección actual
             this.currentElection = new ElectionImpl(0, new Date(), new Date(), "");
-            logger.info("✅ Sistema de elecciones inicializado");
+            logger.info(" Sistema de elecciones inicializado");
 
             // 3. Inicializar managers
             this.reportsManager = new ReportsManagerImpl(connectionDB);
             this.votingManager = new VotingManagerImpl(connectionDB);
             this.voteNotifier = new VoteNotifierImpl();
-            logger.info("✅ Managers de subsistemas inicializados");
+            logger.info(" Managers de subsistemas inicializados");
 
             // 4. Inicializar datos de prueba si es necesario
             initializeTestDataIfNeeded();
@@ -89,23 +68,19 @@ public class ServerControllerImpl implements ServerControllerInterface {
             this.systemStatus = "READY";
             this.lastSystemCheck = new Date();
 
-            logger.info("🎉 Controlador del Sistema Electoral inicializado exitosamente");
+
 
         } catch (Exception e) {
-            logger.error("❌ Error crítico inicializando el sistema electoral", e);
+            logger.error(" Error crítico inicializando el sistema electoral", e);
             this.systemStatus = "ERROR: " + e.getMessage();
             throw new RuntimeException("Failed to initialize Electoral System Controller", e);
         }
     }
 
-    // =================== 🗳️ GESTIÓN DE ELECCIONES ===================
 
-    /**
-     * Crea una nueva elección en el sistema
-     */
     public ElectionResult createElection(String name, Date startDate, Date endDate) {
         try {
-            logger.info("📝 Creando nueva elección: {}", name);
+            logger.info(" Creando nueva elección: {}", name);
 
             // Generar ID único para la elección
             int electionId = generateUniqueElectionId();
@@ -119,20 +94,18 @@ public class ServerControllerImpl implements ServerControllerInterface {
             // Limpiar cache relacionado
             clearElectionCache();
 
-            logger.info("✅ Elección '{}' creada exitosamente con ID: {}", name, electionId);
+            logger.info(" Elección '{}' creada exitosamente con ID: {}", name, electionId);
 
             return ElectionResult.success("Elección creada exitosamente",
                     Map.of("electionId", electionId, "name", name, "status", "PRE"));
 
         } catch (Exception e) {
-            logger.error("❌ Error creando elección: {}", name, e);
+            logger.error(" Error creando elección: {}", name, e);
             return ElectionResult.error("Error creando elección: " + e.getMessage());
         }
     }
 
-    /**
-     * Obtiene información completa de una elección
-     */
+
     public ElectionResult getElectionInfo(int electionId) {
         try {
             // Intentar obtener desde cache primero
@@ -167,17 +140,15 @@ public class ServerControllerImpl implements ServerControllerInterface {
             return result;
 
         } catch (Exception e) {
-            logger.error("❌ Error obteniendo información de elección {}", electionId, e);
+            logger.error(" Error obteniendo información de elección {}", electionId, e);
             return ElectionResult.error("Error obteniendo información: " + e.getMessage());
         }
     }
 
-    /**
-     * Cambia el estado de una elección
-     */
+
     public ElectionResult changeElectionStatus(int electionId, ELECTION_STATUS newStatus) {
         try {
-            logger.info("🔄 Cambiando estado de elección {} a {}", electionId, newStatus);
+            logger.info(" Cambiando estado de elección {} a {}", electionId, newStatus);
 
             // Validar que la elección existe
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
@@ -201,13 +172,13 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     "Estado cambiado exitosamente en servidor y mesas remotas" :
                     "Estado cambiado en servidor (algunas mesas remotas fallaron)";
 
-            logger.info("✅ Estado de elección {} cambiado a {}", electionId, newStatus);
+            logger.info(" Estado de elección {} cambiado a {}", electionId, newStatus);
 
             return ElectionResult.success(message,
                     Map.of("electionId", electionId, "newStatus", newStatus.name(), "remoteSuccess", remoteSuccess));
 
         } catch (Exception e) {
-            logger.error("❌ Error cambiando estado de elección {} a {}", electionId, newStatus, e);
+            logger.error(" Error cambiando estado de elección {} a {}", electionId, newStatus, e);
             return ElectionResult.error("Error cambiando estado: " + e.getMessage());
         }
     }
@@ -223,7 +194,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     Map.of("elections", elections, "count", elections.size()));
 
         } catch (Exception e) {
-            logger.error("❌ Error obteniendo lista de elecciones", e);
+            logger.error(" Error obteniendo lista de elecciones", e);
             return ElectionResult.error("Error obteniendo elecciones: " + e.getMessage());
         }
     }
@@ -255,13 +226,13 @@ public class ServerControllerImpl implements ServerControllerInterface {
             // Limpiar cache
             clearCandidatesCache(electionId);
 
-            logger.info("✅ Candidato '{}' agregado exitosamente con ID: {}", name, candidateId);
+            logger.info(" Candidato '{}' agregado exitosamente con ID: {}", name, candidateId);
 
             return ElectionResult.success("Candidato agregado exitosamente",
                     Map.of("candidateId", candidateId, "name", name, "party", party));
 
         } catch (Exception e) {
-            logger.error("❌ Error agregando candidato: {} - {}", name, party, e);
+            logger.error(" Error agregando candidato: {} - {}", name, party, e);
             return ElectionResult.error("Error agregando candidato: " + e.getMessage());
         }
     }
@@ -277,7 +248,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     Map.of("candidates", candidates, "count", candidates.size(), "electionId", electionId));
 
         } catch (Exception e) {
-            logger.error("❌ Error obteniendo candidatos para elección {}", electionId, e);
+            logger.error(" Error obteniendo candidatos para elección {}", electionId, e);
             return ElectionResult.error("Error obteniendo candidatos: " + e.getMessage());
         }
     }
@@ -315,22 +286,18 @@ public class ServerControllerImpl implements ServerControllerInterface {
             // Limpiar cache
             clearCandidatesCache(electionId);
 
-            logger.info("✅ {} candidatos cargados desde CSV", newCandidatesCount);
+            logger.info(" {} candidatos cargados desde CSV", newCandidatesCount);
 
             return ElectionResult.success("Candidatos cargados desde CSV",
                     Map.of("loadedCount", newCandidatesCount, "filePath", csvFilePath));
 
         } catch (Exception e) {
-            logger.error("❌ Error cargando candidatos desde CSV: {}", csvFilePath, e);
+            logger.error(" Error cargando candidatos desde CSV: {}", csvFilePath, e);
             return ElectionResult.error("Error cargando CSV: " + e.getMessage());
         }
     }
 
-    // =================== 📊 CONTROL DE CONFIGURACIONES ===================
 
-    /**
-     * Envía configuración a una mesa específica
-     */
     public ElectionResult sendConfigurationToMesa(int mesaId, int electionId) {
         try {
             logger.info("📤 Enviando configuración a mesa {} para elección {}", mesaId, electionId);
@@ -348,7 +315,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
             boolean success = configurationSender.sendConfigurationToMachine(mesaId, electionId);
 
             if (success) {
-                logger.info("✅ Configuración enviada exitosamente a mesa {}", mesaId);
+                logger.info(" Configuración enviada exitosamente a mesa {}", mesaId);
                 return ElectionResult.success("Configuración enviada exitosamente",
                         Map.of("mesaId", mesaId, "electionId", electionId));
             } else {
@@ -356,7 +323,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
             }
 
         } catch (Exception e) {
-            logger.error("❌ Error enviando configuración a mesa {} para elección {}", mesaId, electionId, e);
+            logger.error(" Error enviando configuración a mesa {} para elección {}", mesaId, electionId, e);
             return ElectionResult.error("Error enviando configuración: " + e.getMessage());
         }
     }
@@ -366,7 +333,6 @@ public class ServerControllerImpl implements ServerControllerInterface {
      */
     public ElectionResult sendConfigurationToDepartment(int departmentId, int electionId) {
         try {
-            logger.info("🏛️ Enviando configuraciones a departamento {} para elección {}", departmentId, electionId);
 
             if (configurationSender == null) {
                 return ElectionResult.error("ConfigurationSender no está disponible");
@@ -406,7 +372,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                             "successCount", successCount, "successRate", successRate));
 
         } catch (Exception e) {
-            logger.error("❌ Error enviando configuraciones a departamento {} para elección {}", departmentId, electionId, e);
+            logger.error(" Error enviando configuraciones a departamento {} para elección {}", departmentId, electionId, e);
             return ElectionResult.error("Error configurando departamento: " + e.getMessage());
         }
     }
@@ -447,37 +413,27 @@ public class ServerControllerImpl implements ServerControllerInterface {
             return ElectionResult.success("Estado de mesa obtenido", statusInfo);
 
         } catch (Exception e) {
-            logger.error("❌ Error obteniendo estado de mesa {}", mesaId, e);
+            logger.error(" Error obteniendo estado de mesa {}", mesaId, e);
             return ElectionResult.error("Error obteniendo estado: " + e.getMessage());
         }
     }
 
-    // =================== 🎮 CONTROL DE VOTACIÓN ===================
 
-    /**
-     * Inicia la votación en todas las mesas
-     */
     public ElectionResult startVoting(int electionId) {
         return changeElectionStatus(electionId, ELECTION_STATUS.DURING);
     }
 
-    /**
-     * Detiene la votación en todas las mesas
-     */
+
     public ElectionResult stopVoting(int electionId) {
         return changeElectionStatus(electionId, ELECTION_STATUS.CLOSED);
     }
 
-    /**
-     * Resetea el estado de votación
-     */
+
     public ElectionResult resetVoting(int electionId) {
         return changeElectionStatus(electionId, ELECTION_STATUS.PRE);
     }
 
-    /**
-     * Registra un voto en el sistema
-     */
+
     public ElectionResult registerVote(ReliableMessage voteMessage) {
         try {
             Vote vote = voteMessage.getMessage();
@@ -506,24 +462,20 @@ public class ServerControllerImpl implements ServerControllerInterface {
                 }
             }
 
-            logger.info("✅ Voto registrado exitosamente para candidato ID: {}", candidateId);
+            logger.info(" Voto registrado exitosamente para candidato ID: {}", candidateId);
 
             return ElectionResult.success("Voto registrado exitosamente",
                     Map.of("candidateId", candidateId, "machineId", vote.getMachineId(),
-                            // ✅ CAMBIO: usar getTimeInMillis() para Calendar
+                            //  CAMBIO: usar getTimeInMillis() para Calendar
                             "timestamp", vote.getDate()));
 
         } catch (Exception e) {
-            logger.error("❌ Error registrando voto", e);
+            logger.error(" Error registrando voto", e);
             return ElectionResult.error("Error registrando voto: " + e.getMessage());
         }
     }
 
-    // =================== 📈 REPORTES Y CONSULTAS ===================
 
-    /**
-     * Genera reporte de un ciudadano específico
-     */
     public ElectionResult getCitizenReport(String documento, int electionId) {
         try {
             logger.info("📋 Generando reporte para ciudadano: {}", documento);
@@ -538,14 +490,12 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     Map.of("documento", documento, "reportData", reportData));
 
         } catch (Exception e) {
-            logger.error("❌ Error generando reporte de ciudadano: {}", documento, e);
+            logger.error(" Error generando reporte de ciudadano: {}", documento, e);
             return ElectionResult.error("Error generando reporte: " + e.getMessage());
         }
     }
 
-    /**
-     * Busca ciudadanos por nombre
-     */
+
     public ElectionResult searchCitizens(String nombre, String apellido, int limit) {
         try {
             logger.info("🔍 Buscando ciudadanos: {} {} (límite: {})", nombre, apellido, limit);
@@ -556,14 +506,12 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     Map.of("results", results, "count", results.size(), "limit", limit));
 
         } catch (Exception e) {
-            logger.error("❌ Error buscando ciudadanos: {} {}", nombre, apellido, e);
+            logger.error(" Error buscando ciudadanos: {} {}", nombre, apellido, e);
             return ElectionResult.error("Error en búsqueda: " + e.getMessage());
         }
     }
 
-    /**
-     * Genera reporte de resultados de una elección
-     */
+
     public ElectionResult getElectionResults(int electionId) {
         try {
             logger.info("📊 Generando reporte de resultados para elección: {}", electionId);
@@ -577,14 +525,11 @@ public class ServerControllerImpl implements ServerControllerInterface {
             return ElectionResult.success("Resultados de elección obtenidos", results);
 
         } catch (Exception e) {
-            logger.error("❌ Error obteniendo resultados de elección: {}", electionId, e);
+            logger.error(" Error obteniendo resultados de elección: {}", electionId, e);
             return ElectionResult.error("Error obteniendo resultados: " + e.getMessage());
         }
     }
 
-    /**
-     * Genera reporte geográfico por departamento
-     */
     public ElectionResult getDepartmentReport(int departmentId, int electionId) {
         try {
             logger.info("🏛️ Generando reporte de departamento: {} para elección: {}", departmentId, electionId);
@@ -602,16 +547,12 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     Map.of("departmentId", departmentId, "reportData", reportData, "statistics", stats));
 
         } catch (Exception e) {
-            logger.error("❌ Error generando reporte de departamento: {}", departmentId, e);
+            logger.error(" Error generando reporte de departamento: {}", departmentId, e);
             return ElectionResult.error("Error generando reporte: " + e.getMessage());
         }
     }
 
-    // =================== 🔧 MONITOREO Y DIAGNÓSTICOS ===================
 
-    /**
-     * Obtiene el estado general del sistema
-     */
     public ElectionResult getSystemStatus() {
         try {
             Map<String, Object> status = new HashMap<>();
@@ -654,14 +595,12 @@ public class ServerControllerImpl implements ServerControllerInterface {
             return ElectionResult.success("Estado del sistema obtenido", status);
 
         } catch (Exception e) {
-            logger.error("❌ Error obteniendo estado del sistema", e);
+            logger.error(" Error obteniendo estado del sistema", e);
             return ElectionResult.error("Error obteniendo estado: " + e.getMessage());
         }
     }
 
-    /**
-     * Ejecuta diagnóstico completo del sistema
-     */
+
     public ElectionResult runSystemDiagnostic() {
         try {
             logger.info("🔍 Ejecutando diagnóstico completo del sistema...");
@@ -716,19 +655,17 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     "overallHealth", issues.isEmpty() ? "HEALTHY" : "NEEDS_ATTENTION"
             ));
 
-            logger.info("✅ Diagnóstico completado - {} issues encontrados", issues.size());
+            logger.info(" Diagnóstico completado - {} issues encontrados", issues.size());
 
             return ElectionResult.success("Diagnóstico completado", diagnostic);
 
         } catch (Exception e) {
-            logger.error("❌ Error ejecutando diagnóstico del sistema", e);
+            logger.error(" Error ejecutando diagnóstico del sistema", e);
             return ElectionResult.error("Error en diagnóstico: " + e.getMessage());
         }
     }
 
-    /**
-     * Obtiene estadísticas de rendimiento del sistema
-     */
+
     public ElectionResult getPerformanceStatistics() {
         try {
             Map<String, Object> stats = new HashMap<>();
@@ -759,30 +696,23 @@ public class ServerControllerImpl implements ServerControllerInterface {
             return ElectionResult.success("Estadísticas de rendimiento obtenidas", stats);
 
         } catch (Exception e) {
-            logger.error("❌ Error obteniendo estadísticas de rendimiento", e);
+            logger.error(" Error obteniendo estadísticas de rendimiento", e);
             return ElectionResult.error("Error obteniendo estadísticas: " + e.getMessage());
         }
     }
 
-    // =================== 🔗 CONFIGURACIÓN EXTERNA ===================
 
-    /**
-     * Configura el ConfigurationSender (llamado desde Server.java)
-     */
     public void setConfigurationSender(ConfigurationSender configurationSender) {
         this.configurationSender = configurationSender;
         logger.info("🔗 ConfigurationSender configurado en el controller");
     }
 
-    /**
-     * Configura el VoteNotifier (si se necesita desde fuera)
-     */
+
     public void setVoteNotifier(VoteNotifierImpl voteNotifier) {
         // No es necesario ya que se inicializa en el constructor, pero se deja para compatibilidad
-        logger.info("🔔 VoteNotifier configurado en el controller");
+        logger.info(" VoteNotifier configurado en el controller");
     }
 
-    // =================== 🛠️ MÉTODOS HELPER PRIVADOS ===================
 
     private void initializeTestDataIfNeeded() {
         try {
@@ -813,10 +743,10 @@ public class ServerControllerImpl implements ServerControllerInterface {
                 // Cambiar estado a activo
                 changeElectionStatus(1, ELECTION_STATUS.DURING);
 
-                logger.info("✅ Datos de prueba inicializados exitosamente");
+                logger.info(" Datos de prueba inicializados exitosamente");
             }
         } catch (Exception e) {
-            logger.warn("⚠️ Error inicializando datos de prueba: {}", e.getMessage());
+            logger.warn(" Error inicializando datos de prueba: {}", e.getMessage());
         }
     }
 
@@ -844,11 +774,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
         return candidateName + "-" + vote.getDate() + "-" + vote.getElection();
     }
 
-    // =================== 📋 CLASE HELPER PARA RESULTADOS ===================
 
-    /**
-     * Clase helper para encapsular respuestas del controller
-     */
     public static class ElectionResult {
         private final boolean success;
         private final String message;
@@ -887,14 +813,10 @@ public class ServerControllerImpl implements ServerControllerInterface {
         }
     }
 
-    // =================== 🧹 CLEANUP ===================
 
-    /**
-     * Cierra recursos del controller
-     */
     public void shutdown() {
         try {
-            logger.info("🛑 Cerrando Controlador del Sistema Electoral...");
+            logger.info(" Cerrando Controlador del Sistema Electoral");
 
             // Limpiar cache
             systemCache.clear();
@@ -903,10 +825,10 @@ public class ServerControllerImpl implements ServerControllerInterface {
             ConnectionDB.shutdown();
 
             this.systemStatus = "SHUTDOWN";
-            logger.info("✅ Controlador cerrado exitosamente");
+            logger.info(" Controlador cerrado exitosamente");
 
         } catch (Exception e) {
-            logger.error("❌ Error durante shutdown del controller", e);
+            logger.error(" Error durante shutdown del controller", e);
         }
     }
 }
