@@ -147,7 +147,7 @@ public class Server {
             votingReceiverAdapter.activate();
 
             // =================== LANZAR INTERFAZ GRÁFICA ===================
-            System.out.println("🖥️ Iniciando Interfaz Gráfica del Servidor...");
+            System.out.println("🖥️ Iniciando Interfaz Gráfica del Servidor...ACA OSCAR");
 
             // Lanzar la UI en el hilo de eventos de Swing
             ServerUI.launchUI(electoralController);
