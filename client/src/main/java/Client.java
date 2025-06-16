@@ -76,7 +76,6 @@ public class Client {
     private static void iniciarModoNormal() {
         try {
 
-
             System.out.println("Iniciando estación de votación...");
 
             javax.swing.SwingUtilities.invokeLater(() -> {

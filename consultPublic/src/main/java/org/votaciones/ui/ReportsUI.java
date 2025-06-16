@@ -1,7 +1,9 @@
 package org.votaciones.ui;
 
 import org.votaciones.service.ReportsService;
+import org.votaciones.util.CitizenIds;
 import java.util.Scanner;
+import java.util.Random;
 
 public class ReportsUI {
     private final ReportsService service;
@@ -53,6 +55,9 @@ public class ReportsUI {
                     case "8":
                         verEstadisticasCache();
                         break;
+                    case "9":
+                        ejecutarPruebaMasiva();
+                        break;
                     case "0":
                         running = false;
                         break;
@@ -85,6 +90,7 @@ public class ReportsUI {
         System.out.println("6. Validar elegibilidad de ciudadano");
         System.out.println("7. Consultar ciudadanos de mesa");
         System.out.println("8. Ver estadísticas del cache");
+        System.out.println("9. Ejecutar prueba masiva de consultas");
         System.out.println("0. Salir");
         System.out.println("==========================================");
         System.out.print("Selecciona una opción: ");
@@ -279,6 +285,130 @@ public class ReportsUI {
 
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void ejecutarPruebaMasiva() {
+        System.out.println("\n========== PRUEBA MASIVA DE CONSULTAS ==========");
+        System.out.println("Seleccione el tipo de prueba:");
+        System.out.println("1. Consulta secuencial (mismo ciudadano múltiples veces)");
+        System.out.println("2. Consulta aleatoria (diferentes ciudadanos)");
+        System.out.println("3. Consulta en paralelo (simulación de carga alta)");
+        System.out.print("Seleccione el tipo de prueba (1-3): ");
+
+        String tipoPrueba = scanner.nextLine().trim();
+        int numConsultas = 0;
+        boolean entradaValida = false;
+
+        while (!entradaValida) {
+            System.out.print("Ingrese el número de consultas a realizar (mínimo 1): ");
+            try {
+                numConsultas = Integer.parseInt(scanner.nextLine().trim());
+                if (numConsultas > 0) {
+                    entradaValida = true;
+                } else {
+                    System.out.println("Error: El número de consultas debe ser mayor a 0.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Por favor ingrese un número válido.");
+            }
+        }
+
+        System.out.print("Ingrese el índice inicial de ciudadano (0-" + (CitizenIds.CITIZEN_IDS.length - 1) + "): ");
+        int indiceInicial = 0;
+        try {
+            indiceInicial = Integer.parseInt(scanner.nextLine().trim());
+            if (indiceInicial < 0 || indiceInicial >= CitizenIds.CITIZEN_IDS.length) {
+                System.out.println("Índice fuera de rango, usando 0 como valor por defecto");
+                indiceInicial = 0;
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Valor inválido, usando 0 como valor por defecto");
+        }
+
+        long startTime = System.currentTimeMillis();
+        int hits = 0;
+        int misses = 0;
+        Random random = new Random();
+
+        try {
+            switch (tipoPrueba) {
+                case "1":
+                    System.out.println("\nEjecutando prueba secuencial...");
+                    String documento = CitizenIds.CITIZEN_IDS[indiceInicial];
+                    for (int i = 0; i < numConsultas; i++) {
+                        long queryStart = System.currentTimeMillis();
+                        String result = service.getCitizenReports(documento, 1);
+                        long queryTime = System.currentTimeMillis() - queryStart;
+
+                        if (i == 0) {
+                            System.out
+                                    .println("Primera consulta (cache miss): " + documento + " (" + queryTime + " ms)");
+                            misses++;
+                        } else {
+                            System.out.println(
+                                    "Consulta " + (i + 1) + " (cache hit): " + documento + " (" + queryTime + " ms)");
+                            hits++;
+                        }
+
+                        Thread.sleep(100);
+                    }
+                    break;
+
+                case "2":
+                    System.out.println("\nEjecutando prueba aleatoria...");
+                    for (int i = 0; i < numConsultas; i++) {
+                        int indice = (indiceInicial + i) % CitizenIds.CITIZEN_IDS.length;
+                        String docAleatorio = CitizenIds.CITIZEN_IDS[indice];
+                        long queryStart = System.currentTimeMillis();
+                        String result = service.getCitizenReports(docAleatorio, 1);
+                        long queryTime = System.currentTimeMillis() - queryStart;
+
+                        System.out.println("Consulta " + (i + 1) + " para " + docAleatorio + ": " + queryTime + " ms");
+                        if (i == 0)
+                            misses++;
+                        else
+                            hits++;
+
+                        Thread.sleep(50);
+                    }
+                    break;
+
+                case "3":
+                    System.out.println("\nEjecutando prueba de carga alta...");
+                    for (int i = 0; i < numConsultas; i++) {
+                        int indice = (indiceInicial + i) % CitizenIds.CITIZEN_IDS.length;
+                        String docAleatorio = CitizenIds.CITIZEN_IDS[indice];
+                        long queryStart = System.currentTimeMillis();
+                        String result = service.getCitizenReports(docAleatorio, 1);
+                        long queryTime = System.currentTimeMillis() - queryStart;
+
+                        System.out.println("Consulta " + (i + 1) + " para " + docAleatorio + ": " + queryTime + " ms");
+                        if (i == 0)
+                            misses++;
+                        else
+                            hits++;
+                    }
+                    break;
+
+                default:
+                    System.out.println("Tipo de prueba no válido");
+                    return;
+            }
+
+            long totalTime = System.currentTimeMillis() - startTime;
+            double hitRate = (hits * 100.0) / (hits + misses);
+
+            System.out.println("\n========== RESULTADOS DE LA PRUEBA ==========");
+            System.out.println("Tiempo total: " + totalTime + " ms");
+            System.out.println("Tiempo promedio por consulta: " + (totalTime / (double) numConsultas) + " ms");
+            System.out.println("Cache hits: " + hits);
+            System.out.println("Cache misses: " + misses);
+            System.out.println("Hit rate: " + String.format("%.2f", hitRate) + "%");
+
+        } catch (Exception e) {
+            System.err.println("Error durante la prueba: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
