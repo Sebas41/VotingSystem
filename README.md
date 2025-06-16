@@ -8,16 +8,35 @@
 
 ## Contexto
 
-En el marco del sistema de votaciones desarrollado para la **Registraduría Nacional**, la empresa **XYZ** ha encomendado la implementación de los **módulos responsables de transmitir y recibir los votos** generados en cada estación de votación, con destino al servidor central encargado de su consolidación y almacenamiento.
+La Registraduría Nacional ha delegado a la empresa XYZ el desarrollo de un sistema de votación electrónica distribuido, capaz de gestionar elecciones nacionales con más de 100 millones de ciudadanos, distribuidos en miles de municipios y mesas de votación.
 
-Dado que se trata de una **funcionalidad crítica**, el sistema debe garantizar de manera estricta que:
+Este sistema debe garantizar:
 
-- **El 100% de los votos emitidos sean registrados correctamente**
-- **Ningún voto sea contado más de una vez**
+- Integridad de la información electoral
 
-Para cumplir con estos requisitos, se diseñó e implementó una **solución robusta, segura y tolerante a fallos** basada en el patrón arquitectónico **Reliable Messaging**. Esta solución permite que los votos enviados desde estaciones de votación remotas lleguen al servidor incluso en escenarios con caídas de red, interrupciones del servidor o apagados inesperados, manteniendo siempre la **consistencia y unicidad del voto**.
+- Seguridad y autenticidad del voto
 
-Mediante mecanismos de **almacenamiento local, reintentos automáticos y confirmación de recepción**, el sistema asegura una comunicación confiable entre los nodos distribuidos, cumpliendo con principios sólidos de diseño de sistemas distribuidos seguros.
+- Disponibilidad continua ante fallos
+
+- Trazabilidad completa de los procesos
+
+Para lograrlo, se implementó un sistema modular basado en ZeroC ICE, con arquitectura distribuida, comunicación robusta entre componentes, y separación clara de responsabilidades para soportar escenarios reales de alta concurrencia y fallas parciales.
+
+## Módulos Implementados
+
+1. Registro y Recepción de Votos
+Implementación del patrón Reliable Messaging, que garantiza la recepción única y confirmada de cada voto.
+
+Persistencia local con reintentos automáticos ante fallas de red.
+
+Confirmación vía ack del servidor central al proxy confiable.
+
+2. Consulta de Lugar de Votación
+Permite consultar en tiempo real el lugar de votación de un ciudadano según su documento y elección.
+
+Implementado como una interfaz remota (ReportsService) que accede a un cache distribuido.
+
+Incluye reportes geográficos, por ciudadano y por mesa.
 
 
 ## Estructura del Proyecto
@@ -27,27 +46,30 @@ VotingSystem/
 ├── client/                # Cliente que envía votos
 ├── server/                # Servidor principal que gestiona elecciones
 ├── reliableServer/        # Módulo que implementa Reliable Messaging
-├── votationPoint/         # Configura y lanza votaciones
-├── data/                  # Archivos persistentes (JSON, Kryo)
+├── consultPublic/         # Consulta de reportes y mesas
+├── ProxyCacheReports/     # Proxy de consultas
+├── ProxyConfigMachine/    # Proxy de configuracion de mesas
 ├── build.gradle           # Script de construcción
 ├── *.ice                  # Archivos de definición de interfaces ICE
 ``` 
 
 ## Arquitectura y Funcionamiento
 
-El flujo de votación se realiza en tres capas:
+El sistema está dividido en capas funcionales y componentes distribuidos, que interactúan mediante interfaces definidas en ICE. Se destacan:
 
-1. **Cliente (`client`)**  
-   Autentica al votante, permite seleccionar un candidato y emitir un voto.
+- Clientes (UI/CLI): interfaces de votación y consulta.
 
-2. **Reliable Server (`reliableServer`)**  
-   Intermediario que asegura que el voto llegue al servidor:
-   - Si el servidor está caído, guarda el voto localmente.
-   - Reintenta periódicamente hasta que el servidor confirme su recepción.
-   - Usa ICE para enviar y recibir confirmaciones (`ack`).
+- Servidores confiables y centrales: para registrar y almacenar votos.
 
-3. **Servidor de votación (`server`)**  
-   Recibe el voto, lo valida y lo almacena en la base de datos o en memoria.
+- Proxies de configuración y consulta: permiten desacoplar las consultas de datos de los servicios centrales.
+
+La arquitectura garantiza:
+
+- Alta disponibilidad: mediante reintentos, proxies y cacheo.
+
+- Escalabilidad: mediante componentes distribuidos y separación de responsabilidades.
+
+- Resiliencia: a través de mecanismos de persistencia temporal y recuperación de fallos.
 
 ---
 
@@ -74,6 +96,18 @@ El módulo `reliableServer` implementa el patrón de **Reliable Messaging** con 
 | `RMReciever`                 | Recibe confirmaciones (`ack`) del servidor y actualiza el estado.    |
 | `ReliableServer`             | Orquesta toda la lógica: inicia proxies, adaptadores y el hilo RM.   |
 
+## Tecnologías Utilizadas
+
+- ZeroC ICE y Java– Middleware distribuido
+
+- PostgreSQL – Base de datos relacional
+
+ - JSON - Persistencia de datos y mensajes
+
+- Gradle – Gestión del ciclo de vida del proyecto
+
+- Arquitectura distribuida en capas – Alta cohesión y bajo acoplamiento
+
 
 ## Ejecución del proyecto
 
@@ -89,8 +123,6 @@ Para compilar el proyecto usa el siguiente comando:
 gradle build
 ```
 
-
-
 Despues de compilar el proyecto ejecuta el server para recibir y validar los votos:
 
 ### 2. Compilar el server
@@ -105,5 +137,8 @@ Ya iniciado el server, ejecuta el client o maquina de votación para autenticart
 java -jar client/build/libs/client.jar
 ``` 
 
+## Conclusión
+
+El sistema desarrollado cumple con los principios de resiliencia, seguridad y escalabilidad necesarios para enfrentar una jornada electoral real. Mediante la separación de responsabilidades, uso de proxies confiables, consultas desacopladas y recuperación ante fallos, se garantiza una experiencia robusta tanto para votantes como para operadores y auditores del sistema.
 
 
