@@ -23,10 +23,12 @@ public class BulkVoteSender {
 
         VoteRepository repo = new VoteRepository();
 
+
+
         com.zeroc.Ice.Communicator communicator = com.zeroc.Ice.Util.initialize();
-        RMSourcePrx rm = RMSourcePrx.checkedCast(communicator.stringToProxy("Sender:tcp -h localhost -p 10010"));
+        RMSourcePrx rm = RMSourcePrx.checkedCast(communicator.stringToProxy("Sender:tcp -h 192.168.131.104 -p 10010"));
         RMDestinationPrx dest = RMDestinationPrx
-                .uncheckedCast(communicator.stringToProxy("Service:tcp -h localhost -p 10012"));
+                .uncheckedCast(communicator.stringToProxy("Service:tcp -h 192.168.131.101 -p 10012"));
         rm.setServerProxy(dest);
 
         String machineIp = InetAddress.getLocalHost().getHostAddress();
