@@ -50,16 +50,13 @@ public class ConnectionDB implements ConnectionDBinterface {
             config.setValidationTimeout(5000);
 
             dataSource = new HikariDataSource(config);
-            logger.info("HikariCP connection pool initialized successfully");
 
         } catch (Exception e) {
-            logger.error("Failed to initialize connection pool", e);
             throw new RuntimeException("Database initialization failed", e);
         }
     }
 
     public ConnectionDB() {
-        logger.info("ConnectionDB instance created using HikariCP pool");
     }
 
     /**
@@ -85,10 +82,8 @@ public class ConnectionDB implements ConnectionDBinterface {
             stmt.setString(5, status);
 
             int rowsAffected = stmt.executeUpdate();
-            logger.debug("Election stored: {} (rows affected: {})", name, rowsAffected);
 
         } catch (SQLException e) {
-            logger.error("Error storing election: {}", name, e);
             System.err.println("Error guardando la elección: " + e.getMessage());
         }
     }
@@ -107,10 +102,8 @@ public class ConnectionDB implements ConnectionDBinterface {
             stmt.setInt(4, electionId);
 
             int rowsAffected = stmt.executeUpdate();
-            logger.debug("Candidate stored: {} (rows affected: {})", name, rowsAffected);
 
         } catch (SQLException e) {
-            logger.error("Error storing candidate: {}", name, e);
             System.err.println("Error guardando el candidato: " + e.getMessage());
         }
     }
@@ -134,10 +127,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved votes for {} candidates in election {}", result.size(), electionId);
 
         } catch (SQLException e) {
-            logger.error("Error getting votes per candidate for election: {}", electionId, e);
             System.err.println("Error obteniendo votos por candidato: " + e.getMessage());
         }
 
@@ -166,10 +157,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved votes for {} machines in election {}", result.size(), electionId);
 
         } catch (SQLException e) {
-            logger.error("Error getting votes per candidate grouped by machine for election: {}", electionId, e);
             System.err.println("Error obteniendo votos por candidato y máquina: " + e.getMessage());
         }
 
@@ -192,7 +181,6 @@ public class ConnectionDB implements ConnectionDBinterface {
             }
 
         } catch (SQLException e) {
-            logger.error("Error getting candidate name for ID: {}", key, e);
             System.err.println("Error obteniendo nombre del candidato con ID " + key + ": " + e.getMessage());
         }
 
@@ -212,10 +200,8 @@ public class ConnectionDB implements ConnectionDBinterface {
             stmt.setInt(4, vote.electionId);
 
             int rowsAffected = stmt.executeUpdate();
-            logger.debug("Vote stored for machine {} (rows affected: {})", vote.machineId, rowsAffected);
 
         } catch (SQLException e) {
-            logger.error("Error storing vote for machine: {}", vote.machineId, e);
             System.err.println("Error al guardar el voto en la base de datos: " + e.getMessage());
         }
     }
@@ -242,10 +228,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.debug("Retrieved {} citizens for mesa {}", citizens.size(), mesaId);
 
         } catch (SQLException e) {
-            logger.error("Error getting citizens for mesa: {}", mesaId, e);
             System.err.println("Error obteniendo ciudadanos para mesa " + mesaId + ": " + e.getMessage());
         }
 
@@ -276,13 +260,11 @@ public class ConnectionDB implements ConnectionDBinterface {
                     config.put("departamento_nombre", rs.getString("departamento_nombre"));
                     config.put("total_ciudadanos", rs.getInt("total_ciudadanos"));
 
-                    logger.debug("Retrieved configuration for mesa {}", mesaId);
                     return config;
                 }
             }
 
         } catch (SQLException e) {
-            logger.error("Error getting mesa configuration for: {}", mesaId, e);
             System.err.println("Error obteniendo configuración para mesa " + mesaId + ": " + e.getMessage());
         }
 
@@ -325,10 +307,8 @@ public class ConnectionDB implements ConnectionDBinterface {
             }
 
             int totalCitizens = result.values().stream().mapToInt(List::size).sum();
-            logger.info("Retrieved {} citizens for {} mesas in batch", totalCitizens, mesaIds.size());
 
         } catch (SQLException e) {
-            logger.error("Error getting citizens for mesa batch: {}", mesaIds, e);
             System.err.println("Error obteniendo ciudadanos para lote de mesas: " + e.getMessage());
         }
 
@@ -348,10 +328,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 mesaIds.add(rs.getInt("id"));
             }
 
-            logger.info("Retrieved {} mesa IDs", mesaIds.size());
 
         } catch (SQLException e) {
-            logger.error("Error getting all mesa IDs", e);
             System.err.println("Error obteniendo todos los IDs de mesa: " + e.getMessage());
         }
 
@@ -381,10 +359,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved {} mesa IDs for department {}", mesaIds.size(), departmentId);
 
         } catch (SQLException e) {
-            logger.error("Error getting mesa IDs for department: {}", departmentId, e);
             System.err.println("Error obteniendo IDs de mesa para departamento " + departmentId + ": " + e.getMessage());
         }
 
@@ -409,13 +385,11 @@ public class ConnectionDB implements ConnectionDBinterface {
                     election.put("fecha_fin", rs.getTimestamp("fecha_fin"));
                     election.put("estado", rs.getString("estado"));
 
-                    logger.debug("Retrieved election info for ID: {}", electionId);
                     return election;
                 }
             }
 
         } catch (SQLException e) {
-            logger.error("Error getting election info for ID: {}", electionId, e);
             System.err.println("Error obteniendo información de elección " + electionId + ": " + e.getMessage());
         }
 
@@ -442,10 +416,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.debug("Retrieved {} candidates for election {}", candidates.size(), electionId);
 
         } catch (SQLException e) {
-            logger.error("Error getting candidates for election: {}", electionId, e);
             System.err.println("Error obteniendo candidatos para elección " + electionId + ": " + e.getMessage());
         }
 
@@ -468,10 +440,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 departments.add(department);
             }
 
-            logger.info("Retrieved {} departments", departments.size());
 
         } catch (SQLException e) {
-            logger.error("Error getting all departments", e);
             System.err.println("Error obteniendo departamentos: " + e.getMessage());
         }
 
@@ -498,10 +468,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved {} municipalities for department {}", municipalities.size(), departmentId);
 
         } catch (SQLException e) {
-            logger.error("Error getting municipalities for department: {}", departmentId, e);
             System.err.println("Error obteniendo municipios para departamento " + departmentId + ": " + e.getMessage());
         }
 
@@ -530,10 +498,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved {} puestos for municipality {}", puestos.size(), municipalityId);
 
         } catch (SQLException e) {
-            logger.error("Error getting puestos for municipality: {}", municipalityId, e);
             System.err.println("Error obteniendo puestos para municipio " + municipalityId + ": " + e.getMessage());
         }
 
@@ -598,10 +564,8 @@ public class ConnectionDB implements ConnectionDBinterface {
             // Add timestamp
             stats.put("timestamp", new Date());
 
-            logger.info("Election configuration stats generated for election {}", electionId);
 
         } catch (SQLException e) {
-            logger.error("Error getting election configuration stats for election: {}", electionId, e);
             stats.put("error", "Failed to collect stats: " + e.getMessage());
         }
 
@@ -615,7 +579,6 @@ public class ConnectionDB implements ConnectionDBinterface {
             // Check if election exists
             Map<String, Object> electionInfo = getElectionInfo(electionId);
             if (electionInfo == null) {
-                logger.warn("Election {} not found", electionId);
                 return false;
             }
 
@@ -626,7 +589,6 @@ public class ConnectionDB implements ConnectionDBinterface {
                     if (rs.next()) {
                         int candidateCount = rs.getInt("count");
                         if (candidateCount == 0) {
-                            logger.warn("Election {} has no candidates", electionId);
                             return false;
                         }
                     }
@@ -639,7 +601,6 @@ public class ConnectionDB implements ConnectionDBinterface {
                     if (rs.next()) {
                         int mesaCount = rs.getInt("count");
                         if (mesaCount == 0) {
-                            logger.warn("No voting tables (mesas) found in system");
                             return false;
                         }
                     }
@@ -652,7 +613,6 @@ public class ConnectionDB implements ConnectionDBinterface {
                     if (rs.next()) {
                         long citizenCount = rs.getLong("count");
                         if (citizenCount == 0) {
-                            logger.warn("No citizens found in system");
                             return false;
                         }
                     }
@@ -662,15 +622,12 @@ public class ConnectionDB implements ConnectionDBinterface {
             // Check election status
             String status = (String) electionInfo.get("estado");
             if (status == null) {
-                logger.warn("Election {} has null status", electionId);
                 return false;
             }
 
-            logger.info("Election {} data completeness validation passed", electionId);
             return true;
 
         } catch (SQLException e) {
-            logger.error("Error validating election data completeness for election: {}", electionId, e);
             return false;
         }
     }
@@ -695,7 +652,6 @@ public class ConnectionDB implements ConnectionDBinterface {
         try (Connection conn = getConnection()) {
             return conn.isValid(5);
         } catch (SQLException e) {
-            logger.error("Database health check failed", e);
             return false;
         }
     }
@@ -737,10 +693,8 @@ public class ConnectionDB implements ConnectionDBinterface {
             // Add timestamp
             metrics.put("timestamp", new Date());
 
-            logger.debug("Performance metrics collected: {}", metrics);
 
         } catch (SQLException e) {
-            logger.error("Error collecting performance metrics", e);
             metrics.put("error", "Failed to collect metrics: " + e.getMessage());
         }
 
@@ -753,7 +707,6 @@ public class ConnectionDB implements ConnectionDBinterface {
     public static void shutdown() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
-            logger.info("HikariCP connection pool closed");
         }
     }
 
@@ -810,13 +763,11 @@ public class ConnectionDB implements ConnectionDBinterface {
                     assignment.put("departamento_id", rs.getInt("departamento_id"));
                     assignment.put("departamento_nombre", rs.getString("departamento_nombre"));
 
-                    logger.debug("Retrieved voting assignment for document: {}", documento);
                     return assignment;
                 }
             }
 
         } catch (SQLException e) {
-            logger.error("Error getting voting assignment for document: {}", documento, e);
         }
 
         return null;
@@ -884,10 +835,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Found {} citizens matching name search: {} {}", results.size(), nombre, apellido);
 
         } catch (SQLException e) {
-            logger.error("Error searching citizens by name: {} {}", nombre, apellido, e);
         }
 
         return results;
@@ -924,10 +873,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved {} mesas for puesto {}", mesas.size(), puestoId);
 
         } catch (SQLException e) {
-            logger.error("Error getting mesas for puesto: {}", puestoId, e);
         }
 
         return mesas;
@@ -976,10 +923,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved voting stats for department {} and election {}", departmentId, electionId);
 
         } catch (SQLException e) {
-            logger.error("Error getting voting stats for department {} and election {}", departmentId, electionId, e);
         }
 
         return stats;
@@ -1025,10 +970,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved voting stats for municipality {} and election {}", municipalityId, electionId);
 
         } catch (SQLException e) {
-            logger.error("Error getting voting stats for municipality {} and election {}", municipalityId, electionId, e);
         }
 
         return stats;
@@ -1071,10 +1014,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved voting stats for puesto {} and election {}", puestoId, electionId);
 
         } catch (SQLException e) {
-            logger.error("Error getting voting stats for puesto {} and election {}", puestoId, electionId, e);
         }
 
         return stats;
@@ -1130,10 +1071,8 @@ public class ConnectionDB implements ConnectionDBinterface {
 
             summary.put("timestamp", new Date());
 
-            logger.info("Generated election results summary for election {}", electionId);
 
         } catch (Exception e) {
-            logger.error("Error generating election results summary for election {}", electionId, e);
             summary.put("error", "Failed to generate summary: " + e.getMessage());
         }
 
@@ -1159,10 +1098,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 elections.add(election);
             }
 
-            logger.info("Retrieved {} active elections", elections.size());
 
         } catch (SQLException e) {
-            logger.error("Error getting active elections", e);
         }
 
         return elections;
@@ -1179,12 +1116,10 @@ public class ConnectionDB implements ConnectionDBinterface {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 boolean exists = rs.next();
-                logger.debug("Document {} validation: {}", documento, exists ? "valid" : "invalid");
                 return exists;
             }
 
         } catch (SQLException e) {
-            logger.error("Error validating document: {}", documento, e);
             return false;
         }
     }
@@ -1229,13 +1164,11 @@ public class ConnectionDB implements ConnectionDBinterface {
                     hierarchy.put("departamento_id", rs.getInt("departamento_id"));
                     hierarchy.put("departamento_nombre", rs.getString("departamento_nombre"));
 
-                    logger.debug("Retrieved location hierarchy for mesa {}", mesaId);
                     return hierarchy;
                 }
             }
 
         } catch (SQLException e) {
-            logger.error("Error getting location hierarchy for mesa: {}", mesaId, e);
         }
 
         return null;
@@ -1301,10 +1234,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved {} citizens for department {}", citizens.size(), departmentId);
 
         } catch (SQLException e) {
-            logger.error("Error getting citizens for department: {}", departmentId, e);
         }
 
         return citizens;
@@ -1368,10 +1299,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved {} citizens for municipality {}", citizens.size(), municipalityId);
 
         } catch (SQLException e) {
-            logger.error("Error getting citizens for municipality: {}", municipalityId, e);
         }
 
         return citizens;
@@ -1435,10 +1364,8 @@ public class ConnectionDB implements ConnectionDBinterface {
                 }
             }
 
-            logger.info("Retrieved {} citizens for puesto {}", citizens.size(), puestoId);
 
         } catch (SQLException e) {
-            logger.error("Error getting citizens for puesto: {}", puestoId, e);
         }
 
         return citizens;

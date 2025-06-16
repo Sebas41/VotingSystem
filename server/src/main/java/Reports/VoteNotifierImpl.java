@@ -3,8 +3,6 @@ package Reports;
 import VoteNotification.VoteNotifier;
 import VoteNotification.VoteObserverPrx;
 import com.zeroc.Ice.Current;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -14,14 +12,10 @@ import java.util.ArrayList;
 
 public class VoteNotifierImpl implements VoteNotifier {
 
-    private static final Logger logger = LoggerFactory.getLogger(VoteNotifierImpl.class);
 
     // Map: electionId -> Lista de observers registrados
     private final Map<Integer, List<VoteObserverPrx>> observers = new ConcurrentHashMap<>();
 
-    public VoteNotifierImpl() {
-        logger.info("🔔 VoteNotifier inicializado en el servidor central");
-    }
 
     @Override
     public void registerObserver(VoteObserverPrx observer, int electionId, Current current) {
@@ -29,7 +23,6 @@ public class VoteNotifierImpl implements VoteNotifier {
             // Agregar observer a la lista de la elección
             observers.computeIfAbsent(electionId, k -> new CopyOnWriteArrayList<>()).add(observer);
 
-            logger.info("✅ Observer registrado para elección {}: {}", electionId, observer);
             System.out.println("🔔 Nuevo proxy registrado como observer para elección " + electionId);
 
             // Mostrar estadísticas actuales
@@ -37,7 +30,6 @@ public class VoteNotifierImpl implements VoteNotifier {
             System.out.println("📊 Total observers para elección " + electionId + ": " + totalObservers);
 
         } catch (Exception e) {
-            logger.error("❌ Error registrando observer para elección {}: {}", electionId, e.getMessage());
         }
     }
 
@@ -48,14 +40,11 @@ public class VoteNotifierImpl implements VoteNotifier {
             if (electionObservers != null) {
                 boolean removed = electionObservers.remove(observer);
                 if (removed) {
-                    logger.info("🔕 Observer desregistrado para elección {}", electionId);
                     System.out.println("👋 Proxy desregistrado de elección " + electionId);
                 } else {
-                    logger.warn("⚠️ Observer no encontrado para desregistrar en elección {}", electionId);
                 }
             }
         } catch (Exception e) {
-            logger.error("❌ Error desregistrando observer para elección {}: {}", electionId, e.getMessage());
         }
     }
 
@@ -63,13 +52,11 @@ public class VoteNotifierImpl implements VoteNotifier {
     public int getObserverCount(int electionId, Current current) {
         List<VoteObserverPrx> electionObservers = observers.get(electionId);
         int count = electionObservers != null ? electionObservers.size() : 0;
-        logger.debug("📊 Conteo de observers para elección {}: {}", electionId, count);
         return count;
     }
 
     @Override
     public void forceResultsUpdate(int electionId, Current current) {
-        logger.info("🔄 Forzando actualización de resultados para elección {}", electionId);
         System.out.println("🔄 Actualizando resultados para elección " + electionId);
 
         // TODO: Implementar si necesitas forzar actualización de resultados completos
@@ -84,12 +71,10 @@ public class VoteNotifierImpl implements VoteNotifier {
         List<VoteObserverPrx> electionObservers = observers.get(electionId);
 
         if (electionObservers == null || electionObservers.isEmpty()) {
-            logger.debug("📭 No hay observers registrados para elección {}", electionId);
             System.out.println("📭 No hay proxys para notificar (elección " + electionId + ")");
             return;
         }
 
-        logger.info("📢 Notificando voto a {} observers para elección {}: {}",
                 electionObservers.size(), electionId, voteInfo);
 
         System.out.println("📢 Enviando notificación a " + electionObservers.size() + " proxy(s): " + voteInfo);
@@ -103,10 +88,8 @@ public class VoteNotifierImpl implements VoteNotifier {
             try {
                 // Enviar notificación de voto
                 observer.onVoteReceived(voteInfo);
-                logger.debug("✅ Notificación enviada exitosamente a observer: {}", observer);
 
             } catch (Exception e) {
-                logger.warn("⚠️ Error notificando a observer (será removido): {}", e.getMessage());
                 failedObservers.add(observer);
             }
         }
@@ -175,7 +158,6 @@ public class VoteNotifierImpl implements VoteNotifier {
             if (!toRemove.isEmpty()) {
                 electionObservers.removeAll(toRemove);
                 totalCleaned += toRemove.size();
-                logger.info("🧹 Limpiados {} observers desconectados de elección {}",
                         toRemove.size(), electionId);
             }
         }

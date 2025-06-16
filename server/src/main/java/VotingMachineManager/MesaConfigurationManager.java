@@ -1,8 +1,5 @@
 package VotingMachineManager;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,7 +13,6 @@ import java.util.stream.Collectors;
  */
 public class MesaConfigurationManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(MesaConfigurationManager.class);
     private static final String CONFIG_FILE = "mesas-config.properties";
 
     private final Properties mesaProperties;
@@ -46,7 +42,6 @@ public class MesaConfigurationManager {
      */
     private void loadConfiguration() {
         try {
-            logger.info("📋 Cargando configuración de mesas desde: {}", configFilePath);
 
             // Intentar cargar desde el classpath primero
             InputStream inputStream = getClass().getClassLoader().getResourceAsStream(configFilePath);
@@ -57,7 +52,6 @@ public class MesaConfigurationManager {
                 if (configFile.exists()) {
                     inputStream = new FileInputStream(configFile);
                 } else {
-                    logger.warn("⚠️ Archivo de configuración no encontrado: {}", configFilePath);
                     createDefaultConfigFile();
                     return;
                 }
@@ -69,10 +63,8 @@ public class MesaConfigurationManager {
             // Parsear y cachear la información de las mesas
             parseAndCacheMesaInfo();
 
-            logger.info("✅ Configuración cargada exitosamente - {} mesas registradas", mesasCache.size());
 
         } catch (Exception e) {
-            logger.error("❌ Error cargando configuración de mesas: {}", e.getMessage(), e);
             createDefaultConfigFile();
         }
     }
@@ -103,11 +95,9 @@ public class MesaConfigurationManager {
 
                 if (mesaInfo != null) {
                     mesasCache.put(mesaId, mesaInfo);
-                    logger.debug("📋 Mesa {} registrada: {}:{}", mesaId, mesaInfo.getIp(), mesaInfo.getPort());
                 }
 
             } catch (NumberFormatException e) {
-                logger.warn("⚠️ ID de mesa inválido: {}", mesaIdStr);
             }
         }
     }
@@ -125,7 +115,6 @@ public class MesaConfigurationManager {
         String activeStr = mesaProperties.getProperty(prefix + "active", "true");
 
         if (ip == null || portStr == null) {
-            logger.warn("⚠️ Configuración incompleta para mesa {}", mesaId);
             return null;
         }
 
@@ -137,7 +126,6 @@ public class MesaConfigurationManager {
             return new MesaInfo(mesaId, ip, port, name, department, active);
 
         } catch (NumberFormatException e) {
-            logger.error("❌ Error parseando configuración de mesa {}: {}", mesaId, e.getMessage());
             return null;
         }
     }
@@ -147,7 +135,6 @@ public class MesaConfigurationManager {
      */
     private void createDefaultConfigFile() {
         try {
-            logger.info("📝 Creando archivo de configuración por defecto...");
 
             Properties defaultProps = new Properties();
             defaultProps.setProperty("mesa.6823.ip", "localhost");
@@ -168,10 +155,8 @@ public class MesaConfigurationManager {
             this.mesaProperties.putAll(defaultProps);
             parseAndCacheMesaInfo();
 
-            logger.info("✅ Archivo de configuración por defecto creado: {}", configFilePath);
 
         } catch (Exception e) {
-            logger.error("❌ Error creando configuración por defecto: {}", e.getMessage(), e);
         }
     }
 
@@ -238,7 +223,6 @@ public class MesaConfigurationManager {
      * Recarga la configuración desde el archivo
      */
     public void reloadConfiguration() {
-        logger.info("🔄 Recargando configuración de mesas...");
         loadConfiguration();
     }
 

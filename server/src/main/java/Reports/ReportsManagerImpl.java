@@ -2,8 +2,6 @@ package Reports;
 
 import ConnectionDB.ConnectionDBinterface;
 import com.zeroc.Ice.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.lang.Exception;
 import java.lang.Object;
 import java.util.*;
@@ -11,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ReportsManagerImpl implements ReportsSystem.ReportsService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ReportsManagerImpl.class);
     private final ConnectionDBinterface connectionDB;
     private static final String PACKAGE_VERSION = "1.0";
 
@@ -22,38 +19,32 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
 
     public ReportsManagerImpl(ConnectionDBinterface connectionDB) {
         this.connectionDB = connectionDB;
-        logger.info("ReportsManagerImpl initialized for Ice communication with string formatting");
     }
 
     // =================== MÉTODOS @Override SIMPLIFICADOS ===================
 
     @Override
     public String getCitizenReports(String documento, int electionId, Current current) {
-        logger.debug("Ice request: getCitizenReports for document {} election {}", documento, electionId);
 
         try {
             return generateCitizenReportString(documento, electionId);
         } catch (Exception e) {
-            logger.error("Error generating citizen report string for document {} election {}", documento, electionId, e);
             return createErrorString("Error generating citizen report: " + e.getMessage());
         }
     }
 
     @Override
     public String getElectionReports(int electionId, Current current) {
-        logger.debug("Ice request: getElectionReports for election {}", electionId);
 
         try {
             return generateElectionResultsReportString(electionId);
         } catch (Exception e) {
-            logger.error("Error generating election report string for election {}", electionId, e);
             return createErrorString("Error generating election report: " + e.getMessage());
         }
     }
 
     @Override
     public String getGeographicReports(int locationId, String locationType, int electionId, Current current) {
-        logger.debug("Ice request: getGeographicReports for {} {} election {}", locationType, locationId, electionId);
 
         try {
             switch (locationType.toLowerCase()) {
@@ -66,35 +57,29 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
                 case "puesto":
                     return generatePuestoReportString(locationId, electionId);
                 default:
-                    logger.warn("Unknown location type: {}", locationType);
                     return createErrorString("Unknown location type: " + locationType);
             }
         } catch (Exception e) {
-            logger.error("Error generating geographic report string for {} {} election {}", locationType, locationId, electionId, e);
             return createErrorString("Error generating geographic report: " + e.getMessage());
         }
     }
 
     @Override
     public String[] searchCitizenReports(String nombre, String apellido, int electionId, int limit, Current current) {
-        logger.debug("Ice request: searchCitizenReports for {} {} election {} limit {}", nombre, apellido, electionId, limit);
 
         try {
             return searchCitizenReportsStrings(nombre, apellido, electionId, limit);
         } catch (Exception e) {
-            logger.error("Error searching citizen reports strings for {} {}", nombre, apellido, e);
             return new String[]{createErrorString("Error searching citizen reports: " + e.getMessage())};
         }
     }
 
     @Override
     public String[] getMesaCitizenReports(int mesaId, int electionId, Current current) {
-        logger.debug("Ice request: getMesaCitizenReports for mesa {} election {}", mesaId, electionId);
 
         try {
             return generateMesaCitizenReportsStrings(mesaId, electionId);
         } catch (Exception e) {
-            logger.error("Error generating mesa citizen reports strings for mesa {} election {}", mesaId, electionId, e);
             return new String[]{createErrorString("Error generating mesa citizen reports: " + e.getMessage())};
         }
     }
@@ -122,13 +107,11 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             return electionsArray;
 
         } catch (Exception e) {
-            logger.error("Error getting available elections strings", e);
             return new String[]{createErrorString("Error getting available elections: " + e.getMessage())};
         }
     }
 
     public void preloadReports(int electionId, Current current) {
-        logger.info("Ice request: preloadReports for election {}", electionId);
 
         try {
             // Preload election report
@@ -141,27 +124,22 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
                 generateDepartmentReportString(deptId, electionId);
             }
 
-            logger.info("Preloading completed for election {}", electionId);
         } catch (Exception e) {
-            logger.error("Error during preloading for election {}", electionId, e);
         }
     }
 
     // =================== MÉTODOS PARA GENERAR STRINGS FORMATEADOS ===================
 
     public String generateCitizenReportString(String documento, int electionId) {
-        logger.info("Generating citizen report string for document {} and election {}", documento, electionId);
 
         try {
             Map<String, Object> assignmentMap = connectionDB.getCitizenVotingAssignment(documento);
             if (assignmentMap == null) {
-                logger.warn("No voting assignment found for document: {}", documento);
                 return createErrorString("No voting assignment found");
             }
 
             Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
             if (electionInfoMap == null) {
-                logger.error("Election {} not found", electionId);
                 return createErrorString("Election not found");
             }
 
@@ -185,17 +163,14 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             // 5. Metadata: packageVersion-timestamp
             report.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
 
-            logger.info("Citizen report string generated for document {}", documento);
             return report.toString();
 
         } catch (Exception e) {
-            logger.error("Error generating citizen report string for document {} and election {}", documento, electionId, e);
             return createErrorString("Error generating citizen report: " + e.getMessage());
         }
     }
 
     public String[] searchCitizenReportsStrings(String nombre, String apellido, int electionId, int limit) {
-        logger.info("Searching citizen report strings for name: {} {} (election {}, limit {})", nombre, apellido, electionId, limit);
 
         try {
             // 1. Search citizens by name
@@ -204,7 +179,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             // 2. Get election info once
             Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
             if (electionInfoMap == null) {
-                logger.error("Election {} not found", electionId);
                 return new String[]{createErrorString("Election not found")};
             }
 
@@ -232,26 +206,21 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
                         results.add(report.toString());
                     }
                 } catch (Exception e) {
-                    logger.warn("Error generating report for citizen in search results", e);
                 }
             }
 
-            logger.info("Found {} citizen report strings for name search: {} {}", results.size(), nombre, apellido);
             return results.toArray(new String[0]);
 
         } catch (Exception e) {
-            logger.error("Error searching citizen report strings for name: {} {}", nombre, apellido, e);
             return new String[]{createErrorString("Error searching citizen reports: " + e.getMessage())};
         }
     }
 
     public String generateElectionResultsReportString(int electionId) {
-        logger.info("Generating election results report string for election {}", electionId);
 
         try {
             Map<String, Object> resultsMap = connectionDB.getElectionResultsSummary(electionId);
             if (resultsMap == null) {
-                logger.error("No results found for election {}", electionId);
                 return createErrorString("No results found for election");
             }
 
@@ -273,17 +242,14 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             // 4. Metadata
             report.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
 
-            logger.info("Election results report string generated for election {}", electionId);
             return report.toString();
 
         } catch (Exception e) {
-            logger.error("Error generating election results report string for election {}", electionId, e);
             return createErrorString("Error generating election results report: " + e.getMessage());
         }
     }
 
     public String generateDepartmentReportString(int departmentId, int electionId) {
-        logger.info("Generating department report string for department {} and election {}", departmentId, electionId);
 
         try {
             // 1. Get department voting stats
@@ -317,17 +283,14 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             // 4. Metadata
             report.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
 
-            logger.info("Department report string generated for department {}", departmentId);
             return report.toString();
 
         } catch (Exception e) {
-            logger.error("Error generating department report string for department {} and election {}", departmentId, electionId, e);
             return createErrorString("Error generating department report: " + e.getMessage());
         }
     }
 
     public String generateMunicipalityReportString(int municipalityId, int electionId) {
-        logger.info("Generating municipality report string for municipality {} and election {}", municipalityId, electionId);
 
         try {
             // 1. Get municipality voting stats
@@ -351,17 +314,14 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             // 4. Metadata
             report.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
 
-            logger.info("Municipality report string generated for municipality {}", municipalityId);
             return report.toString();
 
         } catch (Exception e) {
-            logger.error("Error generating municipality report string for municipality {} and election {}", municipalityId, electionId, e);
             return createErrorString("Error generating municipality report: " + e.getMessage());
         }
     }
 
     public String generatePuestoReportString(int puestoId, int electionId) {
-        logger.info("Generating puesto report string for puesto {} and election {}", puestoId, electionId);
 
         try {
             // 1. Get puesto voting stats
@@ -385,17 +345,14 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             // 4. Metadata
             report.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
 
-            logger.info("Puesto report string generated for puesto {}", puestoId);
             return report.toString();
 
         } catch (Exception e) {
-            logger.error("Error generating puesto report string for puesto {} and election {}", puestoId, electionId, e);
             return createErrorString("Error generating puesto report: " + e.getMessage());
         }
     }
 
     public String[] generateMesaCitizenReportsStrings(int mesaId, int electionId) {
-        logger.info("Generating citizen report strings for all citizens in mesa {} and election {}", mesaId, electionId);
 
         try {
             // Get all citizens in mesa
@@ -416,11 +373,9 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
                 }
             }
 
-            logger.info("Generated {} citizen report strings for mesa {}", mesaReports.size(), mesaId);
             return mesaReports.toArray(new String[0]);
 
         } catch (Exception e) {
-            logger.error("Error generating mesa citizen report strings for mesa {} and election {}", mesaId, electionId, e);
             return new String[]{createErrorString("Error generating mesa citizen reports: " + e.getMessage())};
         }
     }
@@ -598,7 +553,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
         try {
             return connectionDB.validateCitizenDocument(documento);
         } catch (Exception e) {
-            logger.error("Error validating citizen eligibility for document: {}", documento, e);
             return false;
         }
     }
@@ -607,7 +561,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
         try {
             return connectionDB.validateElectionDataCompleteness(electionId);
         } catch (Exception e) {
-            logger.error("Error checking if election {} is ready for reports", electionId, e);
             return false;
         }
     }
@@ -616,7 +569,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
         try {
             return connectionDB.getAllActiveElections();
         } catch (Exception e) {
-            logger.error("Error getting available elections", e);
             return new ArrayList<>();
         }
     }
@@ -639,10 +591,8 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             stats.put("serializationType", "String Formatted");
             stats.put("moduleType", "Reports");
 
-            logger.info("Reports statistics generated for election {}", electionId);
 
         } catch (Exception e) {
-            logger.error("Error getting reports statistics for election {}", electionId, e);
             stats.put("error", "Failed to generate statistics: " + e.getMessage());
         }
 
@@ -654,13 +604,11 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
 
     @Override
     public String[] getDepartmentCitizenDocuments(int departmentId, int electionId, Current current) {
-        logger.debug("Ice request: getDepartmentCitizenDocuments for department {} election {}", departmentId, electionId);
 
         try {
             // Validar que la elección existe
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
             if (electionInfo == null) {
-                logger.warn("Election {} not found", electionId);
                 return new String[]{createErrorString("Election not found")};
             }
 
@@ -673,24 +621,20 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
                 documents[i] = (String) citizens.get(i).get("documento");
             }
 
-            logger.info("Retrieved {} citizen documents for department {}", documents.length, departmentId);
             return documents;
 
         } catch (Exception e) {
-            logger.error("Error getting citizen documents for department {} election {}", departmentId, electionId, e);
             return new String[]{createErrorString("Error getting citizen documents: " + e.getMessage())};
         }
     }
 
     @Override
     public String[] getMunicipalityCitizenDocuments(int municipalityId, int electionId, Current current) {
-        logger.debug("Ice request: getMunicipalityCitizenDocuments for municipality {} election {}", municipalityId, electionId);
 
         try {
             // Validar que la elección existe
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
             if (electionInfo == null) {
-                logger.warn("Election {} not found", electionId);
                 return new String[]{createErrorString("Election not found")};
             }
 
@@ -703,24 +647,20 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
                 documents[i] = (String) citizens.get(i).get("documento");
             }
 
-            logger.info("Retrieved {} citizen documents for municipality {}", documents.length, municipalityId);
             return documents;
 
         } catch (Exception e) {
-            logger.error("Error getting citizen documents for municipality {} election {}", municipalityId, electionId, e);
             return new String[]{createErrorString("Error getting citizen documents: " + e.getMessage())};
         }
     }
 
     @Override
     public String[] getPuestoCitizenDocuments(int puestoId, int electionId, Current current) {
-        logger.debug("Ice request: getPuestoCitizenDocuments for puesto {} election {}", puestoId, electionId);
 
         try {
             // Validar que la elección existe
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
             if (electionInfo == null) {
-                logger.warn("Election {} not found", electionId);
                 return new String[]{createErrorString("Election not found")};
             }
 
@@ -733,24 +673,20 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
                 documents[i] = (String) citizens.get(i).get("documento");
             }
 
-            logger.info("Retrieved {} citizen documents for puesto {}", documents.length, puestoId);
             return documents;
 
         } catch (Exception e) {
-            logger.error("Error getting citizen documents for puesto {} election {}", puestoId, electionId, e);
             return new String[]{createErrorString("Error getting citizen documents: " + e.getMessage())};
         }
     }
 
     @Override
     public String[] getMesaCitizenDocuments(int mesaId, int electionId, Current current) {
-        logger.debug("Ice request: getMesaCitizenDocuments for mesa {} election {}", mesaId, electionId);
 
         try {
             // Validar que la elección existe
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
             if (electionInfo == null) {
-                logger.warn("Election {} not found", electionId);
                 return new String[]{createErrorString("Election not found")};
             }
 
@@ -763,11 +699,9 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
                 documents[i] = (String) citizens.get(i).get("documento");
             }
 
-            logger.info("Retrieved {} citizen documents for mesa {}", documents.length, mesaId);
             return documents;
 
         } catch (Exception e) {
-            logger.error("Error getting citizen documents for mesa {} election {}", mesaId, electionId, e);
             return new String[]{createErrorString("Error getting citizen documents: " + e.getMessage())};
         }
     }
@@ -780,7 +714,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
      */
     @Override
     public String preloadReports(int electionId, String locationType, int locationId, Current current) {
-        logger.info("🚀 Ice request: preloadReports type '{}' for election {} location {}", locationType, electionId, locationId);
 
         long startTime = System.currentTimeMillis();
         StringBuilder result = new StringBuilder();
@@ -815,7 +748,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             }
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga tipo '{}': {}", locationType, e.getMessage());
             result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
@@ -826,7 +758,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
      */
     @Override
     public String getCacheStats(Current current) {
-        logger.debug("Ice request: getCacheStats");
 
         try {
             StringBuilder stats = new StringBuilder();
@@ -893,11 +824,9 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             stats.append("\n========================================\n");
 
             String result = stats.toString();
-            logger.info("Server stats generated successfully");
             return result;
 
         } catch (Exception e) {
-            logger.error("Error generating server stats: {}", e.getMessage());
             return createErrorString("Error generating server stats: " + e.getMessage());
         }
     }
@@ -955,7 +884,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga básica: {}", e.getMessage());
             result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
@@ -1017,7 +945,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga de departamento {}: {}", departmentId, e.getMessage());
             result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
@@ -1063,7 +990,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga de municipio {}: {}", municipalityId, e.getMessage());
             result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
@@ -1100,7 +1026,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga de puesto {}: {}", puestoId, e.getMessage());
             result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
@@ -1137,7 +1062,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga de mesa {}: {}", mesaId, e.getMessage());
             result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }
@@ -1183,7 +1107,6 @@ public class ReportsManagerImpl implements ReportsSystem.ReportsService {
             return result.toString();
 
         } catch (Exception e) {
-            logger.error("❌ Error en precarga completa: {}", e.getMessage());
             result.append("❌ ERROR: ").append(e.getMessage()).append("\n");
             return result.toString();
         }

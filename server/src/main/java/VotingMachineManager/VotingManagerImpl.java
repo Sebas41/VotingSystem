@@ -1,8 +1,6 @@
 package VotingMachineManager;
 
 import ConnectionDB.ConnectionDBinterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.zeroc.Ice.Current;
 
 import java.security.Timestamp;
@@ -15,7 +13,6 @@ import VotingsSystem.ConfigurationService;
 
 public class VotingManagerImpl implements ConfigurationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(VotingManagerImpl.class);
     private final ConnectionDBinterface connectionDB;
     private static final String PACKAGE_VERSION = "1.0";
 
@@ -25,47 +22,39 @@ public class VotingManagerImpl implements ConfigurationService {
 
     public VotingManagerImpl(ConnectionDBinterface connectionDB) {
         this.connectionDB = connectionDB;
-        logger.info("VotingManagerImpl initialized for Ice communication with string formatting");
     }
 
     // =================== MÉTODOS ICE EXISTENTES ===================
 
     @Override
     public String getConfiguration(int mesaId, int electionId, Current current) {
-        logger.debug("Ice request: getConfiguration for mesa {} election {}", mesaId, electionId);
 
         try {
             return generateMachineConfigurationString(mesaId, electionId);
         } catch (Exception e) {
-            logger.error("Error generating configuration string for mesa {} election {}", mesaId, electionId, e);
             return createErrorString("Error generating configuration: " + e.getMessage());
         }
     }
 
     @Override
     public boolean isConfigurationReady(int mesaId, int electionId, Current current) {
-        logger.debug("Ice request: isConfigurationReady for mesa {} election {}", mesaId, electionId);
         return validateMesaConfiguration(mesaId, electionId);
     }
 
     @Override
     public void preloadConfigurations(int[] mesaIds, int electionId, Current current) {
-        logger.info("Ice request: preloadConfigurations for {} mesas election {}", mesaIds.length, electionId);
 
         try {
             // Preload configurations for each mesa (caching logic could be added here)
             for (int mesaId : mesaIds) {
                 generateMachineConfigurationString(mesaId, electionId);
             }
-            logger.info("Preloading completed for {} mesas", mesaIds.length);
         } catch (Exception e) {
-            logger.error("Error during preloading for election {}", electionId, e);
         }
     }
 
     @Override
     public String[] getBatchConfigurations(int[] mesaIds, int electionId, Current current) {
-        logger.debug("Ice request: getBatchConfigurations for {} mesas election {}", mesaIds.length, electionId);
 
         try {
             return generateBatchMachineConfigurationStrings(
@@ -73,43 +62,36 @@ public class VotingManagerImpl implements ConfigurationService {
                     electionId
             );
         } catch (Exception e) {
-            logger.error("Error generating batch configuration strings for election {}", electionId, e);
             return new String[]{createErrorString("Error generating batch configurations: " + e.getMessage())};
         }
     }
 
     @Override
     public String[] getDepartmentConfigurations(int departmentId, int electionId, Current current) {
-        logger.debug("Ice request: getDepartmentConfigurations for department {} election {}", departmentId, electionId);
 
         try {
             return generateDepartmentConfigurationStrings(departmentId, electionId);
         } catch (Exception e) {
-            logger.error("Error generating department configuration strings for department {} election {}", departmentId, electionId, e);
             return new String[]{createErrorString("Error generating department configurations: " + e.getMessage())};
         }
     }
 
     @Override
     public String[] getPuestoConfigurations(int puestoId, int electionId, Current current) {
-        logger.debug("Ice request: getPuestoConfigurations for puesto {} election {}", puestoId, electionId);
 
         try {
             return generatePuestoConfigurationStrings(puestoId, electionId);
         } catch (Exception e) {
-            logger.error("Error generating puesto configuration strings for puesto {} election {}", puestoId, electionId, e);
             return new String[]{createErrorString("Error generating puesto configurations: " + e.getMessage())};
         }
     }
 
     @Override
     public String getConfigurationStatistics(int electionId, Current current) {
-        logger.debug("Ice request: getConfigurationStatistics for election {}", electionId);
 
         try {
             return generateConfigurationStatisticsString(electionId);
         } catch (Exception e) {
-            logger.error("Error generating configuration statistics string for election {}", electionId, e);
             return createErrorString("Error generating statistics: " + e.getMessage());
         }
     }
@@ -122,20 +104,17 @@ public class VotingManagerImpl implements ConfigurationService {
     // =================== MÉTODOS DE GENERACIÓN DE CONFIGURACIÓN ===================
 
     public String generateMachineConfigurationString(int mesaId, int electionId) {
-        logger.info("Generating machine configuration string for mesa {} and election {}", mesaId, electionId);
 
         try {
             // 1. Get mesa information
             Map<String, Object> mesaInfoMap = connectionDB.getMesaConfiguration(mesaId);
             if (mesaInfoMap == null) {
-                logger.error("Mesa {} not found", mesaId);
                 return createErrorString("Mesa not found");
             }
 
             // 2. Get election information
             Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
             if (electionInfoMap == null) {
-                logger.error("Election {} not found", electionId);
                 return createErrorString("Election not found");
             }
 
@@ -163,28 +142,23 @@ public class VotingManagerImpl implements ConfigurationService {
             // 5. Metadata: packageVersion-timestamp
             config.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
 
-            logger.info("Machine configuration string generated for mesa {} - {} citizens, {} candidates",
                     mesaId, citizensMap.size(), candidatesMap.size());
 
             // ✅ NUEVO: Log adicional para horarios de jornada
-            logger.info("Election {} includes voting schedule restrictions", electionId);
 
             return config.toString();
 
         } catch (Exception e) {
-            logger.error("Error generating machine configuration string for mesa {} and election {}", mesaId, electionId, e);
             return createErrorString("Error generating machine configuration: " + e.getMessage());
         }
     }
 
     public String[] generateBatchMachineConfigurationStrings(List<Integer> mesaIds, int electionId) {
-        logger.info("Generating batch machine configuration strings for {} mesas and election {}", mesaIds.size(), electionId);
 
         try {
             // 1. Get election info and candidates once (they're the same for all machines)
             Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
             if (electionInfoMap == null) {
-                logger.error("Election {} not found", electionId);
                 return new String[]{createErrorString("Election not found")};
             }
 
@@ -203,7 +177,6 @@ public class VotingManagerImpl implements ConfigurationService {
                 try {
                     Map<String, Object> mesaInfoMap = connectionDB.getMesaConfiguration(mesaId);
                     if (mesaInfoMap == null) {
-                        logger.warn("Mesa {} not found, skipping", mesaId);
                         continue;
                     }
 
@@ -220,28 +193,23 @@ public class VotingManagerImpl implements ConfigurationService {
                     batchConfigurations.add(config.toString());
 
                 } catch (Exception e) {
-                    logger.error("Error generating configuration string for mesa {} in batch", mesaId, e);
                 }
             }
 
-            logger.info("Batch configuration strings generated for {} mesas successfully", batchConfigurations.size());
             return batchConfigurations.toArray(new String[0]);
 
         } catch (Exception e) {
-            logger.error("Error in batch configuration string generation", e);
             return new String[]{createErrorString("Error in batch generation: " + e.getMessage())};
         }
     }
 
     public String[] generateDepartmentConfigurationStrings(int departmentId, int electionId) {
-        logger.info("Generating configuration strings for department {} and election {}", departmentId, electionId);
 
         try {
             // Get all mesa IDs for the department
             List<Integer> mesaIds = connectionDB.getMesaIdsByDepartment(departmentId);
 
             if (mesaIds.isEmpty()) {
-                logger.warn("No mesas found for department {}", departmentId);
                 return new String[]{createErrorString("No mesas found for department")};
             }
 
@@ -249,14 +217,12 @@ public class VotingManagerImpl implements ConfigurationService {
             return generateBatchMachineConfigurationStrings(mesaIds, electionId);
 
         } catch (Exception e) {
-            logger.error("Error generating department configuration strings for department {} and election {}",
                     departmentId, electionId, e);
             return new String[]{createErrorString("Error generating department configurations: " + e.getMessage())};
         }
     }
 
     public String[] generatePuestoConfigurationStrings(int puestoId, int electionId) {
-        logger.info("Generating configuration strings for puesto {} and election {}", puestoId, electionId);
 
         try {
             // Get all mesa IDs for this puesto
@@ -274,24 +240,20 @@ public class VotingManagerImpl implements ConfigurationService {
             }
 
             if (mesaIds.isEmpty()) {
-                logger.warn("No mesas found for puesto {}", puestoId);
                 return new String[]{createErrorString("No mesas found for puesto")};
             }
 
-            logger.info("Found {} mesas in puesto {}", mesaIds.size(), puestoId);
 
             // Use batch generation for efficiency
             return generateBatchMachineConfigurationStrings(mesaIds, electionId);
 
         } catch (Exception e) {
-            logger.error("Error generating puesto configuration strings for puesto {} and election {}",
                     puestoId, electionId, e);
             return new String[]{createErrorString("Error generating puesto configurations: " + e.getMessage())};
         }
     }
 
     public String generateConfigurationStatisticsString(int electionId) {
-        logger.info("Generating configuration statistics string for election {}", electionId);
 
         try {
             // Get database metrics
@@ -321,11 +283,9 @@ public class VotingManagerImpl implements ConfigurationService {
             long estimatedTotalRecords = (long) allMesaIds.size() * avgCitizensPerMesa;
             stats.append(estimatedTotalRecords);
 
-            logger.info("Configuration statistics string generated for election {}", electionId);
             return stats.toString();
 
         } catch (Exception e) {
-            logger.error("Error getting configuration statistics string for election {}", electionId, e);
             return createErrorString("Failed to generate statistics: " + e.getMessage());
         }
     }
@@ -353,19 +313,16 @@ public class VotingManagerImpl implements ConfigurationService {
     }
 
     private String formatElectionInfoString(Map<String, Object> electionInfoMap) {
-        // ✅ IMPORTACIÓN CORREGIDA: usar java.sql.Timestamp
         java.sql.Timestamp fechaInicio = (java.sql.Timestamp) electionInfoMap.get("fecha_inicio");
         java.sql.Timestamp fechaFin = (java.sql.Timestamp) electionInfoMap.get("fecha_fin");
 
-        // ✅ CONSTANTES PARA HORARIOS DE JORNADA
         final int JORNADA_HORA_INICIO = 8;   // 8:00 AM
         final int JORNADA_HORA_FIN = 18;     // 6:00 PM
 
-        // ✅ CALCULAR HORARIOS FIJOS DE JORNADA
         Calendar cal = Calendar.getInstance();
-        cal.setTime(fechaInicio); // ✅ Usar directamente el Timestamp
+        cal.setTime(fechaInicio);
 
-        // Jornada: 8:00 AM - 6:00 PM del día de la elección
+
         cal.set(Calendar.HOUR_OF_DAY, JORNADA_HORA_INICIO);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
@@ -375,12 +332,7 @@ public class VotingManagerImpl implements ConfigurationService {
         cal.set(Calendar.HOUR_OF_DAY, JORNADA_HORA_FIN);
         long jornadaFin = cal.getTimeInMillis();
 
-        // ✅ LOGGING PARA DEBUG
-        logger.debug("🗳️ Horarios de jornada calculados para elección {}:", electionInfoMap.get("id"));
-        logger.debug("   - Inicio: {} ({})", new Date(jornadaInicio), jornadaInicio);
-        logger.debug("   - Fin: {} ({})", new Date(jornadaFin), jornadaFin);
 
-        // ✅ FORMATO EXTENDIDO: id-nombre-estado-fechaInicio-fechaFin-jornadaInicio-jornadaFin
         return String.join(FIELD_SEPARATOR,
                 String.valueOf(electionInfoMap.get("id")),
                 String.valueOf(electionInfoMap.get("nombre")),
@@ -426,7 +378,6 @@ public class VotingManagerImpl implements ConfigurationService {
             // Check if mesa exists
             Map<String, Object> mesaInfo = connectionDB.getMesaConfiguration(mesaId);
             if (mesaInfo == null) {
-                logger.warn("Mesa {} not found", mesaId);
                 return false;
             }
 
@@ -434,7 +385,6 @@ public class VotingManagerImpl implements ConfigurationService {
             return isElectionReadyForConfiguration(electionId);
 
         } catch (Exception e) {
-            logger.error("Error validating mesa {} configuration for election {}", mesaId, electionId, e);
             return false;
         }
     }
@@ -444,29 +394,24 @@ public class VotingManagerImpl implements ConfigurationService {
             // Check if election exists
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
             if (electionInfo == null) {
-                logger.warn("Election {} not found", electionId);
                 return false;
             }
 
             // Check if election has candidates
             List<Map<String, Object>> candidates = connectionDB.getCandidatesByElection(electionId);
             if (candidates.isEmpty()) {
-                logger.warn("Election {} has no candidates", electionId);
                 return false;
             }
 
             // Check election status
             String status = (String) electionInfo.get("estado");
             if (status == null || status.equals("CLOSED")) {
-                logger.warn("Election {} is not in a valid status: {}", electionId, status);
                 return false;
             }
 
-            logger.debug("Election {} is ready for configuration generation", electionId);
             return true;
 
         } catch (Exception e) {
-            logger.error("Error checking if election {} is ready", electionId, e);
             return false;
         }
     }
@@ -480,7 +425,6 @@ public class VotingManagerImpl implements ConfigurationService {
         try {
             return connectionDB.getAllMesaIds();
         } catch (Exception e) {
-            logger.error("Error obteniendo IDs de todas las mesas: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
     }
@@ -492,7 +436,6 @@ public class VotingManagerImpl implements ConfigurationService {
         try {
             return connectionDB.getMesaIdsByDepartment(departmentId);
         } catch (Exception e) {
-            logger.error("Error obteniendo mesas por departamento {}: {}", departmentId, e.getMessage(), e);
             return new ArrayList<>();
         }
     }
@@ -513,11 +456,9 @@ public class VotingManagerImpl implements ConfigurationService {
                 }
             }
 
-            logger.info("Found {} mesas for puesto {}", mesaIds.size(), puestoId);
             return mesaIds;
 
         } catch (Exception e) {
-            logger.error("Error obteniendo mesas por puesto {}: {}", puestoId, e.getMessage(), e);
             return new ArrayList<>();
         }
     }
@@ -555,7 +496,6 @@ public class VotingManagerImpl implements ConfigurationService {
             return details;
 
         } catch (Exception e) {
-            logger.error("Error obteniendo detalles de elección {}: {}", electionId, e.getMessage(), e);
             return null;
         }
     }
@@ -577,13 +517,11 @@ public class VotingManagerImpl implements ConfigurationService {
             stats.put("timestamp", new Date());
             stats.put("package_version", PACKAGE_VERSION);
 
-            logger.info("System statistics generated: {} mesas, {} citizens",
                     allMesas.size(), dbMetrics.get("total_citizens"));
 
             return stats;
 
         } catch (Exception e) {
-            logger.error("Error obteniendo estadísticas del sistema: {}", e.getMessage(), e);
             return new HashMap<>();
         }
     }
@@ -595,7 +533,6 @@ public class VotingManagerImpl implements ConfigurationService {
         Map<String, Object> diagnostic = new HashMap<>();
 
         try {
-            logger.info("Running configuration diagnostic for election {}", electionId);
 
             // 1. Verificar elección
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
@@ -629,13 +566,11 @@ public class VotingManagerImpl implements ConfigurationService {
             // 6. Timestamp
             diagnostic.put("diagnostic_timestamp", new Date());
 
-            logger.info("Configuration diagnostic completed for election {}: ready={}",
                     electionId, configurationReady);
 
             return diagnostic;
 
         } catch (Exception e) {
-            logger.error("Error running configuration diagnostic for election {}: {}",
                     electionId, e.getMessage(), e);
 
             diagnostic.put("error", true);
