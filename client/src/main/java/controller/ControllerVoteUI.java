@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
-
 public class ControllerVoteUI {
     private VotationInterface voteRepo;
     private AutenticationVoterInterface authVoter;
@@ -48,21 +47,17 @@ public class ControllerVoteUI {
 
     public ControllerVoteUI() throws Exception {
         initIceCommunication();
-
         loadConfigurationState();
-
         initRepositories();
-
         initConfigurationService();
-
         initUI();
     }
 
     private void initIceCommunication() throws Exception {
         mapper = new ObjectMapper();
         com = Util.initialize();
-        rm = RMSourcePrx.checkedCast(com.stringToProxy("Sender:tcp -h localhost -p 10010"));
-        dest = RMDestinationPrx.uncheckedCast(com.stringToProxy("Service:tcp -h localhost -p 10012"));
+        rm = RMSourcePrx.checkedCast(com.stringToProxy("Sender:tcp -h 192.168.131.24 -p 10010"));
+        dest = RMDestinationPrx.uncheckedCast(com.stringToProxy("Service:tcp -h 192.168.131.21 -p 10012"));
         ip = InetAddress.getLocalHost();
     }
 
@@ -76,11 +71,11 @@ public class ControllerVoteUI {
                 isConfiguredFromServer = Boolean.parseBoolean(props.getProperty("configured.from.server", "false"));
                 lastConfigurationVersion = props.getProperty("last.configuration.version", "");
 
-                System.out.println(" Estado de configuración cargado:");
+                System.out.println("Estado de configuración cargado:");
                 System.out.println("   - Configurada desde servidor: " + isConfiguredFromServer);
                 System.out.println("   - Última versión: " + lastConfigurationVersion);
             } else {
-                System.out.println(" No hay estado de configuración previo");
+                System.out.println("No hay estado de configuración previo");
             }
         } catch (Exception e) {
             System.err.println("Error cargando estado de configuración: " + e.getMessage());
@@ -111,12 +106,9 @@ public class ControllerVoteUI {
 
     private void initRepositories() {
         try {
-
             voteRepo = new VoteRepository();
             System.out.println("Repositorio de votos inicializado");
-
             reloadDataRepositories();
-
         } catch (Exception e) {
             System.err.println("Error inicializando repositorios: " + e.getMessage());
             e.printStackTrace();
@@ -126,14 +118,13 @@ public class ControllerVoteUI {
     private void reloadDataRepositories() {
         try {
             authVoter = new AutenticationVoter();
-            System.out.println("🔄 Repositorio de autenticación recargado");
+            System.out.println("Repositorio de autenticación recargado");
 
             electionRepo = new ElectionRepository();
             election = electionRepo.getElection();
 
             if (election != null && election.getCandidates() != null) {
-                System.out.println("🗳️ Elección cargada: " + election.getCandidates().size() + " candidatos");
-
+                System.out.println("Elección cargada: " + election.getCandidates().size() + " candidatos");
                 logElectionScheduleInfo();
             } else {
                 System.out.println("No hay datos de elección disponibles");
@@ -184,7 +175,7 @@ public class ControllerVoteUI {
 
             configurationAdapter = com.createObjectAdapterWithEndpoints(
                     "ConfigurationReceiver",
-                    "tcp -h localhost -p 10843"
+                    "tcp -h 192.168.131.22 -p 10843"
             );
 
             configurationReceiver = new ConfigurationReceiverImpl(this);
@@ -209,10 +200,8 @@ public class ControllerVoteUI {
 
     private void initUI() {
         ui = new VotingMachineUI();
-
         updateUIWithCurrentData();
 
-        // =================== ACCIÓN DE LOGIN ===================
         ui.addLoginAction(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -220,7 +209,6 @@ public class ControllerVoteUI {
             }
         });
 
-        // =================== ACCIÓN DE VOTAR ===================
         ui.addVoteAction(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -248,7 +236,6 @@ public class ControllerVoteUI {
                 return;
             }
 
-            // Validaciones existentes
             if (!authVoter.authenticate(id, password)) {
                 ui.showLoginMessage("Credenciales incorrectas.", true);
                 return;
@@ -391,13 +378,9 @@ public class ControllerVoteUI {
             reloadElectionRepository();
 
             if (election != null && election.getElectionId() == electionId) {
-
                 logElectionStatusChange(newStatus);
-
                 updateUIWithNewElectionStatus(newStatus);
-
                 System.out.println("Estado de elección actualizado exitosamente a: " + newStatus);
-
             } else {
                 System.out.println("La elección no coincide con la configuración actual");
             }
@@ -463,7 +446,6 @@ public class ControllerVoteUI {
         if (election == null) {
             return false;
         }
-
         return election.canVote();
     }
 
@@ -471,7 +453,6 @@ public class ControllerVoteUI {
         if (election == null) {
             return "NO_CONFIGURADA";
         }
-
         return election.getFullVotingStatus();
     }
 
@@ -495,8 +476,6 @@ public class ControllerVoteUI {
             System.err.println("Error cerrando servicios: " + e.getMessage());
         }
     }
-
-    // =================== MÉTODOS DE ACCESO ===================
 
     public boolean isConfiguredFromServer() {
         return isConfiguredFromServer;

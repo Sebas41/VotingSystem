@@ -34,11 +34,11 @@ public class ProxyCacheServer {
             System.out.println("========== SERVIDOR PROXY CACHE + OBSERVER ==========");
             System.out.println("Conectando al servidor principal...");
 
-            ObjectPrx base = communicator.stringToProxy("ReportsManager:default -h localhost -p 9001");
+            ObjectPrx base = communicator.stringToProxy("ReportsManager:default -h 192.168.131.21 -p 9001");
             ReportsServicePrx reportsServer = ReportsServicePrx.checkedCast(base);
 
             if (reportsServer == null) {
-                System.err.println("Error: No se pudo conectar al servidor Reports en puerto 9001");
+                System.err.println("Error: No se pudo conectar al servidor Reports en 192.168.131.21:9001");
                 System.err.println("Asegúrate de que el servidor principal esté ejecutándose");
                 return;
             }
@@ -46,24 +46,23 @@ public class ProxyCacheServer {
             System.out.println("Conectado al servidor Reports principal");
 
             ObjectAdapter adapter = communicator.createObjectAdapterWithEndpoints(
-                    "ProxyCacheAdapter", "default -h localhost -p 9999"
+                    "ProxyCacheAdapter", "default -h 192.168.131.23 -p 9999"
             );
 
             ProxyCacheReports proxyCache = new ProxyCacheReports(reportsServer);
 
             adapter.add((ReportsService) proxyCache, Util.stringToIdentity("ProxyCacheReports"));
 
-
             System.out.println("Configurando sistema Observer...");
 
-            ObjectPrx notifierBase = communicator.stringToProxy("VoteNotifier:default -h localhost -p 9002");
+            ObjectPrx notifierBase = communicator.stringToProxy("VoteNotifier:default -h 192.168.131.21 -p 9002");
             VoteNotifierPrx voteNotifier = VoteNotifierPrx.checkedCast(notifierBase);
 
             if (voteNotifier != null) {
                 System.out.println("Conectado al VoteNotifier del servidor central");
 
                 observerAdapter = communicator.createObjectAdapterWithEndpoints(
-                        "VoteObserverAdapter", "default -h localhost"
+                        "VoteObserverAdapter", "default -h 192.168.131.23"
                 );
 
                 voteObserver = new VoteObserverImpl(proxyCache);
@@ -84,13 +83,12 @@ public class ProxyCacheServer {
                 System.err.println("El proxy funcionará sin notificaciones de votos");
             }
 
-
             adapter.activate();
 
-            System.out.println("\n ========== PROXY CACHE + OBSERVER INICIADO ==========");
-            System.out.println("    Proxy Cache: localhost:9999");
-            System.out.println("    Servidor Backend: localhost:9001");
-            System.out.println("    VoteNotifier: localhost:9002");
+            System.out.println("\n========== PROXY CACHE + OBSERVER INICIADO ==========");
+            System.out.println("    Proxy Cache: 192.168.131.23:9999");
+            System.out.println("    Servidor Backend: 192.168.131.21:9001");
+            System.out.println("    VoteNotifier: 192.168.131.21:9002");
             System.out.println("    Cache TTL: 5 minutos");
             System.out.println("    Funcionalidades:");
             System.out.println("   - Cache local inteligente");
@@ -100,8 +98,7 @@ public class ProxyCacheServer {
             System.out.println("   - Notificaciones de votos en tiempo real");
             System.out.println();
 
-
-            scheduler = Executors.newScheduledThreadPool(2); 
+            scheduler = Executors.newScheduledThreadPool(2);
 
             scheduler.scheduleAtFixedRate(() -> {
                 try {
@@ -114,7 +111,6 @@ public class ProxyCacheServer {
             if (voteObserver != null) {
                 scheduler.scheduleAtFixedRate(() -> {
                     try {
-                        // Solo mostrar si hay votos
                         if (voteObserver.getTotalVotesReceived() > 0) {
                             System.out.println("\n" + getCurrentTime() + " - Estadísticas actuales:");
                             System.out.println("Total votos recibidos: " + voteObserver.getTotalVotesReceived());
@@ -125,10 +121,10 @@ public class ProxyCacheServer {
                 }, 30, 30, TimeUnit.SECONDS);
             }
 
-            System.out.println(" Limpieza automática del cache: cada 2 minutos");
-            System.out.println(" Estadísticas de votos: cada 30 segundos");
-            System.out.println(" Esperando conexiones de clientes en puerto 9999...");
-            System.out.println(" Esperando notificaciones de votos del servidor...");
+            System.out.println("Limpieza automática del cache: cada 2 minutos");
+            System.out.println("Estadísticas de votos: cada 30 segundos");
+            System.out.println("Esperando conexiones de clientes en puerto 9999...");
+            System.out.println("Esperando notificaciones de votos del servidor...");
             System.out.println("================================================");
             System.out.println();
 
@@ -137,13 +133,12 @@ public class ProxyCacheServer {
                 System.out.println("Prueba de conectividad exitosa");
                 System.out.println("Elecciones disponibles: " + elections.length);
             } catch (Exception e) {
-                System.err.println(" Advertencia: Error en prueba de conectividad: " + e.getMessage());
+                System.err.println("Advertencia: Error en prueba de conectividad: " + e.getMessage());
             }
 
             System.out.println("\nComandos disponibles mientras el proxy está ejecutándose:");
             System.out.println("   - Ctrl+C: Cerrar proxy");
             System.out.println("   - Los votos aparecerán automáticamente aquí");
-
 
             communicator.waitForShutdown();
 
@@ -154,7 +149,7 @@ public class ProxyCacheServer {
                     VoteObserverPrx observerProxy = VoteObserverPrx.uncheckedCast(
                             observerAdapter.createProxy(Util.stringToIdentity("VoteObserver"))
                     );
-                    voteNotifier.unregisterObserver(observerProxy, 1); 
+                    voteNotifier.unregisterObserver(observerProxy, 1);
                     System.out.println("Observer desregistrado del servidor central");
                 } catch (Exception e) {
                     logger.warn("Error desregistrando observer: {}", e.getMessage());
@@ -179,11 +174,11 @@ public class ProxyCacheServer {
             System.out.println("Proxy Cache + Observer finalizado");
 
         } catch (LocalException e) {
-            System.err.println(" Error de Ice en proxy cache: " + e.getMessage());
+            System.err.println("Error de Ice en proxy cache: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         } catch (Exception e) {
-            System.err.println(" Error general en proxy cache: " + e.getMessage());
+            System.err.println("Error general en proxy cache: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         } finally {
