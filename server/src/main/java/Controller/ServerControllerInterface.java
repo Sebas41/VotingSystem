@@ -2,44 +2,54 @@ package Controller;
 
 import Elections.models.ELECTION_STATUS;
 import configuration.ConfigurationSender;
+import Reports.VoteNotifierImpl;
 import model.ReliableMessage;
-import Elections.models.Candidate;
+import Controller.ServerControllerImpl.ElectionResult;
 
 import java.util.Date;
-import java.util.List;
 
 public interface ServerControllerInterface {
 
-    // Voto
-    void registerVote(ReliableMessage newVote);
 
-    // Información de elección
-    String getElectionInfo();
-
-    // Crear elección
-    void createElection(int id, String name, Date start, Date end);
-
-    // Candidatos
-    void addCandidate(int id, String name, String party);
-    void editCandidate(int id, String newName, String newParty);
-    void removeCandidate(int id);
-    List<Candidate> getCandidates();
-
-    // Estado de la elección
-    void changeElectionStatus(Elections.models.ELECTION_STATUS status);
-
-    // Cargar candidatos desde CSV (puede usarse más adelante)
-    void loadCandidatesFromCSV(String filepath);
-
-    // Agregar a ServerControllerInterface.java
-    public boolean changeElectionStatusInAllMachines(ELECTION_STATUS newStatus);
-    public boolean startElectionInAllMachines();
-    public boolean closeElectionInAllMachines();
-    public boolean resetElectionInAllMachines();
-    public void setConfigurationSender(ConfigurationSender configurationSender);
+    ElectionResult createElection(String name, Date startDate, Date endDate);
+    ElectionResult getElectionInfo(int electionId);
+    ElectionResult changeElectionStatus(int electionId, ELECTION_STATUS newStatus);
+    ElectionResult getAllElections();
 
 
+    ElectionResult addCandidate(int electionId, String name, String party);
+    ElectionResult getCandidates(int electionId);
+    ElectionResult loadCandidatesFromCSV(int electionId, String csvFilePath);
+
+
+    ElectionResult sendConfigurationToMesa(int mesaId, int electionId);
+    ElectionResult sendConfigurationToDepartment(int departmentId, int electionId);
+    ElectionResult getMesaConfigurationStatus(int mesaId);
+
+
+    ElectionResult startVoting(int electionId);
+    ElectionResult stopVoting(int electionId);
+    ElectionResult resetVoting(int electionId);
+    ElectionResult registerVote(ReliableMessage voteMessage);
+
+
+    ElectionResult getCitizenReport(String documento, int electionId);
+    ElectionResult searchCitizens(String nombre, String apellido, int limit);
+    ElectionResult getElectionResults(int electionId);
+    ElectionResult getDepartmentReport(int departmentId, int electionId);
 
 
 
+    ElectionResult getSystemStatus();
+    ElectionResult runSystemDiagnostic();
+    ElectionResult getPerformanceStatistics();
+
+
+
+    void setConfigurationSender(ConfigurationSender configurationSender);
+    void setVoteNotifier(VoteNotifierImpl voteNotifier);
+
+
+
+    void shutdown();
 }
