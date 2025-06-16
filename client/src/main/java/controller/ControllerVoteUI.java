@@ -25,24 +25,20 @@ import java.util.Properties;
 
 
 public class ControllerVoteUI {
-    // =================== COMPONENTES PRINCIPALES ===================
     private VotationInterface voteRepo;
     private AutenticationVoterInterface authVoter;
     private ElectionInterface electionRepo;
     private Election election;
 
-    // =================== COMUNICACIÓN ICE ===================
     private Communicator com;
     private RMSourcePrx rm;
     private RMDestinationPrx dest;
     private ObjectMapper mapper;
 
-    // =================== UI Y DATOS ===================
     private InetAddress ip;
     private VotingMachineUI ui;
     private String currentVoterId;
 
-    // =================== CONFIGURACIÓN REMOTA ===================
     private ConfigurationReceiverImpl configurationReceiver;
     private ObjectAdapter configurationAdapter;
 

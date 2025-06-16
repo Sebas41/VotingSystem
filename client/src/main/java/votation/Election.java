@@ -57,7 +57,6 @@ public class Election {
         this.electionStatus = ELECTION_STATUS.PRE;
     }
 
-    // =================== GETTERS Y SETTERS EXISTENTES ===================
 
     public int getElectionId() {
         return electionId;
@@ -110,7 +109,6 @@ public class Election {
         }
     }
 
-    // =================== MÉTODOS EXISTENTES DE VALIDACIÓN DE HORARIO ===================
 
     @JsonIgnore
     public boolean isVotingOpen() {
@@ -160,7 +158,6 @@ public class Election {
                 startDate, startDate, endDate, endDate);
     }
 
-    // =================== NUEVOS MÉTODOS PARA CONTROL DE ESTADO ===================
 
     @JsonIgnore
     public boolean canVote() {
@@ -197,7 +194,6 @@ public class Election {
         }
     }
 
-    // =================== MÉTODOS EXISTENTES ===================
 
     public void showCandidates() {
         System.out.println("Candidatos disponibles para elección #" + electionId + ":");
