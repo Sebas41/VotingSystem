@@ -29,8 +29,8 @@ public class Candidate {
         return name;
     }
 
-    @JsonProperty("party")                    // Para serialización usa "party"
-    @JsonAlias({"politicalParty", "party"})   // Para deserialización acepta ambos
+    @JsonProperty("party")
+    @JsonAlias({"politicalParty", "party"})
     public String getParty() {
         return party;
     }

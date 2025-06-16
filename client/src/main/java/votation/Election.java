@@ -14,14 +14,12 @@ public class Election {
     private List<Candidate> candidates;
     private ELECTION_STATUS status;
 
-    // ✅ CAMPOS EXISTENTES PARA HORARIOS DE JORNADA
     @JsonProperty("votingStartTime")
     private long votingStartTime;    // Timestamp inicio jornada
 
     @JsonProperty("votingEndTime")
     private long votingEndTime;      // Timestamp fin jornada
 
-    // ✅ NUEVO CAMPO para el estado de la elección
     @JsonProperty("electionStatus")
     private ELECTION_STATUS electionStatus;
 
@@ -29,7 +27,6 @@ public class Election {
     public Election() {
     }
 
-    // ✅ CONSTRUCTOR PRINCIPAL con @JsonCreator - CON ESTADO
     @JsonCreator
     public Election(
             @JsonProperty("electionId") int electionId,
@@ -44,22 +41,20 @@ public class Election {
         this.electionStatus = electionStatus != null ? electionStatus : ELECTION_STATUS.PRE;
     }
 
-    // ✅ CONSTRUCTOR CON HORARIOS (actualizar el existente)
     public Election(int electionId, List<Candidate> candidates, long votingStartTime, long votingEndTime) {
         this.electionId = electionId;
         this.candidates = candidates;
         this.votingStartTime = votingStartTime;
         this.votingEndTime = votingEndTime;
-        this.electionStatus = ELECTION_STATUS.PRE; // ✅ Estado por defecto
+        this.electionStatus = ELECTION_STATUS.PRE;
     }
 
-    // ✅ CONSTRUCTOR LEGACY (actualizar el existente)
     public Election(int electionId, List<Candidate> candidates) {
         this.electionId = electionId;
         this.candidates = candidates;
         this.votingStartTime = 0;
         this.votingEndTime = 0;
-        this.electionStatus = ELECTION_STATUS.PRE; // ✅ Estado por defecto
+        this.electionStatus = ELECTION_STATUS.PRE;
     }
 
     // =================== GETTERS Y SETTERS EXISTENTES ===================
@@ -96,7 +91,6 @@ public class Election {
         this.votingEndTime = votingEndTime;
     }
 
-    // ✅ NUEVOS GETTERS Y SETTERS PARA ELECTION_STATUS
     public ELECTION_STATUS getElectionStatus() {
         return electionStatus;
     }
@@ -105,13 +99,12 @@ public class Election {
         this.electionStatus = electionStatus;
     }
 
-    // ✅ MÉTODO HELPER para actualizar desde string
     public void setElectionStatus(String statusString) {
         if (statusString != null) {
             try {
                 this.electionStatus = ELECTION_STATUS.valueOf(statusString.toUpperCase());
             } catch (IllegalArgumentException e) {
-                System.err.println("⚠️ Estado inválido: " + statusString + ", usando PRE por defecto");
+                System.err.println("Estado inválido: " + statusString + ", usando PRE por defecto");
                 this.electionStatus = ELECTION_STATUS.PRE;
             }
         }
@@ -130,7 +123,7 @@ public class Election {
         long now = System.currentTimeMillis();
 
         if (votingStartTime == 0 || votingEndTime == 0) {
-            return "SIN_HORARIO"; // No se configuraron horarios
+            return "SIN_HORARIO";
         }
 
         if (now < votingStartTime) {
@@ -169,7 +162,6 @@ public class Election {
 
     // =================== NUEVOS MÉTODOS PARA CONTROL DE ESTADO ===================
 
-    // ✅ MÉTODO ACTUALIZADO: Verificar si se puede votar
     @JsonIgnore
     public boolean canVote() {
         // Verificar estado de la elección
@@ -186,7 +178,6 @@ public class Election {
         return electionStatus == ELECTION_STATUS.DURING;
     }
 
-    // ✅ MÉTODO ACTUALIZADO: Obtener estado completo
     @JsonIgnore
     public String getFullVotingStatus() {
         switch (electionStatus) {
@@ -199,7 +190,7 @@ public class Election {
                 if (votingStartTime > 0 && votingEndTime > 0) {
                     return getVotingStatus(); // Usa el método original para verificar horarios
                 } else {
-                    return "ABIERTA"; // Sin restricción de horarios
+                    return "ABIERTA";
                 }
             default:
                 return "Estado desconocido";
@@ -214,7 +205,6 @@ public class Election {
             System.out.println(c.toString());
         }
 
-        // ✅ MOSTRAR TAMBIÉN ESTADO Y HORARIO
         System.out.println("Estado de elección: " + electionStatus);
         System.out.println("Estado de votación: " + getFullVotingStatus());
         System.out.println(getFormattedSchedule());

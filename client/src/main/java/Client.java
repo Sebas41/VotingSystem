@@ -7,7 +7,6 @@ public class Client {
     public static void main(String[] args) throws Exception {
 
         try {
-            // Iniciar ReliableServer en hilo separado
             new Thread(() -> {
                 System.out.println(" Iniciando ReliableServer...");
                 ReliableServer.main(new String[0]);
@@ -17,7 +16,6 @@ public class Client {
 
             System.out.println(" Iniciando estación de votación...");
 
-            //  CREAR Y MANTENER REFERENCIA AL CONTROLLER
             javax.swing.SwingUtilities.invokeLater(() -> {
                 try {
                     controller = new ControllerVoteUI();
@@ -42,7 +40,6 @@ public class Client {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("Cerrando estación de votación...");
 
-                // Cerrar controller si existe
                 if (controller != null) {
                     try {
                         controller.shutdown();
@@ -60,7 +57,7 @@ public class Client {
                     System.err.println(" Error cerrando ReliableServer: " + e.getMessage());
                 }
 
-                System.out.println("👋 Estación de votación cerrada completamente");
+                System.out.println("Estación de votación cerrada completamente");
             }));
 
 
@@ -84,7 +81,7 @@ public class Client {
 
 
     private static void cleanup() {
-        System.out.println("🧹 Ejecutando cleanup de emergencia...");
+        System.out.println("Ejecutando cleanup de emergencia...");
 
         if (controller != null) {
             try {
@@ -109,7 +106,7 @@ public class Client {
 
     public static void shutdown() {
         synchronized (Client.class) {
-            Client.class.notifyAll(); // Despertar el hilo principal para que termine
+            Client.class.notifyAll();
         }
     }
 }

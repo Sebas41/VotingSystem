@@ -12,15 +12,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * VoteRepository que mantiene un ArrayList<Vote> en memoria
- * y lo persiste entero en un archivo binario usando Kryo.
- */
 public class VoteRepository implements VotationInterface {
     private static final String FILE_PATH = "client/data/votes_list.kryo";
     private final File file = new File(FILE_PATH);
 
-    // Lista en memoria que guarda todos los Vote en orden de inserción
     private final List<Vote> votes = new ArrayList<>();
 
     private final Kryo kryo = new Kryo();
@@ -33,11 +28,9 @@ public class VoteRepository implements VotationInterface {
 
     @SuppressWarnings("unchecked")
     private void loadFromDisk() {
-        // Asegurarse de que la carpeta padre exista
         file.getParentFile().mkdirs();
 
         if (!file.exists()) {
-            // No existe el archivo aún => nada que cargar
             return;
         }
 

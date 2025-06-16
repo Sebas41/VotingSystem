@@ -22,7 +22,6 @@ import java.util.Properties;
 /**
  * Implementación del servicio de configuración para mesas de votación
  * Recibe configuraciones del servidor y actualiza automáticamente la mesa
- * ✅ ACTUALIZADO: Incluye soporte para horarios de jornada electoral
  */
 public class ConfigurationReceiverImpl implements ConfigurationReceiver {
 
@@ -52,60 +51,53 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
 
     @Override
     public boolean updateConfiguration(int mesaId, String configurationData, Current current) {
-        System.out.println("🔄 Recibiendo configuración para mesa " + mesaId);
+        System.out.println("Recibiendo configuración para mesa " + mesaId);
 
         try {
             // Validar que la configuración es para esta mesa
             if (mesaId != this.machineId) {
-                System.out.println("❌ Configuración rechazada - Mesa ID no coincide: esperado=" +
+                System.out.println("Configuración rechazada - Mesa ID no coincide: esperado=" +
                         this.machineId + ", recibido=" + mesaId);
                 return false;
             }
 
             // Validar formato del string de configuración
             if (configurationData == null || configurationData.trim().isEmpty()) {
-                System.out.println("❌ Configuración rechazada - Datos vacíos");
+                System.out.println("Configuración rechazada - Datos vacíos");
                 return false;
             }
 
-            // Verificar si es un error del servidor
             if (configurationData.startsWith("ERROR")) {
-                System.out.println("❌ Error del servidor: " + configurationData);
+                System.out.println("Error del servidor: " + configurationData);
                 return false;
             }
 
-            // ✅ NUEVO: Limpiar automáticamente archivos previos antes de procesar
             cleanupPreviousConfiguration();
 
-            // Parsear y aplicar configuración
             boolean success = parseAndApplyConfiguration(configurationData);
 
             if (success) {
                 isConfigured = true;
-                System.out.println("✅ Configuración aplicada exitosamente para mesa " + mesaId);
+                System.out.println("Configuración aplicada exitosamente para mesa " + mesaId);
 
-                // Notificar al controller que la configuración cambió
                 if (controller != null) {
                     controller.onConfigurationUpdated();
                 }
             } else {
-                System.out.println("❌ Error aplicando configuración para mesa " + mesaId);
+                System.out.println("Error aplicando configuración para mesa " + mesaId);
             }
 
             return success;
 
         } catch (Exception e) {
-            System.err.println("❌ Error procesando configuración: " + e.getMessage());
+            System.err.println("Error procesando configuración: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * ✅ NUEVO: Limpia automáticamente todos los archivos de configuración previos
-     */
     private void cleanupPreviousConfiguration() {
-        System.out.println("🧹 Limpiando configuración previa...");
+        System.out.println("Limpiando configuración previa...");
 
         try {
             // Lista de archivos a limpiar
@@ -113,7 +105,7 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                     VOTERS_JSON_PATH,
                     ELECTION_JSON_PATH,
                     CONFIG_STATE_FILE,
-                    "client/data/votes_list.kryo",  // ✅ También limpiar votos previos
+                    "client/data/votes_list.kryo",
                     "client/config/configuration_state.properties"
             };
 
@@ -127,29 +119,27 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                 if (file.exists()) {
                     if (file.delete()) {
                         cleanedFiles++;
-                        System.out.println("   🗑️ Eliminado: " + filePath);
+                        System.out.println("Eliminado: " + filePath);
                     } else {
-                        System.out.println("   ⚠️ No se pudo eliminar: " + filePath);
+                        System.out.println("No se pudo eliminar: " + filePath);
                     }
                 } else {
-                    System.out.println("   ➖ No existe: " + filePath);
+                    System.out.println("No existe: " + filePath);
                 }
             }
 
-            // ✅ También limpiar directorios vacíos si existen
+
             cleanupEmptyDirectories();
 
-            System.out.println("🧹 Limpieza completada: " + cleanedFiles + "/" + totalFiles + " archivos eliminados");
+            System.out.println("Limpieza completada: " + cleanedFiles + "/" + totalFiles + " archivos eliminados");
 
         } catch (Exception e) {
-            System.err.println("⚠️ Error durante limpieza: " + e.getMessage());
+            System.err.println("Error durante limpieza: " + e.getMessage());
             // No fallar por errores de limpieza, continuar con la configuración
         }
     }
 
-    /**
-     * ✅ NUEVO: Limpia directorios vacíos después de eliminar archivos
-     */
+
     private void cleanupEmptyDirectories() {
         try {
             // Intentar limpiar directorios que podrían quedar vacíos
@@ -164,31 +154,26 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                     File[] files = dir.listFiles();
                     if (files != null && files.length == 0) {
                         // Directorio vacío, pero NO lo eliminamos porque lo necesitamos
-                        System.out.println("   📁 Directorio vacío mantenido: " + dirPath);
+                        System.out.println("Directorio vacío mantenido: " + dirPath);
                     }
                 }
             }
         } catch (Exception e) {
-            System.err.println("⚠️ Error limpiando directorios: " + e.getMessage());
+            System.err.println("Error limpiando directorios: " + e.getMessage());
         }
     }
 
-    /**
-     * ✅ ACTUALIZADO: Procesa información de elección y candidatos CON HORARIOS DE JORNADA
-     */
     private boolean processElectionAndCandidates(String electionInfo, String candidatesInfo) {
         try {
             // Parsear información de la elección
             String[] electionParts = electionInfo.split(FIELD_SEPARATOR);
 
-            // ✅ VALIDAR NUEVO FORMATO: debe tener al menos 7 campos
             if (electionParts.length < 7) {
-                System.out.println("❌ Formato de elección inválido - se esperan 7 campos, recibidos: " + electionParts.length);
-                System.out.println("   Formato esperado: id-nombre-estado-fechaInicio-fechaFin-jornadaInicio-jornadaFin");
+                System.out.println("Formato de elección inválido - se esperan 7 campos, recibidos: " + electionParts.length);
+                System.out.println("  Formato esperado: id-nombre-estado-fechaInicio-fechaFin-jornadaInicio-jornadaFin");
 
-                // ✅ COMPATIBILIDAD: Si solo tiene 5 campos (formato anterior), usar sin horarios
                 if (electionParts.length >= 5) {
-                    System.out.println("⚠️ Usando formato anterior sin horarios de jornada");
+                    System.out.println("Usando formato anterior sin horarios de jornada");
                     return processElectionAndCandidatesLegacy(electionInfo, candidatesInfo);
                 }
 
@@ -201,13 +186,12 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
             long fechaInicio = Long.parseLong(electionParts[3]);
             long fechaFin = Long.parseLong(electionParts[4]);
 
-            // ✅ NUEVOS CAMPOS: Horarios de jornada electoral
             long jornadaInicio = Long.parseLong(electionParts[5]);
             long jornadaFin = Long.parseLong(electionParts[6]);
 
-            System.out.println("🗳️ Procesando elección: " + electionName + " (ID: " + electionId + ")");
-            System.out.println("📅 Estado: " + electionStatus);
-            System.out.println("⏰ Horario de jornada: " + new java.util.Date(jornadaInicio) + " - " + new java.util.Date(jornadaFin));
+            System.out.println("Procesando elección: " + electionName + " (ID: " + electionId + ")");
+            System.out.println("Estado: " + electionStatus);
+            System.out.println("Horario de jornada: " + new java.util.Date(jornadaInicio) + " - " + new java.util.Date(jornadaFin));
 
             // Parsear candidatos
             List<Candidate> candidates = new ArrayList<>();
@@ -227,44 +211,38 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                 }
             }
 
-            System.out.println("👥 Candidatos procesados: " + candidates.size());
+            System.out.println("Candidatos procesados: " + candidates.size());
             for (Candidate c : candidates) {
                 System.out.println("   - " + c.toString());
             }
 
-            // ✅ CREAR OBJETO ELECTION CON HORARIOS DE JORNADA
             Election election = new Election(electionId, candidates, jornadaInicio, jornadaFin);
 
-            // ✅ Verificar estado de votación
             String votingStatus = election.getVotingStatus();
-            System.out.println("🔍 Estado de votación: " + votingStatus);
-            System.out.println("📋 " + election.getFormattedSchedule());
+            System.out.println("Estado de votación: " + votingStatus);
+            System.out.println(election.getFormattedSchedule());
 
-            // ✅ MEJORADO: Asegurar que el directorio existe después de la limpieza
             File file = new File(ELECTION_JSON_PATH);
             if (!file.getParentFile().exists()) {
                 boolean dirsCreated = file.getParentFile().mkdirs();
                 if (dirsCreated) {
-                    System.out.println("📁 Directorio creado: " + file.getParentFile().getAbsolutePath());
+                    System.out.println("Directorio creado: " + file.getParentFile().getAbsolutePath());
                 }
             }
 
             // Guardar como JSON con formato limpio
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, election);
 
-            System.out.println("✅ Archivo election.json actualizado en: " + file.getAbsolutePath());
+            System.out.println("Archivo election.json actualizado en: " + file.getAbsolutePath());
             return true;
 
         } catch (Exception e) {
-            System.err.println("❌ Error procesando elección y candidatos: " + e.getMessage());
+            System.err.println("Error procesando elección y candidatos: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * ✅ NUEVO: Método de compatibilidad para formato anterior (sin horarios)
-     */
     private boolean processElectionAndCandidatesLegacy(String electionInfo, String candidatesInfo) {
         try {
             String[] electionParts = electionInfo.split(FIELD_SEPARATOR);
@@ -272,8 +250,8 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
             int electionId = Integer.parseInt(electionParts[0]);
             String electionName = electionParts[1];
 
-            System.out.println("🗳️ Procesando elección (formato legacy): " + electionName + " (ID: " + electionId + ")");
-            System.out.println("⚠️ Sin horarios de jornada - votación siempre disponible");
+            System.out.println("Procesando elección (formato legacy): " + electionName + " (ID: " + electionId + ")");
+            System.out.println("Sin horarios de jornada - votación siempre disponible");
 
             // Parsear candidatos (igual que antes)
             List<Candidate> candidates = new ArrayList<>();
@@ -303,20 +281,17 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
             }
 
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, election);
-            System.out.println("✅ Archivo election.json actualizado (formato legacy)");
+            System.out.println("Archivo election.json actualizado (formato legacy)");
 
             return true;
 
         } catch (Exception e) {
-            System.err.println("❌ Error procesando elección legacy: " + e.getMessage());
+            System.err.println("Error procesando elección legacy: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * ✅ MEJORADO: Procesa ciudadanos/votantes con creación de directorios
-     */
     private boolean processVoters(String citizensInfo) {
         try {
             List<Voter> voters = new ArrayList<>();
@@ -340,25 +315,24 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                 }
             }
 
-            System.out.println("👤 Votantes procesados: " + voters.size());
+            System.out.println("Votantes procesados: " + voters.size());
 
-            // ✅ MEJORADO: Asegurar que el directorio existe después de la limpieza
             File file = new File(VOTERS_JSON_PATH);
             if (!file.getParentFile().exists()) {
                 boolean dirsCreated = file.getParentFile().mkdirs();
                 if (dirsCreated) {
-                    System.out.println("📁 Directorio creado: " + file.getParentFile().getAbsolutePath());
+                    System.out.println("Directorio creado: " + file.getParentFile().getAbsolutePath());
                 }
             }
 
             // Guardar como JSON con formato limpio
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, voters);
 
-            System.out.println("✅ Archivo voters.json actualizado en: " + file.getAbsolutePath());
+            System.out.println("Archivo voters.json actualizado en: " + file.getAbsolutePath());
             return true;
 
         } catch (Exception e) {
-            System.err.println("❌ Error procesando votantes: " + e.getMessage());
+            System.err.println("Error procesando votantes: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -367,7 +341,7 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
     @Override
     public boolean isReady(int mesaId, Current current) {
         boolean ready = mesaId == this.machineId && controller != null;
-        System.out.println("🔍 Mesa " + mesaId + " ready check: " + ready);
+        System.out.println("Mesa " + mesaId + " ready check: " + ready);
         return ready;
     }
 
@@ -389,14 +363,14 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
      */
     private boolean parseAndApplyConfiguration(String configurationData) {
         try {
-            System.out.println("🔍 Parseando configuración...");
-            System.out.println("📦 Datos recibidos: " + configurationData.length() + " caracteres");
+            System.out.println("Parseando configuración...");
+            System.out.println("Datos recibidos: " + configurationData.length() + " caracteres");
 
             // Dividir el string por secciones
             String[] sections = configurationData.split(RECORD_SEPARATOR);
 
             if (sections.length < 5) {
-                System.out.println("❌ Formato de configuración inválido - secciones insuficientes: " + sections.length);
+                System.out.println("Formato de configuración inválido - secciones insuficientes: " + sections.length);
                 return false;
             }
 
@@ -407,7 +381,7 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
             String citizensInfo = sections[3];    // CITIZENS
             String metadata = sections[4];        // METADATA
 
-            System.out.println("📊 Secciones parseadas:");
+            System.out.println("Secciones parseadas:");
             System.out.println("   - Mesa: " + mesaInfo);
             System.out.println("   - Elección: " + electionInfo);
             System.out.println("   - Candidatos: " + candidatesInfo.length() + " chars");
@@ -429,20 +403,17 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
             return electionSuccess && votersSuccess;
 
         } catch (Exception e) {
-            System.err.println("❌ Error parseando configuración: " + e.getMessage());
+            System.err.println("Error parseando configuración: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * Procesa información de la mesa
-     */
     private void processMesaInfo(String mesaInfo) {
         try {
             String[] parts = mesaInfo.split(FIELD_SEPARATOR);
             if (parts.length >= 10) {
-                System.out.println("🏢 Mesa configurada:");
+                System.out.println("Mesa configurada:");
                 System.out.println("   - ID: " + parts[0]);
                 System.out.println("   - Consecutivo: " + parts[1]);
                 System.out.println("   - Puesto: " + parts[3] + " (" + parts[4] + ")");
@@ -451,7 +422,7 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                 System.out.println("   - Total ciudadanos: " + parts[9]);
             }
         } catch (Exception e) {
-            System.err.println("⚠️ Error procesando info de mesa: " + e.getMessage());
+            System.err.println("Error procesando info de mesa: " + e.getMessage());
         }
     }
 
@@ -465,18 +436,15 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                 String version = parts[0];
                 long timestamp = Long.parseLong(parts[1]);
 
-                System.out.println("ℹ️ Metadata:");
+                System.out.println("Metadata:");
                 System.out.println("   - Versión: " + version);
                 System.out.println("   - Timestamp: " + timestamp + " (" + new java.util.Date(timestamp) + ")");
             }
         } catch (Exception e) {
-            System.err.println("⚠️ Error procesando metadata: " + e.getMessage());
+            System.err.println("Error procesando metadata: " + e.getMessage());
         }
     }
 
-    /**
-     * ✅ MÉTODO MEJORADO: Carga el ID de la máquina desde resources o archivos
-     */
     private int loadMachineId() {
         try {
             Properties props = new Properties();
@@ -486,7 +454,7 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
                 if (is != null) {
                     props.load(is);
                     int machineId = Integer.parseInt(props.getProperty("machine.id", "6823"));
-                    System.out.println("📁 Configuración cargada desde resources: machine.id=" + machineId);
+                    System.out.println("Configuración cargada desde resources: machine.id=" + machineId);
                     return machineId;
                 }
             }
@@ -496,7 +464,7 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
             if (configFile.exists()) {
                 props.load(new FileInputStream(configFile));
                 int machineId = Integer.parseInt(props.getProperty("machine.id", "6823"));
-                System.out.println("📁 Configuración cargada desde archivo: machine.id=" + machineId);
+                System.out.println("Configuración cargada desde archivo: machine.id=" + machineId);
                 return machineId;
             } else {
                 // 3. Crear archivo con ID por defecto
@@ -504,17 +472,14 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
             }
 
         } catch (Exception e) {
-            System.err.println("⚠️ Error cargando ID de máquina, usando ID por defecto: " + e.getMessage());
-            return 6823; // ✅ ID por defecto para mesa de prueba
+            System.err.println("Error cargando ID de máquina, usando ID por defecto: " + e.getMessage());
+            return 6823;
         }
     }
 
-    /**
-     * ✅ MÉTODO MEJORADO: Crea archivo de configuración por defecto
-     */
     private int createDefaultMachineConfig() {
         try {
-            int defaultId = 6823; // ✅ ID de mesa para prueba
+            int defaultId = 6823;
 
             Properties props = new Properties();
             props.setProperty("machine.id", String.valueOf(defaultId));
@@ -526,57 +491,49 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
 
             props.store(new FileOutputStream(configFile), "Machine Configuration - Auto Generated");
 
-            System.out.println("📁 Archivo de configuración creado: " + configFile.getAbsolutePath());
-            System.out.println("🆔 ID de máquina asignado: " + defaultId);
+            System.out.println("Archivo de configuración creado: " + configFile.getAbsolutePath());
+            System.out.println("ID de máquina asignado: " + defaultId);
 
             return defaultId;
 
         } catch (IOException e) {
-            System.err.println("❌ Error creando configuración por defecto: " + e.getMessage());
+            System.err.println("Error creando configuración por defecto: " + e.getMessage());
             return 6823;
         }
     }
 
-    // ✅ NUEVO MÉTODO - Agregar a ConfigurationReceiverImpl.java
-
     @Override
     public boolean updateElectionStatus(int electionId, String status, Current current) {
-        System.out.println("🔄 Recibiendo cambio de estado para elección " + electionId + " -> " + status);
+        System.out.println("Recibiendo cambio de estado para elección " + electionId + " -> " + status);
 
         try {
-            // 1. Validar el estado recibido
             if (!isValidElectionStatus(status)) {
-                System.out.println("❌ Estado de elección inválido: " + status);
+                System.out.println("Estado de elección inválido: " + status);
                 return false;
             }
 
-            // 2. Actualizar el archivo election.json directamente
             boolean success = updateElectionStatusInFile(electionId, status);
 
             if (success) {
-                System.out.println("✅ Estado de elección actualizado exitosamente: " + status);
+                System.out.println("Estado de elección actualizado exitosamente: " + status);
 
-                // 3. Notificar al controller que el estado cambió
                 if (controller != null) {
                     controller.onElectionStatusChanged(electionId, status);
                 }
 
                 return true;
             } else {
-                System.out.println("❌ Error actualizando estado de elección");
+                System.out.println("Error actualizando estado de elección");
                 return false;
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error procesando cambio de estado: " + e.getMessage());
+            System.err.println("Error procesando cambio de estado: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * ✅ MÉTODO HELPER: Valida que el estado sea válido
-     */
     private boolean isValidElectionStatus(String status) {
         return status != null && (
                 status.equals("PRE") ||
@@ -585,51 +542,42 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
         );
     }
 
-    /**
-     * ✅ MÉTODO HELPER: Actualiza solo el estado en el archivo election.json
-     */
     private boolean updateElectionStatusInFile(int electionId, String status) {
         try {
             File electionFile = new File(ELECTION_JSON_PATH);
 
             if (!electionFile.exists()) {
-                System.out.println("⚠️ Archivo election.json no existe");
+                System.out.println("Archivo election.json no existe");
                 return false;
             }
 
-            // Leer la elección actual
             Election election = mapper.readValue(electionFile, Election.class);
 
             if (election == null) {
-                System.out.println("❌ No se pudo leer la elección del archivo");
+                System.out.println("No se pudo leer la elección del archivo");
                 return false;
             }
 
             if (election.getElectionId() != electionId) {
-                System.out.println("⚠️ ID de elección no coincide: esperado=" + electionId +
+                System.out.println("ID de elección no coincide: esperado=" + electionId +
                         ", encontrado=" + election.getElectionId());
                 return false;
             }
 
-            // ✅ ACTUALIZAR SOLO EL ESTADO - necesitarás agregar este método a la clase Election
             election.setElectionStatus(status);
 
-            // Guardar el archivo actualizado
             mapper.writerWithDefaultPrettyPrinter().writeValue(electionFile, election);
 
-            System.out.println("💾 Estado actualizado en election.json: " + status);
+            System.out.println("Estado actualizado en election.json: " + status);
             return true;
 
         } catch (Exception e) {
-            System.err.println("❌ Error actualizando archivo election.json: " + e.getMessage());
+            System.err.println("Error actualizando archivo election.json: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * Obtiene el ID de la máquina
-     */
     public int getMachineId() {
         return machineId;
     }
