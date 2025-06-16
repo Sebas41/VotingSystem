@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class MesaConfigurationManager {
 
     private static final Logger logger = LoggerFactory.getLogger(MesaConfigurationManager.class);
-    private static final String CONFIG_FILE = "VotingMachineManager/ConfigMachines/mesas-config.properties";
+    private static final String CONFIG_FILE = "mesas-config.properties";
 
     private final Properties mesaProperties;
     private final Map<Integer, MesaInfo> mesasCache;
