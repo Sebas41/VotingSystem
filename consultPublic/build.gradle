@@ -1,0 +1,106 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'org.example'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation 'com.zeroc:ice:3.7.10'
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+    implementation 'ch.qos.logback:logback-classic:1.2.12'
+    implementation 'ch.qos.logback:logback-core:1.2.12'
+    implementation project(':ProxyCacheReports')
+}
+
+test {
+    useJUnitPlatform()
+}
+
+slice {
+    java {
+        srcDir = 'src/main/slice'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', 'build/generated-src']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+application {
+    mainClass = 'org.votaciones.ConsultPublicClient'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+// Configuración para Ice
+task generateIce {
+    doLast {
+        def sliceDir = file('slice')
+        def outputDir = file('build/generated-src')
+        outputDir.mkdirs()
+
+        exec {
+            workingDir sliceDir
+            commandLine 'slice2java', '--output-dir', outputDir, 'ConsultPublic.ice'
+        }
+    }
+}
+
+// Configuración del JAR
+task fatJar(type: Jar) {
+    group = 'build'
+    description = 'Crea un JAR con todas las dependencias'
+    
+    manifest {
+        attributes 'Main-Class': 'org.votaciones.ConsultPublicClient'
+    }
+    
+    archiveBaseName = 'consultPublic'
+    archiveVersion = '1.0'
+    archiveClassifier = ''
+    
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    with jar
+    
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Configuración de tareas
+compileJava.dependsOn generateIce
+build.dependsOn fatJar
+
+// Configuración de limpieza
+clean {
+    delete 'build'
+    delete 'bin'
+}
+
+// Configurar dependencias de tareas
+distZip.dependsOn fatJar
+distTar.dependsOn fatJar
+startScripts.dependsOn fatJar
