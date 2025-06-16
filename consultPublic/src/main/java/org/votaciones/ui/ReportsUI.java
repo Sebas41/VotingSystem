@@ -15,13 +15,13 @@ public class ReportsUI {
     public void start() {
         try {
             System.out.println(" ========== CLIENTE DE CONSULTA PÚBLICA ==========");
-            System.out.println("🔌 Conectando al proxy cache...");
+            System.out.println("Conectando al proxy cache...");
 
             // Conectar al proxy cache
             service.connect("localhost", 9999);
 
             System.out.println(" Conectado al proxy cache exitosamente");
-            System.out.println("📊 Todas las consultas pasarán por el cache local");
+            System.out.println("Todas las consultas pasarán por el cache local");
             System.out.println();
 
             boolean running = true;
@@ -67,7 +67,7 @@ public class ReportsUI {
                 }
             }
 
-            System.out.println("👋 Cliente finalizado");
+            System.out.println("Cliente finalizado");
             service.disconnect();
 
         } catch (Exception e) {
@@ -77,7 +77,7 @@ public class ReportsUI {
     }
 
     private void mostrarMenu() {
-        System.out.println("\n📋 ========== MENÚ DE CONSULTAS ==========");
+        System.out.println("\n========== MENÚ DE CONSULTAS ==========");
         System.out.println("1.  Consultar reporte de ciudadano");
         System.out.println("2.  Buscar ciudadanos por nombre");
         System.out.println("3. ️Consultar reporte de elección");
@@ -99,7 +99,7 @@ public class ReportsUI {
             System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.println("⏳ Consultando reporte del ciudadano...");
+            System.out.println("Consultando reporte del ciudadano...");
             long startTime = System.currentTimeMillis();
 
             String result = service.getCitizenReports(documento, electionId);
@@ -128,14 +128,14 @@ public class ReportsUI {
             System.out.print(" Ingresa el límite de resultados (ej: 10): ");
             int limit = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.println("🔍 Buscando ciudadanos...");
+            System.out.println("Buscando ciudadanos...");
             long startTime = System.currentTimeMillis();
 
             String[] results = service.searchCitizenReports(nombre, apellido, electionId, limit);
 
             long endTime = System.currentTimeMillis();
             System.out.println(" Búsqueda completada en " + (endTime - startTime) + " ms");
-            System.out.println("📊 Encontrados " + results.length + " resultados:");
+            System.out.println("Encontrados " + results.length + " resultados:");
 
             for (int i = 0; i < Math.min(results.length, 5); i++) {
                 System.out.println("   " + (i + 1) + ". " + results[i]);
@@ -203,7 +203,7 @@ public class ReportsUI {
 
     private void consultarEleccionesDisponibles() {
         try {
-            System.out.println("📊 Consultando elecciones disponibles...");
+            System.out.println("Consultando elecciones disponibles...");
             long startTime = System.currentTimeMillis();
 
             String[] elections = service.getAvailableElections();
@@ -232,8 +232,8 @@ public class ReportsUI {
             boolean isValid = service.validateCitizenEligibility(documento);
 
             long endTime = System.currentTimeMillis();
-            System.out.println("⚡ Validación completada en " + (endTime - startTime) + " ms");
-            System.out.println("📊 Resultado: " + (isValid ? " ELEGIBLE" : " NO ELEGIBLE"));
+            System.out.println("Validación completada en " + (endTime - startTime) + " ms");
+            System.out.println("Resultado: " + (isValid ? " ELEGIBLE" : " NO ELEGIBLE"));
 
         } catch (Exception e) {
             System.err.println(" Error: " + e.getMessage());
@@ -248,7 +248,7 @@ public class ReportsUI {
             System.out.print(" Ingresa el ID de la elección (ej: 1): ");
             int electionId = Integer.parseInt(scanner.nextLine().trim());
 
-            System.out.println("🏢 Consultando ciudadanos de la mesa...");
+            System.out.println("Consultando ciudadanos de la mesa...");
             long startTime = System.currentTimeMillis();
 
             String[] results = service.getMesaCitizenReports(mesaId, electionId);
@@ -272,7 +272,7 @@ public class ReportsUI {
 
     private void verEstadisticasCache() {
         try {
-            System.out.println("📊 Obteniendo estadísticas del cache...");
+            System.out.println("Obteniendo estadísticas del cache...");
             String stats = service.getCacheStats();
             System.out.println("\n" + "=".repeat(60));
             System.out.println(stats);
