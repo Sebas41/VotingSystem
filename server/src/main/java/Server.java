@@ -34,9 +34,6 @@ public class Server {
     private static VotingManagerImpl votingManager;
     private static VoteNotifierImpl voteNotifier;
 
-    private static final int MESA_6823_ID = 6823;
-    private static final int MESA_6823_PORT = 10843;
-
     public static ServerControllerImpl getElectoralController() {
         return electoralController;
     }
@@ -191,138 +188,250 @@ public class Server {
         return electoralController.getElectionResults(electionId);
     }
 
-    public static boolean testConnectivityMesa6823() {
+    // =================== MÉTODOS GENERALIZADOS PARA TODAS LAS MESAS ===================
+
+    /**
+     * Prueba conectividad con todas las mesas registradas y activas
+     */
+    public static boolean testConnectivityAllMesas() {
         if (configurationSender == null) {
+            System.out.println("ConfigurationSender no disponible");
             return false;
         }
 
-        try {
-            ElectionResult result = electoralController.sendConfigurationToMesa(MESA_6823_ID, 1);
+        List<Integer> activeMesas = getActiveMesaIds();
+        if (activeMesas.isEmpty()) {
+            System.out.println("No hay mesas activas registradas");
+            return false;
+        }
 
-            if (result.isSuccess()) {
-                System.out.println("Mesa " + MESA_6823_ID + " conectada y configurada");
-                return true;
-            } else {
-                System.out.println("Mesa " + MESA_6823_ID + " no disponible: " + result.getMessage());
-                return false;
+        int successCount = 0;
+        System.out.println("Probando conectividad con " + activeMesas.size() + " mesas registradas:");
+
+        for (Integer mesaId : activeMesas) {
+            try {
+                ElectionResult result = electoralController.sendConfigurationToMesa(mesaId, 1);
+                if (result.isSuccess()) {
+                    System.out.println("✓ Mesa " + mesaId + " conectada y configurada");
+                    successCount++;
+                } else {
+                    System.out.println("✗ Mesa " + mesaId + " no disponible: " + result.getMessage());
+                }
+            } catch (Exception e) {
+                System.out.println("✗ Mesa " + mesaId + " error: " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.err.println("Error conectando: " + e.getMessage());
-            return false;
+
+            // Pausa pequeña entre pruebas
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
+
+        System.out.println("Conectividad: " + successCount + "/" + activeMesas.size() + " mesas");
+        return successCount > 0;
     }
 
-    public static boolean testStartElectionMesa6823() {
-        System.out.println("Iniciando elección en mesa " + MESA_6823_ID + " (sistema registrado)...");
+    /**
+     * Inicia elección en todas las máquinas registradas
+     */
+    public static boolean testStartElectionAllMachines() {
+        System.out.println("Iniciando elección en todas las mesas registradas...");
         return configurationSender != null && configurationSender.startElectionInAllMachines(1);
     }
 
-    public static boolean testCloseElectionMesa6823() {
-        System.out.println("Cerrando elección en mesa " + MESA_6823_ID + " (sistema registrado)...");
+    /**
+     * Cierra elección en todas las máquinas registradas
+     */
+    public static boolean testCloseElectionAllMachines() {
+        System.out.println("Cerrando elección en todas las mesas registradas...");
         return configurationSender != null && configurationSender.closeElectionInAllMachines(1);
     }
 
-    public static boolean testResetElectionMesa6823() {
-        System.out.println("Reseteando elección en mesa " + MESA_6823_ID + " (sistema registrado)...");
+    /**
+     * Resetea elección en todas las máquinas registradas
+     */
+    public static boolean testResetElectionAllMachines() {
+        System.out.println("Reseteando elección en todas las mesas registradas...");
         return configurationSender != null && configurationSender.resetElectionInAllMachines(1);
     }
 
+    /**
+     * Obtiene lista de IDs de mesas activas
+     */
+    public static List<Integer> getActiveMesaIds() {
+        if (configurationSender != null) {
+            return configurationSender.getActiveMesaIds();
+        }
+        return new ArrayList<>();
+    }
+
+    /**
+     * Obtiene número de mesas activas registradas
+     */
+    public static int getActiveMesaCount() {
+        if (configurationSender != null) {
+            return configurationSender.getActiveMesaCount();
+        }
+        return 0;
+    }
+
+    // =================== MÉTODOS LEGACY (MANTENER COMPATIBILIDAD) ===================
+
+    /**
+     * @deprecated Usar testConnectivityAllMesas() en su lugar
+     */
+    @Deprecated
+    public static boolean testConnectivityMesa6823() {
+        System.out.println("ADVERTENCIA: Método legacy - use testConnectivityAllMesas()");
+        List<Integer> activeMesas = getActiveMesaIds();
+
+        // Buscar si la mesa 6823 está en la lista
+        for (Integer mesaId : activeMesas) {
+            if (mesaId == 6823) {
+                ElectionResult result = electoralController.sendConfigurationToMesa(6823, 1);
+                if (result.isSuccess()) {
+                    System.out.println("Mesa 6823 conectada y configurada");
+                    return true;
+                } else {
+                    System.out.println("Mesa 6823 no disponible: " + result.getMessage());
+                    return false;
+                }
+            }
+        }
+
+        System.out.println("Mesa 6823 no está registrada como activa");
+        return false;
+    }
+
+    /**
+     * @deprecated Usar testStartElectionAllMachines() en su lugar
+     */
+    @Deprecated
+    public static boolean testStartElectionMesa6823() {
+        System.out.println("ADVERTENCIA: Método legacy - use testStartElectionAllMachines()");
+        return testStartElectionAllMachines();
+    }
+
+    /**
+     * @deprecated Usar testCloseElectionAllMachines() en su lugar
+     */
+    @Deprecated
+    public static boolean testCloseElectionMesa6823() {
+        System.out.println("ADVERTENCIA: Método legacy - use testCloseElectionAllMachines()");
+        return testCloseElectionAllMachines();
+    }
+
+    /**
+     * @deprecated Usar testResetElectionAllMachines() en su lugar
+     */
+    @Deprecated
+    public static boolean testResetElectionMesa6823() {
+        System.out.println("ADVERTENCIA: Método legacy - use testResetElectionAllMachines()");
+        return testResetElectionAllMachines();
+    }
+
+    // =================== MÉTODOS DE INICIALIZACIÓN Y ESTADO ===================
+
     private static void showSystemInitializationStatus() {
-        System.out.println("\nEstado de inicialización:");
+        System.out.println("\n=================== ESTADO DE INICIALIZACIÓN ===================");
 
         try {
             ElectionResult status = electoralController.getSystemStatus();
             if (status.isSuccess()) {
-                System.out.println("Base de datos: CONECTADA");
-                System.out.println("Pool de conexiones: ACTIVO");
-                System.out.println("Elección de prueba: CONFIGURADA");
-                System.out.println("Candidatos de prueba: CARGADOS");
+                System.out.println("✓ Base de datos: CONECTADA");
+                System.out.println("✓ Pool de conexiones: ACTIVO");
+                System.out.println("✓ Elección de prueba: CONFIGURADA");
+                System.out.println("✓ Candidatos de prueba: CARGADOS");
             } else {
-                System.out.println("Advertencias durante inicialización");
+                System.out.println("⚠ Advertencias durante inicialización: " + status.getMessage());
             }
         } catch (Exception e) {
-            System.out.println("No se pudo obtener estado inicial: " + e.getMessage());
+            System.out.println("✗ No se pudo obtener estado inicial: " + e.getMessage());
         }
+
+        System.out.println("===============================================================");
     }
 
     private static void runAutomaticTests() {
-        System.out.println("\nPRUEBAS AUTOMATICAS");
+        System.out.println("\n=================== INICIANDO PRUEBAS AUTOMÁTICAS ===================");
 
         try {
-            System.out.println("\nPrueba de conectividad con mesa " + MESA_6823_ID + ":");
-            boolean connectivity = testConnectivityMesa6823();
-            System.out.println("Resultado: " + (connectivity ? "CONECTADA" : "NO CONECTADA"));
+            // Mostrar información de mesas registradas
+            int mesaCount = getActiveMesaCount();
+            System.out.println("Mesas activas registradas: " + mesaCount);
 
-            System.out.println("\nDiagnóstico del sistema:");
+            if (mesaCount == 0) {
+                System.out.println("⚠ No hay mesas registradas - saltando pruebas de conectividad");
+                return;
+            }
+
+            // Prueba de conectividad generalizada
+            System.out.println("\n--- Prueba de conectividad con mesas registradas ---");
+            boolean connectivity = testConnectivityAllMesas();
+            System.out.println("Resultado general: " + (connectivity ? "ALGUNAS CONECTADAS" : "NINGUNA CONECTADA"));
+
+            // Diagnóstico del sistema
+            System.out.println("\n--- Diagnóstico del sistema ---");
             ElectionResult diagnostic = electoralController.runSystemDiagnostic();
-            System.out.println("Estado: " + (diagnostic.isSuccess() ? "SALUDABLE" : "CON PROBLEMAS"));
+            System.out.println("Estado: " + (diagnostic.isSuccess() ? "✓ SALUDABLE" : "✗ CON PROBLEMAS"));
             if (!diagnostic.isSuccess()) {
                 System.out.println("Mensaje: " + diagnostic.getMessage());
             }
 
-            System.out.println("\nEstado del sistema:");
+            // Estado del sistema
+            System.out.println("\n--- Estado del sistema ---");
             ElectionResult systemStatus = electoralController.getSystemStatus();
             if (systemStatus.isSuccess()) {
-                System.out.println("Sistema operativo y listo");
-                System.out.println("Métricas disponibles en systemStatus.getData()");
+                System.out.println("✓ Sistema operativo y listo");
+                System.out.println("  Métricas disponibles en systemStatus.getData()");
             }
 
+            // Pruebas de cambio de estado (solo si hay conectividad)
             if (connectivity) {
-                System.out.println("\nPruebas de cambio de estado en mesa " + MESA_6823_ID + ":");
+                System.out.println("\n--- Pruebas de cambio de estado en mesas conectadas ---");
 
-                boolean startResult = testStartElectionMesa6823();
-                System.out.println("Iniciar elección: " + (startResult ? "ÉXITO" : "ERROR"));
+                boolean startResult = testStartElectionAllMachines();
+                System.out.println("Iniciar elección: " + (startResult ? "✓ ÉXITO" : "✗ ERROR"));
                 Thread.sleep(3000);
 
-                boolean stopResult = testCloseElectionMesa6823();
-                System.out.println("Cerrar elección: " + (stopResult ? "ÉXITO" : "ERROR"));
+                boolean stopResult = testCloseElectionAllMachines();
+                System.out.println("Cerrar elección: " + (stopResult ? "✓ ÉXITO" : "✗ ERROR"));
                 Thread.sleep(3000);
 
-                boolean resetResult = testResetElectionMesa6823();
-                System.out.println("Reset elección: " + (resetResult ? "ÉXITO" : "ERROR"));
+                boolean resetResult = testResetElectionAllMachines();
+                System.out.println("Reset elección: " + (resetResult ? "✓ ÉXITO" : "✗ ERROR"));
 
+                // Resumen
                 int successCount = (startResult ? 1 : 0) + (stopResult ? 1 : 0) + (resetResult ? 1 : 0);
-                System.out.println("\nResumen: " + successCount + "/3 pruebas exitosas");
+                System.out.println("\nResumen cambios de estado: " + successCount + "/3 pruebas exitosas");
 
                 if (successCount == 3) {
-                    System.out.println("Comunicación servidor-cliente funcionando");
+                    System.out.println("✓ Comunicación servidor-cliente funcionando perfectamente");
                 } else if (successCount > 0) {
-                    System.out.println("Funcionamiento parcial - revisar logs");
+                    System.out.println("⚠ Funcionamiento parcial - revisar logs de mesas");
                 } else {
-                    System.out.println("Comunicación fallida - verificar cliente");
+                    System.out.println("✗ Comunicación fallida - verificar clientes");
                 }
+            } else {
+                System.out.println("\n⚠ No se ejecutaron pruebas de cambio de estado (sin conectividad)");
             }
 
-            System.out.println("\n------ PRUEBAS AUTOMÁTICAS COMPLETADAS -----------");
-            System.out.println("Para más pruebas, usa los métodos estáticos del Server");
-            System.out.println("Ejemplo: Server.getSystemStatus()");
-
-        } catch (Exception e) {
-            System.err.println("Error en pruebas automáticas: " + e.getMessage());
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static boolean sendElectionStatusToMesa6823(String newStatus) {
-        if (configurationSender == null) {
-            System.err.println("ConfigurationSender no disponible");
-            return false;
-        }
-
-        try {
-            String endpoint = "ConfigurationReceiver:default -h 192.168.131.102 -p " + MESA_6823_PORT;
-            ObjectPrx base = configurationSender.communicator.stringToProxy(endpoint);
-            ConfigurationSystem.ConfigurationReceiverPrx receiver =
-                    ConfigurationSystem.ConfigurationReceiverPrx.checkedCast(base);
-
-            if (receiver != null && receiver.isReady(MESA_6823_ID)) {
-                return receiver.updateElectionStatus(1, newStatus);
-            }
-            return false;
+            System.out.println("✗ Pruebas interrumpidas");
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
-            System.err.println("Error enviando estado: " + e.getMessage());
-            return false;
+            System.err.println("✗ Error en pruebas automáticas: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            System.out.println("\n=================== PRUEBAS AUTOMÁTICAS COMPLETADAS ===================");
+            System.out.println("Para más pruebas manuales, usa los métodos estáticos del Server:");
+            System.out.println("  - Server.testConnectivityAllMesas()");
+            System.out.println("  - Server.testStartElectionAllMachines()");
+            System.out.println("  - Server.getSystemStatus()");
+            System.out.println("=================================================================");
         }
     }
 
@@ -345,29 +454,47 @@ public class Server {
     }
 
     public static void showSystemInfo() {
-        System.out.println("\n-------------- INFORMACIÓN DEL SISTEMA ------------");
+        System.out.println("\n=================== INFORMACIÓN DEL SISTEMA ===================");
 
         ElectionResult status = getSystemStatus();
         if (status.isSuccess()) {
-            System.out.println("\nMesa de prueba: " + MESA_6823_ID + " (Puerto " + MESA_6823_PORT + ")");
+            System.out.println("✓ Sistema funcionando correctamente");
+
+            int mesaCount = getActiveMesaCount();
+            List<Integer> mesaIds = getActiveMesaIds();
+
+            System.out.println("📊 Estadísticas de mesas:");
+            System.out.println("  - Total mesas activas: " + mesaCount);
+            System.out.println("  - IDs registrados: " + mesaIds);
+
         } else {
-            System.out.println("Sistema con problemas: " + status.getMessage());
+            System.out.println("✗ Sistema con problemas: " + status.getMessage());
         }
+        System.out.println("============================================================");
     }
 
     public static void showRegisteredMesas() {
-        System.out.println("\n--------------- MESAS REGISTRADAS -------------------");
+        System.out.println("\n=================== MESAS REGISTRADAS ===================");
 
         if (configurationSender != null) {
             try {
                 configurationSender.showRegisteredMesasInfo();
+
+                // Información adicional
+                int activeMesas = getActiveMesaCount();
+                List<Integer> mesaIds = getActiveMesaIds();
+
+                System.out.println("\n📈 Resumen:");
+                System.out.println("  - Mesas activas: " + activeMesas);
+                System.out.println("  - IDs: " + mesaIds);
+
             } catch (Exception e) {
-                System.out.println("Error obteniendo información de mesas: " + e.getMessage());
+                System.out.println("✗ Error obteniendo información de mesas: " + e.getMessage());
             }
         } else {
-            System.out.println("ConfigurationSender no disponible");
+            System.out.println("✗ ConfigurationSender no disponible");
         }
 
-        System.out.println("--------------------------------");
+        System.out.println("======================================================");
     }
 }

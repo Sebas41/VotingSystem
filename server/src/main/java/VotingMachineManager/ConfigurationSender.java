@@ -10,14 +10,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-
 public class ConfigurationSender {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationSender.class);
     private final VotingManagerImpl votingManager;
     public final Communicator communicator;
-
-
     private final MesaConfigurationManager mesaConfigManager;
 
     public ConfigurationSender(VotingManagerImpl votingManager, Communicator communicator) {
@@ -29,19 +26,16 @@ public class ConfigurationSender {
         logRegisteredMesas();
     }
 
-
     public boolean sendConfigurationToMachine(int mesaId, int electionId) {
         logger.info(" Solicitando envío de configuración a mesa {} para elección {}", mesaId, electionId);
 
         try {
-
             if (!mesaConfigManager.isMesaRegistered(mesaId)) {
                 logger.error(" Mesa {} NO está registrada en el archivo de configuración", mesaId);
                 logger.error("   Solo se pueden configurar mesas registradas en: configMachines/mesas-config.properties");
                 return false;
             }
 
-            //  Obtener información de la mesa desde el archivo
             MesaConfigurationManager.MesaInfo mesaInfo = mesaConfigManager.getMesaInfo(mesaId);
             logger.info(" Mesa {} encontrada en configuración:", mesaId);
             logger.info("   - Nombre: {}", mesaInfo.getName());
@@ -49,7 +43,6 @@ public class ConfigurationSender {
             logger.info("   - Puerto: {}", mesaInfo.getPort());
             logger.info("   - Activa: {}", mesaInfo.isActive());
 
-            // 1. Generar configuración de la elección
             String configurationData = votingManager.generateMachineConfigurationString(mesaId, electionId);
 
             if (configurationData.startsWith("ERROR")) {
@@ -59,8 +52,7 @@ public class ConfigurationSender {
 
             logger.info(" Configuración generada - {} caracteres", configurationData.length());
 
-            // 2. Conectar usando la información del archivo
-            String endpoint = mesaInfo.getEndpoint(); // "ConfigurationReceiver:default -h localhost -p 10843"
+            String endpoint = mesaInfo.getEndpoint();
             logger.info(" Conectando a endpoint: {}", endpoint);
 
             ObjectPrx base = communicator.stringToProxy(endpoint);
@@ -72,21 +64,18 @@ public class ConfigurationSender {
                 return false;
             }
 
-            // 3. Verificar que la mesa esté lista
             logger.info(" Verificando si mesa {} está lista...", mesaId);
             if (!receiver.isReady(mesaId)) {
                 logger.warn(" Mesa {} no está lista para recibir configuración", mesaId);
                 return false;
             }
 
-            // 4. Enviar configuración
             logger.info(" Enviando configuración a mesa {}...", mesaId);
             boolean success = receiver.updateConfiguration(mesaId, configurationData);
 
             if (success) {
                 logger.info(" Configuración enviada exitosamente a mesa {} ({})", mesaId, mesaInfo.getName());
 
-                // Verificar estado final
                 String status = receiver.getConfigurationStatus(mesaId);
                 logger.info(" Estado final mesa {}: {}", mesaId, status);
             } else {
@@ -101,11 +90,9 @@ public class ConfigurationSender {
         }
     }
 
-
     public boolean changeElectionStatusForAllMachines(int electionId, String newStatus) {
         logger.info(" Cambiando estado de elección {} a {} en mesas registradas", electionId, newStatus);
 
-        // Obtener solo mesas activas del archivo
         List<MesaConfigurationManager.MesaInfo> activeMesas = mesaConfigManager.getActiveMesas();
 
         if (activeMesas.isEmpty()) {
@@ -125,7 +112,6 @@ public class ConfigurationSender {
                 logger.warn(" Error actualizando mesa {} ({})", mesaInfo.getId(), mesaInfo.getName());
             }
 
-            // Pausa entre envíos
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {
@@ -140,7 +126,6 @@ public class ConfigurationSender {
 
         return success;
     }
-
 
     private boolean sendElectionStatusToMachine(MesaConfigurationManager.MesaInfo mesaInfo, int electionId, String newStatus) {
         try {
@@ -166,7 +151,6 @@ public class ConfigurationSender {
         }
     }
 
-
     private void logRegisteredMesas() {
         List<MesaConfigurationManager.MesaInfo> allMesas =
                 (List<MesaConfigurationManager.MesaInfo>) mesaConfigManager.getAllMesas();
@@ -183,7 +167,6 @@ public class ConfigurationSender {
         logger.info("---------------");
     }
 
-
     public boolean startElectionInAllMachines(int electionId) {
         logger.info(" Iniciando elección {} en mesas registradas...", electionId);
         return changeElectionStatusForAllMachines(electionId, "DURING");
@@ -198,7 +181,6 @@ public class ConfigurationSender {
         logger.info(" Reseteando elección {} en mesas registradas...", electionId);
         return changeElectionStatusForAllMachines(electionId, "PRE");
     }
-
 
     public void showRegisteredMesasInfo() {
         List<MesaConfigurationManager.MesaInfo> allMesas =
@@ -215,5 +197,42 @@ public class ConfigurationSender {
             System.out.println("  - Endpoint: " + mesa.getEndpoint());
         }
         System.out.println("----------------------------");
+    }
+
+    // =================== MÉTODOS PÚBLICOS AGREGADOS PARA SERVER ===================
+
+    /**
+     * Obtiene lista de IDs de mesas activas
+     */
+    public List<Integer> getActiveMesaIds() {
+        return mesaConfigManager.getActiveMesaIds();
+    }
+
+    /**
+     * Obtiene número de mesas activas registradas
+     */
+    public int getActiveMesaCount() {
+        return mesaConfigManager.getActiveMesas().size();
+    }
+
+    /**
+     * Obtiene información de una mesa específica
+     */
+    public MesaConfigurationManager.MesaInfo getMesaInfo(int mesaId) {
+        return mesaConfigManager.getMesaInfo(mesaId);
+    }
+
+    /**
+     * Verifica si una mesa está registrada y activa
+     */
+    public boolean isMesaRegistered(int mesaId) {
+        return mesaConfigManager.isMesaRegistered(mesaId);
+    }
+
+    /**
+     * Obtiene todas las mesas activas
+     */
+    public List<MesaConfigurationManager.MesaInfo> getActiveMesas() {
+        return mesaConfigManager.getActiveMesas();
     }
 }
