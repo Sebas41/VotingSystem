@@ -33,49 +33,40 @@ public class VoteObserverImpl implements VoteObserver {
                 long timestamp = Long.parseLong(parts[1]);
                 int electionId = Integer.parseInt(parts[2]);
 
-                // Incrementar contadores
                 voteCount.computeIfAbsent(candidateName, k -> new AtomicInteger(0)).incrementAndGet();
                 totalVotesReceived.incrementAndGet();
                 lastVoteTimestamp = timestamp;
 
-                // 🚀 MOSTRAR CADA VOTO EN TIEMPO REAL
                 int candidateVotes = voteCount.get(candidateName).get();
                 int totalVotes = totalVotesReceived.get();
 
-                // ⚡ DISPLAY INMEDIATO Y DETALLADO
                 System.out.println(String.format(
-                        "\n🗳️  VOTO #%d RECIBIDO ⚡ %s → %d votos (Elección: %d) [%s]",
+                        "\n VOTO #%d RECIBIDO %s → %d votos (Elección: %d) [%s]",
                         totalVotes, candidateName, candidateVotes, electionId,
                         getCurrentTimeString()
                 ));
 
-                // 📊 MOSTRAR DISTRIBUCIÓN ACTUAL EN TIEMPO REAL
                 showCurrentDistribution();
 
-                // Log técnico
-                logger.info("🗳️ VOTO #{}: {} → {} votos totales de {}",
+                logger.info("VOTO #{}: {} → {} votos totales de {}",
                         totalVotes, candidateName, candidateVotes, electionId);
 
             } else {
-                logger.warn("⚠️ Formato de voto inválido: {}", voteInfo);
+                logger.warn("Formato de voto inválido: {}", voteInfo);
             }
 
         } catch (Exception e) {
-            logger.error("❌ Error procesando notificación de voto: {}", e.getMessage());
+            logger.error("Error procesando notificación de voto: {}", e.getMessage());
         }
     }
 
-    /**
-     * 📊 Muestra la distribución actual de votos INMEDIATAMENTE
-     */
     private void showCurrentDistribution() {
         if (voteCount.isEmpty()) {
             return;
         }
 
-        System.out.println("📊 Distribución actual:");
+        System.out.println("Distribución actual:");
 
-        // Mostrar cada candidato con su porcentaje
         voteCount.entrySet().stream()
                 .sorted((a, b) -> b.getValue().get() - a.getValue().get())
                 .forEach(entry -> {
@@ -83,7 +74,6 @@ public class VoteObserverImpl implements VoteObserver {
                     int votes = entry.getValue().get();
                     double percentage = (votes * 100.0) / totalVotesReceived.get();
 
-                    // Crear barra visual simple
                     String bar = createProgressBar(percentage);
 
                     System.out.printf("   %-15s: %3d votos (%.1f%%) %s\n",
@@ -93,9 +83,7 @@ public class VoteObserverImpl implements VoteObserver {
         System.out.println("   " + "─".repeat(50));
     }
 
-    /**
-     * 📈 Crea una barra de progreso visual
-     */
+ 
     private String createProgressBar(double percentage) {
         int barLength = 20;
         int filled = (int) (percentage * barLength / 100.0);
@@ -113,9 +101,7 @@ public class VoteObserverImpl implements VoteObserver {
         return bar.toString();
     }
 
-    /**
-     *  Obtiene timestamp formateado
-     */
+ 
     private String getCurrentTimeString() {
         return new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
     }
@@ -123,29 +109,26 @@ public class VoteObserverImpl implements VoteObserver {
     @Override
     public void onElectionResultsUpdated(String resultsData, Current current) {
         try {
-            logger.info("📈 Resultados de elección actualizados: {}", resultsData);
+            logger.info("Resultados de elección actualizados: {}", resultsData);
             System.out.println("\n ========== RESULTADOS OFICIALES ACTUALIZADOS ==========");
-            System.out.println("📈 " + resultsData);
+            System.out.println("<" + resultsData + ">");
             System.out.println("===========================================================\n");
         } catch (Exception e) {
-            logger.error("❌ Error procesando actualización de resultados: {}", e.getMessage());
+            logger.error("Error procesando actualización de resultados: {}", e.getMessage());
         }
     }
 
     @Override
     public boolean ping(Current current) {
-        logger.debug("🏓 Ping recibido - Observer activo");
+        logger.debug("Ping recibido - Observer activo");
         return true;
     }
 
-    /**
-     * 📊 Muestra resumen completo (para uso manual)
-     */
     public void showVoteSummary() {
-        System.out.println("\n📊 ========== RESUMEN COMPLETO DE VOTOS ==========");
+        System.out.println("\n========== RESUMEN COMPLETO DE VOTOS ==========");
 
         if (voteCount.isEmpty()) {
-            System.out.println("📭 No se han recibido votos aún");
+            System.out.println("No se han recibido votos aún");
         } else {
             voteCount.entrySet().stream()
                     .sorted((a, b) -> b.getValue().get() - a.getValue().get())
@@ -155,14 +138,14 @@ public class VoteObserverImpl implements VoteObserver {
                         double percentage = (votes * 100.0) / totalVotesReceived.get();
                         String bar = createProgressBar(percentage);
 
-                        System.out.printf("🗳️ %-15s: %3d votos (%.1f%%) %s\n",
+                        System.out.printf("%-15s: %3d votos (%.1f%%) %s\n",
                                 candidateName, votes, percentage, bar);
                     });
         }
 
-        System.out.printf("📈 Total votos recibidos: %d\n", totalVotesReceived.get());
+        System.out.printf("Total votos recibidos: %d\n", totalVotesReceived.get());
         if (lastVoteTimestamp > 0) {
-            System.out.printf(" Último voto: %s\n", new java.util.Date(lastVoteTimestamp));
+            System.out.printf("Último voto: %s\n", new java.util.Date(lastVoteTimestamp));
         }
         System.out.println("=================================================\n");
     }
@@ -170,16 +153,16 @@ public class VoteObserverImpl implements VoteObserver {
 
     public String getVoteStats() {
         StringBuilder stats = new StringBuilder();
-        stats.append("📊 ========== ESTADÍSTICAS DE VOTOS (TIEMPO REAL) ==========\n");
+        stats.append("========== ESTADÍSTICAS DE VOTOS (TIEMPO REAL) ==========\n");
 
-        stats.append(String.format("📈 Total votos recibidos: %d\n", totalVotesReceived.get()));
-        stats.append(String.format("👥 Candidatos activos: %d\n", voteCount.size()));
+        stats.append(String.format("Total votos recibidos: %d\n", totalVotesReceived.get()));
+        stats.append(String.format("Candidatos activos: %d\n", voteCount.size()));
 
         if (lastVoteTimestamp > 0) {
-            stats.append(String.format(" Último voto: %s\n", new java.util.Date(lastVoteTimestamp)));
+            stats.append(String.format("Último voto: %s\n", new java.util.Date(lastVoteTimestamp)));
         }
 
-        stats.append("\n🗳️ Distribución de votos:\n");
+        stats.append("\nDistribución de votos:\n");
         voteCount.entrySet().stream()
                 .sorted((a, b) -> b.getValue().get() - a.getValue().get())
                 .forEach(entry -> {
