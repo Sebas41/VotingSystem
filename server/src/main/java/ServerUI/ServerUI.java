@@ -21,7 +21,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
     private static ServerUI instance;
     private final ServerControllerImpl controller;
 
-    // =================== COMPONENTES PRINCIPALES ===================
+
     private final JTextArea systemLogArea;
     private final JTextArea electionInfoArea;
     private final JTextArea voteLogArea;
@@ -30,7 +30,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
     private final JLabel connectionStatusLabel;
     private final JProgressBar operationProgressBar;
 
-    // =================== COLORES ===================
+
     private static final Color PRIMARY_COLOR = new Color(33, 150, 243);
     private static final Color SUCCESS_COLOR = new Color(76, 175, 80);
     private static final Color ERROR_COLOR = new Color(244, 67, 54);
@@ -187,15 +187,15 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         JButton btnInfo = createStyledButton("📋 Ver Información", PRIMARY_COLOR);
         btnInfo.addActionListener(e -> showElectionInfo());
 
-        JButton btnListAll = createStyledButton("📃 Listar Todas", WARNING_COLOR);
+        JButton btnListAll = createStyledButton(" Listar Todas", WARNING_COLOR);
         btnListAll.addActionListener(e -> listAllElections());
 
         // Layout
-        gbc.gridx = 0; gbc.gridy = 0; creationPanel.add(new JLabel("📝 Nombre:"), gbc);
+        gbc.gridx = 0; gbc.gridy = 0; creationPanel.add(new JLabel(" Nombre:"), gbc);
         gbc.gridx = 1; creationPanel.add(nameField, gbc);
         gbc.gridx = 0; gbc.gridy++; creationPanel.add(new JLabel(" Inicio (dd-MM-yyyy HH:mm):"), gbc);
         gbc.gridx = 1; creationPanel.add(startField, gbc);        gbc.gridx = 0; gbc.gridy++; creationPanel.add(new JLabel(" Fin (dd-MM-yyyy HH:mm):"), gbc);
-        gbc.gridx = 1; creationPanel.add(endField, gbc);        gbc.gridx = 0; gbc.gridy++; creationPanel.add(btCreate, gbc);
+        gbc.gridx = 1; creationPanel.add(endField, gbc);        gbc.gridx = 0; gbc.gridy++; creationPanel.add(btnCreate, gbc);
         gbc.gridx = 1; creationPanel.add(btnInfo, gbc);
         gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2; creationPanel.add(btnListAll, gbc);
 
@@ -210,7 +210,6 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return panel;
     }
 
-    // =================== 👥 PANEL CANDIDATOS ===================
 
     private JPanel createCandidatePanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -231,13 +230,13 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         btnAdd.addActionListener(e -> addCandidate(
                 electionIdField.getText(), nameField.getText(), partyField.getText()));
 
-        JButton btnList = createStyledButton("📋 Listar Candidatos", PRIMARY_COLOR);
+        JButton btnList = createStyledButton(" Listar Candidatos", PRIMARY_COLOR);
         btnList.addActionListener(e -> listCandidates(electionIdField.getText()));
 
         // Layout
         gbc.gridx = 0; gbc.gridy = 0; registrationPanel.add(new JLabel(" ID Elección:"), gbc);
         gbc.gridx = 1; registrationPanel.add(electionIdField, gbc);
-        gbc.gridx = 0; gbc.gridy++; registrationPanel.add(new JLabel("👤 Nombre:"), gbc);
+        gbc.gridx = 0; gbc.gridy++; registrationPanel.add(new JLabel(" Nombre:"), gbc);
         gbc.gridx = 1; registrationPanel.add(nameField, gbc);
         gbc.gridx = 0; gbc.gridy++; registrationPanel.add(new JLabel(" Partido:"), gbc);
         gbc.gridx = 1; registrationPanel.add(partyField, gbc);
@@ -247,7 +246,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
         // Panel de resultados
         JPanel resultsPanel = new JPanel(new BorderLayout());
-        resultsPanel.setBorder(createTitledBorder("👥 Candidatos"));
+        resultsPanel.setBorder(createTitledBorder(" Candidatos"));
         resultsPanel.add(new JScrollPane(resultsArea));
 
         panel.add(registrationPanel, BorderLayout.NORTH);
@@ -256,7 +255,6 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return panel;
     }
 
-    // =================== 📤 PANEL MESAS ===================
 
     private JPanel createMesaPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -311,7 +309,6 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return panel;
     }
 
-    // =================== 📈 PANEL REPORTES ===================
 
     private JPanel createReportsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -365,7 +362,6 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return panel;
     }
 
-    // ===================  PANEL MONITOREO ===================
 
     private JPanel createMonitoringPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -399,7 +395,6 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return panel;
     }
 
-    // =================== 📋 PANEL LOG VOTOS ===================
 
     private JPanel createVoteLogPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -654,14 +649,14 @@ public class ServerUI extends JFrame implements ServerUIInterface {
     }
 
     private void listRegisteredMesas() {
-        resultsArea.setText("📋 ========== MESAS REGISTRADAS ==========\n");
+        resultsArea.setText("MESAS REGISTRADAS\n");
         resultsArea.append("Información de mesas desde archivo de configuración:\n\n");
         resultsArea.append("Mesa 6823: localhost:10843 (Activa)\n");
         resultsArea.append("Mesa 1001: 192.168.1.100:10020 (Activa)\n");
         resultsArea.append("Mesa 1002: 192.168.1.101:10020 (Inactiva)\n");
         resultsArea.append("Mesa 2001: 192.168.2.100:10020 (Activa)\n\n");
         resultsArea.append("Ver archivo 'mesas-config.properties' para más detalles\n");
-        resultsArea.append("================================================");
+        resultsArea.append("--------------------------------------");
     }
 
     private void generateCitizenReport(String document, String electionIdText) {

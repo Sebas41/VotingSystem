@@ -1,8 +1,7 @@
 plugins {
     id 'java'
     id 'application'
-    // ❌ NO INCLUIR: id 'com.zeroc.gradle.ice-builder.slice'
-    // Ya que generas las clases manualmente
+
 }
 
 group = 'com.electoral'
@@ -20,7 +19,6 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.7.3'
     implementation 'com.zaxxer:HikariCP:5.1.0'
 
-    // =================== DEPENDENCIA CRÍTICA ===================
     implementation project(':reliableServer')
 
     // Logging
@@ -40,16 +38,15 @@ java {
     }
 }
 
-// =================== CONFIGURACIÓN DE SOURCESET ===================
 sourceSets {
     main {
         java {
             srcDirs = [
-                    'src/main/java',           // Código fuente principal
-                    '../ReportsSystem',        // Clases generadas por ReportsSystem.ice
+                    'src/main/java',
+                    '../ReportsSystem',
                     '../VotingsSystem',
                     '../VoteNotification',
-                    '../ConfigurationSystem'   // ✅ Clases Ice manuales
+                    '../ConfigurationSystem'
             ]
         }
     }
@@ -59,7 +56,6 @@ application {
     mainClass = 'org.votaciones.Server'
 }
 
-// =================== TAREAS PERSONALIZADAS ===================
 
 task runServer(type: JavaExec) {
     group = 'application'
@@ -80,13 +76,13 @@ task runServerDebug(type: JavaExec) {
 task showProjectDependencies {
     group = 'verification'
     doLast {
-        println "📦 Dependencias del proyecto:"
+        println "Dependencias del proyecto:"
         configurations.compileClasspath.allDependencies.withType(ProjectDependency).each {
             println "   - Proyecto: ${it.dependencyProject.name}"
             println "     Path: ${it.dependencyProject.projectDir}"
         }
 
-        println "\n📁 Source directories:"
+        println "\nSource directories:"
         sourceSets.main.java.srcDirs.each { println "   - ${it}" }
     }
 }
@@ -113,16 +109,16 @@ task verifyReliableServer {
     doLast {
         try {
             def reliableServerProject = project(':reliableServer')
-            println "✅ Proyecto reliableServer encontrado: ${reliableServerProject.projectDir}"
+            println "Proyecto reliableServer encontrado: ${reliableServerProject.projectDir}"
 
             // Verificar que las clases model estén en reliableServer
             def modelClasses = fileTree(dir: reliableServerProject.projectDir, include: '**/model/*.java')
-            println "📄 Clases model encontradas:"
+            println "Clases model encontradas:"
             modelClasses.each { println "   - ${it.name}" }
 
         } catch (Exception e) {
-            println "❌ Error: Proyecto reliableServer no encontrado"
-            println "💡 Asegúrate de que esté incluido en settings.gradle"
+            println "Error: Proyecto reliableServer no encontrado"
+            println "Asegúrate de que esté incluido en settings.gradle"
             throw e
         }
     }
