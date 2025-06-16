@@ -1,4 +1,3 @@
-// ✅ MANTENIDO EXACTO: Tu configuración slice original
 slice {
     java {
         files = [file("../Service.ice")]
@@ -9,7 +8,6 @@ repositories {
     mavenCentral()
 }
 
-// ✅ MANTENIDO EXACTO + solo agregadas dependencias de logging
 dependencies{
     implementation 'com.zeroc:ice:3.7.2'
     implementation project(':reliableServer')
@@ -17,12 +15,10 @@ dependencies{
     implementation files('../reliableServer/build/libs/reliableServer.jar')
     implementation 'com.esotericsoftware:kryo:5.5.0'
 
-    // ✅ SOLO AGREGADO: Logging (necesario para ConfigurationReceiverImpl)
     implementation 'org.slf4j:slf4j-api:2.0.12'
     implementation 'ch.qos.logback:logback-classic:1.5.3'
 }
 
-// ✅ AGREGADO: SourceSets para incluir las clases Ice manuales
 sourceSets {
     main {
         java {
@@ -34,7 +30,6 @@ sourceSets {
     }
 }
 
-// ✅ MANTENIDO EXACTO: Tu configuración jar original
 jar {
     manifest {
         attributes(
