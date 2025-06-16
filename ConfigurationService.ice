@@ -1,5 +1,3 @@
-// ConfigurationService.ice
-// Interfaz Ice para recibir configuraciones de votación en las mesas
 
 module ConfigurationSystem {
 
