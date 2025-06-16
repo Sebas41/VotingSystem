@@ -190,12 +190,12 @@ public class ConfigurationSender {
     }
 
     public boolean closeElectionInAllMachines(int electionId) {
-        logger.info("🔒 Cerrando elección {} en mesas registradas...", electionId);
+        logger.info(" Cerrando elección {} en mesas registradas...", electionId);
         return changeElectionStatusForAllMachines(electionId, "CLOSED");
     }
 
     public boolean resetElectionInAllMachines(int electionId) {
-        logger.info("⏪ Reseteando elección {} en mesas registradas...", electionId);
+        logger.info(" Reseteando elección {} en mesas registradas...", electionId);
         return changeElectionStatusForAllMachines(electionId, "PRE");
     }
 

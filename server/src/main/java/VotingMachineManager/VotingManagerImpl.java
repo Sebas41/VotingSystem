@@ -349,7 +349,7 @@ public class VotingManagerImpl implements ConfigurationService {
         final int JORNADA_HORA_FIN = 18;     // 6:00 PM
 
         Calendar cal = Calendar.getInstance();
-        cal.setTime(fechaInicio); // ✅ Usar directamente el Timestamp
+        cal.setTime(fechaInicio);
 
         // Jornada: 8:00 AM - 6:00 PM del día de la elección
         cal.set(Calendar.HOUR_OF_DAY, JORNADA_HORA_INICIO);
@@ -361,7 +361,7 @@ public class VotingManagerImpl implements ConfigurationService {
         cal.set(Calendar.HOUR_OF_DAY, JORNADA_HORA_FIN);
         long jornadaFin = cal.getTimeInMillis();
 
-        logger.debug("🗳️ Horarios de jornada calculados para elección {}:", electionInfoMap.get("id"));
+        logger.debug(" Horarios de jornada calculados para elección {}:", electionInfoMap.get("id"));
         logger.debug("   - Inicio: {} ({})", new Date(jornadaInicio), jornadaInicio);
         logger.debug("   - Fin: {} ({})", new Date(jornadaFin), jornadaFin);
 
