@@ -1,4 +1,3 @@
-// ReportsSystem.ice - Versión corregida con sintaxis consistente
 #pragma once
 
 module ReportsSystem {

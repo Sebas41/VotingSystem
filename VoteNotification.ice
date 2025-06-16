@@ -1,4 +1,3 @@
-// VoteNotification.ice - Versión corregida con Current explícito
 #pragma once
 
 module VoteNotification {

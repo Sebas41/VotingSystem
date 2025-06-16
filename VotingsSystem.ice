@@ -1,4 +1,3 @@
-// VotingSystem.ice - Versión simplificada con strings (patrón máquina de café)
 #pragma once
 
 module VotingsSystem {
