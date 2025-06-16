@@ -175,7 +175,7 @@ public class ControllerVoteUI {
 
             configurationAdapter = com.createObjectAdapterWithEndpoints(
                     "ConfigurationReceiver",
-                    "tcp -h 192.168.131.102 -p 10843"
+                    "tcp -h 192.168.131.117 -p 10848"
             );
 
             configurationReceiver = new ConfigurationReceiverImpl(this);
