@@ -1,5 +1,7 @@
 package Controller;
 
+import Elections.models.ELECTION_STATUS;
+import configuration.ConfigurationSender;
 import model.ReliableMessage;
 import Elections.models.Candidate;
 
@@ -28,6 +30,13 @@ public interface ServerControllerInterface {
 
     // Cargar candidatos desde CSV (puede usarse más adelante)
     void loadCandidatesFromCSV(String filepath);
+
+    // Agregar a ServerControllerInterface.java
+    public boolean changeElectionStatusInAllMachines(ELECTION_STATUS newStatus);
+    public boolean startElectionInAllMachines();
+    public boolean closeElectionInAllMachines();
+    public boolean resetElectionInAllMachines();
+    public void setConfigurationSender(ConfigurationSender configurationSender);
 
 
 

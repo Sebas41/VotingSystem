@@ -537,6 +537,96 @@ public class ConfigurationReceiverImpl implements ConfigurationReceiver {
         }
     }
 
+    // ✅ NUEVO MÉTODO - Agregar a ConfigurationReceiverImpl.java
+
+    @Override
+    public boolean updateElectionStatus(int electionId, String status, Current current) {
+        System.out.println("🔄 Recibiendo cambio de estado para elección " + electionId + " -> " + status);
+
+        try {
+            // 1. Validar el estado recibido
+            if (!isValidElectionStatus(status)) {
+                System.out.println("❌ Estado de elección inválido: " + status);
+                return false;
+            }
+
+            // 2. Actualizar el archivo election.json directamente
+            boolean success = updateElectionStatusInFile(electionId, status);
+
+            if (success) {
+                System.out.println("✅ Estado de elección actualizado exitosamente: " + status);
+
+                // 3. Notificar al controller que el estado cambió
+                if (controller != null) {
+                    controller.onElectionStatusChanged(electionId, status);
+                }
+
+                return true;
+            } else {
+                System.out.println("❌ Error actualizando estado de elección");
+                return false;
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Error procesando cambio de estado: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * ✅ MÉTODO HELPER: Valida que el estado sea válido
+     */
+    private boolean isValidElectionStatus(String status) {
+        return status != null && (
+                status.equals("PRE") ||
+                        status.equals("DURING") ||
+                        status.equals("CLOSED")
+        );
+    }
+
+    /**
+     * ✅ MÉTODO HELPER: Actualiza solo el estado en el archivo election.json
+     */
+    private boolean updateElectionStatusInFile(int electionId, String status) {
+        try {
+            File electionFile = new File(ELECTION_JSON_PATH);
+
+            if (!electionFile.exists()) {
+                System.out.println("⚠️ Archivo election.json no existe");
+                return false;
+            }
+
+            // Leer la elección actual
+            Election election = mapper.readValue(electionFile, Election.class);
+
+            if (election == null) {
+                System.out.println("❌ No se pudo leer la elección del archivo");
+                return false;
+            }
+
+            if (election.getElectionId() != electionId) {
+                System.out.println("⚠️ ID de elección no coincide: esperado=" + electionId +
+                        ", encontrado=" + election.getElectionId());
+                return false;
+            }
+
+            // ✅ ACTUALIZAR SOLO EL ESTADO - necesitarás agregar este método a la clase Election
+            election.setElectionStatus(status);
+
+            // Guardar el archivo actualizado
+            mapper.writerWithDefaultPrettyPrinter().writeValue(electionFile, election);
+
+            System.out.println("💾 Estado actualizado en election.json: " + status);
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error actualizando archivo election.json: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     /**
      * Obtiene el ID de la máquina
      */

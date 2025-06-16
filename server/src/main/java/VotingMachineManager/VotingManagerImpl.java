@@ -10,8 +10,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-
 import VotingsSystem.ConfigurationService;
+
 
 public class VotingManagerImpl implements ConfigurationService {
 
@@ -28,6 +28,7 @@ public class VotingManagerImpl implements ConfigurationService {
         logger.info("VotingManagerImpl initialized for Ice communication with string formatting");
     }
 
+    // =================== MÉTODOS ICE EXISTENTES ===================
 
     @Override
     public String getConfiguration(int mesaId, int electionId, Current current) {
@@ -118,6 +119,7 @@ public class VotingManagerImpl implements ConfigurationService {
         return isElectionReadyForConfiguration(electionId);
     }
 
+    // =================== MÉTODOS DE GENERACIÓN DE CONFIGURACIÓN ===================
 
     public String generateMachineConfigurationString(int mesaId, int electionId) {
         logger.info("Generating machine configuration string for mesa {} and election {}", mesaId, electionId);
@@ -466,6 +468,181 @@ public class VotingManagerImpl implements ConfigurationService {
         } catch (Exception e) {
             logger.error("Error checking if election {} is ready", electionId, e);
             return false;
+        }
+    }
+
+    // =================== ✅ NUEVOS MÉTODOS PARA MANEJO DE ESTADO ===================
+
+    /**
+     * ✅ MÉTODO HELPER: Obtiene todas las IDs de mesa del sistema
+     */
+    public List<Integer> getAllMesaIds() {
+        try {
+            return connectionDB.getAllMesaIds();
+        } catch (Exception e) {
+            logger.error("Error obteniendo IDs de todas las mesas: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtiene mesas por departamento
+     */
+    public List<Integer> getMesaIdsByDepartment(int departmentId) {
+        try {
+            return connectionDB.getMesaIdsByDepartment(departmentId);
+        } catch (Exception e) {
+            logger.error("Error obteniendo mesas por departamento {}: {}", departmentId, e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtiene mesas por puesto de votación
+     */
+    public List<Integer> getMesaIdsByPuesto(int puestoId) {
+        try {
+            List<Integer> mesaIds = new ArrayList<>();
+            List<Integer> allMesaIds = connectionDB.getAllMesaIds();
+
+            // Filter mesas that belong to this puesto
+            for (Integer mesaId : allMesaIds) {
+                Map<String, Object> mesaConfig = connectionDB.getMesaConfiguration(mesaId);
+                if (mesaConfig != null && puestoId == (Integer) mesaConfig.get("puesto_id")) {
+                    mesaIds.add(mesaId);
+                }
+            }
+
+            logger.info("Found {} mesas for puesto {}", mesaIds.size(), puestoId);
+            return mesaIds;
+
+        } catch (Exception e) {
+            logger.error("Error obteniendo mesas por puesto {}: {}", puestoId, e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Validar estado de elección
+     */
+    public boolean isValidElectionStatus(String status) {
+        return status != null && (
+                status.equals("PRE") ||
+                        status.equals("DURING") ||
+                        status.equals("CLOSED")
+        );
+    }
+
+    /**
+     * ✅ NUEVO: Obtener información completa de una elección
+     */
+    public Map<String, Object> getElectionDetails(int electionId) {
+        try {
+            Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
+            if (electionInfo == null) {
+                return null;
+            }
+
+            // Agregar información adicional
+            List<Map<String, Object>> candidates = connectionDB.getCandidatesByElection(electionId);
+            List<Integer> allMesas = connectionDB.getAllMesaIds();
+
+            Map<String, Object> details = new HashMap<>(electionInfo);
+            details.put("total_candidates", candidates.size());
+            details.put("total_mesas", allMesas.size());
+            details.put("candidates", candidates);
+
+            return details;
+
+        } catch (Exception e) {
+            logger.error("Error obteniendo detalles de elección {}: {}", electionId, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Estadísticas del sistema
+     */
+    public Map<String, Object> getSystemStatistics() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+
+            // Obtener métricas básicas
+            Map<String, Object> dbMetrics = connectionDB.getPerformanceMetrics();
+            List<Integer> allMesas = connectionDB.getAllMesaIds();
+
+            stats.put("total_mesas", allMesas.size());
+            stats.put("total_citizens", dbMetrics.get("total_citizens"));
+            stats.put("total_puestos", dbMetrics.get("total_puestos"));
+            stats.put("timestamp", new Date());
+            stats.put("package_version", PACKAGE_VERSION);
+
+            logger.info("System statistics generated: {} mesas, {} citizens",
+                    allMesas.size(), dbMetrics.get("total_citizens"));
+
+            return stats;
+
+        } catch (Exception e) {
+            logger.error("Error obteniendo estadísticas del sistema: {}", e.getMessage(), e);
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Diagnóstico de configuración
+     */
+    public Map<String, Object> runConfigurationDiagnostic(int electionId) {
+        Map<String, Object> diagnostic = new HashMap<>();
+
+        try {
+            logger.info("Running configuration diagnostic for election {}", electionId);
+
+            // 1. Verificar elección
+            Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
+            diagnostic.put("election_exists", electionInfo != null);
+
+            if (electionInfo != null) {
+                diagnostic.put("election_name", electionInfo.get("nombre"));
+                diagnostic.put("election_status", electionInfo.get("estado"));
+            }
+
+            // 2. Verificar candidatos
+            List<Map<String, Object>> candidates = connectionDB.getCandidatesByElection(electionId);
+            diagnostic.put("candidates_count", candidates.size());
+            diagnostic.put("has_candidates", !candidates.isEmpty());
+
+            // 3. Verificar mesas
+            List<Integer> allMesas = connectionDB.getAllMesaIds();
+            diagnostic.put("total_mesas", allMesas.size());
+            diagnostic.put("has_mesas", !allMesas.isEmpty());
+
+            // 4. Verificar ciudadanos
+            Map<String, Object> dbMetrics = connectionDB.getPerformanceMetrics();
+            long totalCitizens = (Long) dbMetrics.get("total_citizens");
+            diagnostic.put("total_citizens", totalCitizens);
+            diagnostic.put("has_citizens", totalCitizens > 0);
+
+            // 5. Verificar integridad
+            boolean configurationReady = isElectionReadyForConfiguration(electionId);
+            diagnostic.put("configuration_ready", configurationReady);
+
+            // 6. Timestamp
+            diagnostic.put("diagnostic_timestamp", new Date());
+
+            logger.info("Configuration diagnostic completed for election {}: ready={}",
+                    electionId, configurationReady);
+
+            return diagnostic;
+
+        } catch (Exception e) {
+            logger.error("Error running configuration diagnostic for election {}: {}",
+                    electionId, e.getMessage(), e);
+
+            diagnostic.put("error", true);
+            diagnostic.put("error_message", e.getMessage());
+            diagnostic.put("diagnostic_timestamp", new Date());
+
+            return diagnostic;
         }
     }
 }

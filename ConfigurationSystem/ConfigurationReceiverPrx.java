@@ -139,6 +139,48 @@ public interface ConfigurationReceiverPrx extends com.zeroc.Ice.ObjectPrx
         return f;
     }
 
+    default boolean updateElectionStatus(int electionId, String status)
+    {
+        return updateElectionStatus(electionId, status, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    default boolean updateElectionStatus(int electionId, String status, java.util.Map<String, String> context)
+    {
+        return _iceI_updateElectionStatusAsync(electionId, status, context, true).waitForResponse();
+    }
+
+    default java.util.concurrent.CompletableFuture<java.lang.Boolean> updateElectionStatusAsync(int electionId, String status)
+    {
+        return _iceI_updateElectionStatusAsync(electionId, status, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    default java.util.concurrent.CompletableFuture<java.lang.Boolean> updateElectionStatusAsync(int electionId, String status, java.util.Map<String, String> context)
+    {
+        return _iceI_updateElectionStatusAsync(electionId, status, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_electionId -
+     * @param iceP_status -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<java.lang.Boolean> _iceI_updateElectionStatusAsync(int iceP_electionId, String iceP_status, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<java.lang.Boolean> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "updateElectionStatus", null, sync, null);
+        f.invoke(true, context, null, ostr -> {
+                     ostr.writeInt(iceP_electionId);
+                     ostr.writeString(iceP_status);
+                 }, istr -> {
+                     boolean ret;
+                     ret = istr.readBool();
+                     return ret;
+                 });
+        return f;
+    }
+
     /**
      * Contacts the remote server to verify that the object implements this type.
      * Raises a local exception if a communication error occurs.
