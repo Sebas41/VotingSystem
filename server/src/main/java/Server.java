@@ -33,6 +33,7 @@ import Elections.models.ELECTION_STATUS;
  * ✅ API SIMPLIFICADA: Todos los métodos devuelven ElectionResult
  * ✅ MENOS CÓDIGO: Elimina duplicación y complejidad
  * ✅ MEJOR ESTRUCTURA: Separación clara de responsabilidades
+ * ✅ SISTEMA DE MESAS REGISTRADAS: Solo mesas en archivo de configuración
  *
  * Servidor completo que maneja Reports, Voting, Observer, VotingReceiver y ConfigurationSender
  * usando el nuevo controller integrado para una API limpia y consistente.
@@ -118,6 +119,9 @@ public class Server {
             electoralController.setConfigurationSender(configurationSender);
             System.out.println("🔗 ConfigurationSender conectado con ElectoralController");
 
+            // ✅ NUEVO: Mostrar mesas registradas
+            showRegisteredMesas();
+
             // =================== SERVICIO DE OBSERVER ===================
 
             System.out.println("🔔 Configurando servicio de Observer...");
@@ -159,6 +163,7 @@ public class Server {
             System.out.println("🔔 Servicio Observer: ACTIVO (puerto 9002)");
             System.out.println("📥 Servicio VotingReceiver: ACTIVO (puerto 10012)");
             System.out.println("📤 ConfigurationSender: ACTIVO");
+            System.out.println("📋 Sistema de mesas registradas: ACTIVO");
             System.out.println("🔌 Base de datos: CONECTADA con pool optimizado");
 
             // =================== MÉTODOS DISPONIBLES ===================
@@ -174,7 +179,7 @@ public class Server {
             System.out.println("   • loadCandidatesFromCSV(electionId, filePath)");
 
             System.out.println("\n📤 CONFIGURACIÓN DE MESAS:");
-            System.out.println("   • sendConfigurationToMesa(mesaId, electionId)");
+            System.out.println("   • sendConfigurationToMesa(mesaId, electionId) - Solo mesas registradas");
             System.out.println("   • sendConfigurationToDepartment(deptId, electionId)");
 
             System.out.println("\n📊 REPORTES Y CONSULTAS:");
@@ -191,6 +196,7 @@ public class Server {
             System.out.println("   • testStartElectionMesa6823()");
             System.out.println("   • testCloseElectionMesa6823()");
             System.out.println("   • testConnectivityMesa6823()");
+            System.out.println("   • showRegisteredMesas() - Ver mesas del archivo de configuración");
             System.out.println("==================================================");
 
             // =================== ESTADO INICIAL DEL SISTEMA ===================
@@ -335,10 +341,10 @@ public class Server {
     // =================== MÉTODOS DE PRUEBA ESPECÍFICOS ===================
 
     /**
-     * ✅ SIMPLIFICADO: Prueba de conectividad con mesa 6823
+     * ✅ ACTUALIZADO: Usa el nuevo sistema de configuración registrada
      */
     public static boolean testConnectivityMesa6823() {
-        System.out.println("🔍 Probando conectividad con mesa " + MESA_6823_ID + "...");
+        System.out.println("🔍 Probando conectividad con mesa " + MESA_6823_ID + " (sistema registrado)...");
 
         if (configurationSender == null) {
             System.err.println("❌ ConfigurationSender no disponible");
@@ -346,16 +352,15 @@ public class Server {
         }
 
         try {
-            String endpoint = "ConfigurationReceiver:default -h localhost -p " + MESA_6823_PORT;
-            ObjectPrx base = configurationSender.communicator.stringToProxy(endpoint);
-            ConfigurationSystem.ConfigurationReceiverPrx receiver =
-                    ConfigurationSystem.ConfigurationReceiverPrx.checkedCast(base);
+            // ✅ Usar el nuevo método del ConfigurationSender
+            // Intentar enviar configuración (esto validará conectividad)
+            ElectionResult result = electoralController.sendConfigurationToMesa(MESA_6823_ID, 1);
 
-            if (receiver != null && receiver.isReady(MESA_6823_ID)) {
-                System.out.println("✅ Mesa " + MESA_6823_ID + " conectada y lista");
+            if (result.isSuccess()) {
+                System.out.println("✅ Mesa " + MESA_6823_ID + " conectada y configurada");
                 return true;
             } else {
-                System.out.println("❌ Mesa " + MESA_6823_ID + " no disponible");
+                System.out.println("❌ Mesa " + MESA_6823_ID + " no disponible: " + result.getMessage());
                 return false;
             }
         } catch (Exception e) {
@@ -365,27 +370,27 @@ public class Server {
     }
 
     /**
-     * ✅ SIMPLIFICADO: Inicia elección en mesa 6823
+     * ✅ ACTUALIZADO: Usa el nuevo sistema para cambio de estado
      */
     public static boolean testStartElectionMesa6823() {
-        System.out.println("🗳️ Iniciando elección en mesa " + MESA_6823_ID + "...");
-        return sendElectionStatusToMesa6823("DURING");
+        System.out.println("🗳️ Iniciando elección en mesa " + MESA_6823_ID + " (sistema registrado)...");
+        return configurationSender != null && configurationSender.startElectionInAllMachines(1);
     }
 
     /**
-     * ✅ SIMPLIFICADO: Cierra elección en mesa 6823
+     * ✅ ACTUALIZADO: Usa el nuevo sistema para cambio de estado
      */
     public static boolean testCloseElectionMesa6823() {
-        System.out.println("🔒 Cerrando elección en mesa " + MESA_6823_ID + "...");
-        return sendElectionStatusToMesa6823("CLOSED");
+        System.out.println("🔒 Cerrando elección en mesa " + MESA_6823_ID + " (sistema registrado)...");
+        return configurationSender != null && configurationSender.closeElectionInAllMachines(1);
     }
 
     /**
-     * ✅ SIMPLIFICADO: Resetea elección en mesa 6823
+     * ✅ ACTUALIZADO: Usa el nuevo sistema para cambio de estado
      */
     public static boolean testResetElectionMesa6823() {
-        System.out.println("⏪ Reseteando elección en mesa " + MESA_6823_ID + "...");
-        return sendElectionStatusToMesa6823("PRE");
+        System.out.println("⏪ Reseteando elección en mesa " + MESA_6823_ID + " (sistema registrado)...");
+        return configurationSender != null && configurationSender.resetElectionInAllMachines(1);
     }
 
     // =================== MÉTODOS HELPER PRIVADOS ===================
@@ -546,6 +551,26 @@ public class Server {
 
         System.out.println("\n💡 Usa Server.getSystemStatus() para detalles completos");
         System.out.println("🧪 Usa Server.runSystemDiagnostic() para diagnóstico detallado");
+        System.out.println("================================================");
+    }
+
+    /**
+     * ✅ NUEVO: Muestra las mesas registradas desde el archivo de configuración
+     */
+    public static void showRegisteredMesas() {
+        System.out.println("\n📋 ========== MESAS REGISTRADAS ==========");
+
+        if (configurationSender != null) {
+            try {
+                // Usar el método que agregamos al ConfigurationSender
+                configurationSender.showRegisteredMesasInfo();
+            } catch (Exception e) {
+                System.out.println("❌ Error obteniendo información de mesas: " + e.getMessage());
+            }
+        } else {
+            System.out.println("❌ ConfigurationSender no disponible");
+        }
+
         System.out.println("================================================");
     }
 }
