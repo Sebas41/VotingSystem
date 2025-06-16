@@ -7,12 +7,7 @@ public class Client {
     public static void main(String[] args) throws Exception {
 
         try {
-            new Thread(() -> {
-                System.out.println("Iniciando ReliableServer...");
-                ReliableServer.main(new String[0]);
-            }).start();
 
-            Thread.sleep(3000);
 
             System.out.println("Iniciando estación de votación...");
 
