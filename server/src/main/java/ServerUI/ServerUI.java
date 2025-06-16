@@ -15,14 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * 🏛️ INTERFAZ GRÁFICA SIMPLIFICADA DEL SERVIDOR ELECTORAL
- *
- * ✅ SOLO FUNCIONALIDADES IMPLEMENTADAS: Contiene únicamente las funciones que realmente existen
- * ✅ API REAL: Usa directamente los métodos del ServerControllerImpl
- * ✅ FEEDBACK CLARO: Muestra resultados reales de las operaciones
- * ✅ DISEÑO LIMPIO: Interfaz profesional y fácil de usar
- */
+
 public class ServerUI extends JFrame implements ServerUIInterface {
 
     private static ServerUI instance;
@@ -47,19 +40,17 @@ public class ServerUI extends JFrame implements ServerUIInterface {
     public ServerUI(ServerControllerImpl controller) {
         this.controller = controller;
 
-        // =================== CONFIGURACIÓN VENTANA ===================
-        setTitle("🏛️ Servidor Electoral - Sistema Integrado");
+        setTitle(" Servidor Electoral - Sistema Integrado");
         setSize(1200, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        // =================== INICIALIZACIÓN COMPONENTES ===================
         systemLogArea = createStyledTextArea();
         electionInfoArea = createStyledTextArea();
         voteLogArea = createStyledTextArea();
         resultsArea = createStyledTextArea();
 
-        statusLabel = new JLabel("🟢 Sistema iniciado");
+        statusLabel = new JLabel(" Sistema iniciado");
         statusLabel.setBorder(new EmptyBorder(8, 15, 8, 15));
         statusLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
 
@@ -72,17 +63,15 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         operationProgressBar.setString("Listo");
         operationProgressBar.setVisible(false);
 
-        // =================== LAYOUT ===================
+
         setLayout(new BorderLayout());
         add(createHeaderPanel(), BorderLayout.NORTH);
         add(createMainTabPane(), BorderLayout.CENTER);
         add(createFooterPanel(), BorderLayout.SOUTH);
 
-        // =================== INICIALIZAR DATOS ===================
         initializeUI();
     }
 
-    // =================== CREACIÓN DE COMPONENTES ===================
 
     private JTextArea createStyledTextArea() {
         JTextArea area = new JTextArea();
@@ -98,7 +87,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         header.setBackground(PRIMARY_COLOR);
         header.setBorder(new EmptyBorder(15, 20, 15, 20));
 
-        JLabel titleLabel = new JLabel("🏛️ Sistema Electoral - Solo Funcionalidades Implementadas");
+        JLabel titleLabel = new JLabel(" Sistema Electoral - Solo Funcionalidades Implementadas");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
 
@@ -127,18 +116,17 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(new Font("SansSerif", Font.BOLD, 13));
 
-        tabs.addTab("📊 Dashboard", createDashboardPanel());
-        tabs.addTab("🗳️ Elecciones", createElectionPanel());
-        tabs.addTab("👥 Candidatos", createCandidatePanel());
-        tabs.addTab("📤 Mesas de Votación", createMesaPanel());
-        tabs.addTab("📈 Reportes", createReportsPanel());
-        tabs.addTab("🔧 Monitoreo", createMonitoringPanel());
-        tabs.addTab("📋 Log de Votos", createVoteLogPanel());
+        tabs.addTab(" Dashboard", createDashboardPanel());
+        tabs.addTab(" Elecciones", createElectionPanel());
+        tabs.addTab(" Candidatos", createCandidatePanel());
+        tabs.addTab(" Mesas de Votación", createMesaPanel());
+        tabs.addTab(" Reportes", createReportsPanel());
+        tabs.addTab(" Monitoreo", createMonitoringPanel());
+        tabs.addTab(" Log de Votos", createVoteLogPanel());
 
         return tabs;
     }
 
-    // =================== 📊 PANEL DASHBOARD ===================
 
     private JPanel createDashboardPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -148,13 +136,13 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         JPanel actionsPanel = new JPanel(new FlowLayout());
         actionsPanel.setBorder(createTitledBorder("⚡ Acciones Rápidas"));
 
-        JButton btnStatus = createStyledButton("📊 Estado del Sistema", PRIMARY_COLOR);
+        JButton btnStatus = createStyledButton(" Estado del Sistema", PRIMARY_COLOR);
         btnStatus.addActionListener(e -> refreshSystemStatus());
 
         JButton btnDiagnostic = createStyledButton("🔍 Diagnóstico", WARNING_COLOR);
         btnDiagnostic.addActionListener(e -> runDiagnostic());
 
-        JButton btnStartVoting = createStyledButton("🗳️ Iniciar Votación", SUCCESS_COLOR);
+        JButton btnStartVoting = createStyledButton(" Iniciar Votación", SUCCESS_COLOR);
         btnStartVoting.addActionListener(e -> startVoting());
 
         JButton btnStopVoting = createStyledButton("🔒 Detener Votación", ERROR_COLOR);
@@ -176,7 +164,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return panel;
     }
 
-    // =================== 🗳️ PANEL ELECCIONES ===================
+    // ===================  PANEL ELECCIONES ===================
 
     private JPanel createElectionPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -193,7 +181,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         JTextField startField = new JTextField("15-06-2025 08:00", 15);
         JTextField endField = new JTextField("15-06-2025 18:00", 15);
 
-        JButton btnCreate = createStyledButton("✅ Crear Elección", SUCCESS_COLOR);
+        JButton btnCreate = createStyledButton(" Crear Elección", SUCCESS_COLOR);
         btnCreate.addActionListener(e -> createElection(nameField.getText(), startField.getText(), endField.getText()));
 
         JButton btnInfo = createStyledButton("📋 Ver Información", PRIMARY_COLOR);
@@ -205,18 +193,15 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         // Layout
         gbc.gridx = 0; gbc.gridy = 0; creationPanel.add(new JLabel("📝 Nombre:"), gbc);
         gbc.gridx = 1; creationPanel.add(nameField, gbc);
-        gbc.gridx = 0; gbc.gridy++; creationPanel.add(new JLabel("📅 Inicio (dd-MM-yyyy HH:mm):"), gbc);
-        gbc.gridx = 1; creationPanel.add(startField, gbc);
-        gbc.gridx = 0; gbc.gridy++; creationPanel.add(new JLabel("📅 Fin (dd-MM-yyyy HH:mm):"), gbc);
-        gbc.gridx = 1; creationPanel.add(endField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++; creationPanel.add(btnCreate, gbc);
+        gbc.gridx = 0; gbc.gridy++; creationPanel.add(new JLabel(" Inicio (dd-MM-yyyy HH:mm):"), gbc);
+        gbc.gridx = 1; creationPanel.add(startField, gbc);        gbc.gridx = 0; gbc.gridy++; creationPanel.add(new JLabel(" Fin (dd-MM-yyyy HH:mm):"), gbc);
+        gbc.gridx = 1; creationPanel.add(endField, gbc);        gbc.gridx = 0; gbc.gridy++; creationPanel.add(btCreate, gbc);
         gbc.gridx = 1; creationPanel.add(btnInfo, gbc);
         gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2; creationPanel.add(btnListAll, gbc);
 
         // Panel de información
         JPanel infoPanel = new JPanel(new BorderLayout());
-        infoPanel.setBorder(createTitledBorder("📊 Información"));
+        infoPanel.setBorder(createTitledBorder(" Información"));
         infoPanel.add(new JScrollPane(electionInfoArea));
 
         panel.add(creationPanel, BorderLayout.NORTH);
@@ -242,7 +227,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         JTextField nameField = new JTextField(20);
         JTextField partyField = new JTextField(20);
 
-        JButton btnAdd = createStyledButton("✅ Agregar Candidato", SUCCESS_COLOR);
+        JButton btnAdd = createStyledButton(" Agregar Candidato", SUCCESS_COLOR);
         btnAdd.addActionListener(e -> addCandidate(
                 electionIdField.getText(), nameField.getText(), partyField.getText()));
 
@@ -250,11 +235,11 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         btnList.addActionListener(e -> listCandidates(electionIdField.getText()));
 
         // Layout
-        gbc.gridx = 0; gbc.gridy = 0; registrationPanel.add(new JLabel("🗳️ ID Elección:"), gbc);
+        gbc.gridx = 0; gbc.gridy = 0; registrationPanel.add(new JLabel(" ID Elección:"), gbc);
         gbc.gridx = 1; registrationPanel.add(electionIdField, gbc);
         gbc.gridx = 0; gbc.gridy++; registrationPanel.add(new JLabel("👤 Nombre:"), gbc);
         gbc.gridx = 1; registrationPanel.add(nameField, gbc);
-        gbc.gridx = 0; gbc.gridy++; registrationPanel.add(new JLabel("🏛️ Partido:"), gbc);
+        gbc.gridx = 0; gbc.gridy++; registrationPanel.add(new JLabel(" Partido:"), gbc);
         gbc.gridx = 1; registrationPanel.add(partyField, gbc);
 
         gbc.gridx = 0; gbc.gridy++; registrationPanel.add(btnAdd, gbc);
@@ -292,7 +277,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         btnSendMesa.addActionListener(e -> sendConfigToMesa(
                 mesaIdField.getText(), electionIdField.getText()));
 
-        JButton btnSendDept = createStyledButton("🏛️ Enviar a Departamento", WARNING_COLOR);
+        JButton btnSendDept = createStyledButton(" Enviar a Departamento", WARNING_COLOR);
         btnSendDept.addActionListener(e -> sendConfigToDepartment(
                 departmentIdField.getText(), electionIdField.getText()));
 
@@ -305,9 +290,9 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         // Layout
         gbc.gridx = 0; gbc.gridy = 0; configPanel.add(new JLabel("📋 ID Mesa:"), gbc);
         gbc.gridx = 1; configPanel.add(mesaIdField, gbc);
-        gbc.gridx = 0; gbc.gridy++; configPanel.add(new JLabel("🗳️ ID Elección:"), gbc);
+        gbc.gridx = 0; gbc.gridy++; configPanel.add(new JLabel(" ID Elección:"), gbc);
         gbc.gridx = 1; configPanel.add(electionIdField, gbc);
-        gbc.gridx = 0; gbc.gridy++; configPanel.add(new JLabel("🏛️ ID Departamento:"), gbc);
+        gbc.gridx = 0; gbc.gridy++; configPanel.add(new JLabel(" ID Departamento:"), gbc);
         gbc.gridx = 1; configPanel.add(departmentIdField, gbc);
 
         gbc.gridx = 0; gbc.gridy++; configPanel.add(btnSendMesa, gbc);
@@ -317,7 +302,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
         // Panel de resultados
         JPanel resultsPanel = new JPanel(new BorderLayout());
-        resultsPanel.setBorder(createTitledBorder("📊 Resultados"));
+        resultsPanel.setBorder(createTitledBorder(" Resultados"));
         resultsPanel.add(new JScrollPane(resultsArea));
 
         panel.add(configPanel, BorderLayout.NORTH);
@@ -352,7 +337,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         btnSearchCitizen.addActionListener(e -> searchCitizens(
                 nameField.getText(), lastNameField.getText()));
 
-        JButton btnElectionResults = createStyledButton("📊 Resultados Elección", WARNING_COLOR);
+        JButton btnElectionResults = createStyledButton(" Resultados Elección", WARNING_COLOR);
         btnElectionResults.addActionListener(e -> getElectionResults(electionIdField.getText()));
 
         // Layout
@@ -362,7 +347,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         gbc.gridx = 1; queryPanel.add(nameField, gbc);
         gbc.gridx = 0; gbc.gridy++; queryPanel.add(new JLabel("👤 Apellido:"), gbc);
         gbc.gridx = 1; queryPanel.add(lastNameField, gbc);
-        gbc.gridx = 0; gbc.gridy++; queryPanel.add(new JLabel("🗳️ ID Elección:"), gbc);
+        gbc.gridx = 0; gbc.gridy++; queryPanel.add(new JLabel(" ID Elección:"), gbc);
         gbc.gridx = 1; queryPanel.add(electionIdField, gbc);
 
         gbc.gridx = 0; gbc.gridy++; queryPanel.add(btnCitizenReport, gbc);
@@ -371,7 +356,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
         // Panel de resultados
         JPanel resultsPanel = new JPanel(new BorderLayout());
-        resultsPanel.setBorder(createTitledBorder("📊 Resultados"));
+        resultsPanel.setBorder(createTitledBorder(" Resultados"));
         resultsPanel.add(new JScrollPane(resultsArea));
 
         panel.add(queryPanel, BorderLayout.NORTH);
@@ -380,7 +365,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return panel;
     }
 
-    // =================== 🔧 PANEL MONITOREO ===================
+    // ===================  PANEL MONITOREO ===================
 
     private JPanel createMonitoringPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -388,9 +373,9 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
         // Panel de acciones
         JPanel actionsPanel = new JPanel(new FlowLayout());
-        actionsPanel.setBorder(createTitledBorder("🔧 Herramientas"));
+        actionsPanel.setBorder(createTitledBorder(" Herramientas"));
 
-        JButton btnSystemStatus = createStyledButton("📊 Estado Sistema", PRIMARY_COLOR);
+        JButton btnSystemStatus = createStyledButton(" Estado Sistema", PRIMARY_COLOR);
         btnSystemStatus.addActionListener(e -> showSystemStatus());
 
         JButton btnDiagnostic = createStyledButton("🔍 Diagnóstico", WARNING_COLOR);
@@ -422,9 +407,9 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
         // Panel de control
         JPanel controlPanel = new JPanel(new FlowLayout());
-        controlPanel.setBorder(createTitledBorder("⚙️ Control"));
+        controlPanel.setBorder(createTitledBorder(" Control"));
 
-        JButton btnClear = createStyledButton("🗑️ Limpiar", ERROR_COLOR);
+        JButton btnClear = createStyledButton(" Limpiar", ERROR_COLOR);
         btnClear.addActionListener(e -> voteLogArea.setText(""));
 
         controlPanel.add(btnClear);
@@ -440,7 +425,6 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return panel;
     }
 
-    // =================== 🎨 MÉTODOS DE ESTILO ===================
 
     private JButton createStyledButton(String text, Color color) {
         JButton button = new JButton(text);
@@ -451,7 +435,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Efecto hover
+
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -474,7 +458,6 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         return border;
     }
 
-    // =================== 🔧 MÉTODOS DE ACCIÓN IMPLEMENTADOS ===================
 
     private void createElection(String name, String startText, String endText) {
         if (name.trim().isEmpty()) {
@@ -494,17 +477,17 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
                     if (result.isSuccess()) {
-                        showSuccess("✅ " + result.getMessage());
+                        showSuccess(" " + result.getMessage());
                         showElectionInfo(); // Actualizar información
                     } else {
-                        showError("❌ " + result.getMessage());
+                        showError(" " + result.getMessage());
                     }
                 });
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
-                    showError("❌ Error: " + ex.getMessage());
+                    showError(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -526,17 +509,17 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
                     if (result.isSuccess()) {
-                        showSuccess("✅ " + result.getMessage());
+                        showSuccess(" " + result.getMessage());
                         listCandidates(electionIdText); // Actualizar lista
                     } else {
-                        showError("❌ " + result.getMessage());
+                        showError(" " + result.getMessage());
                     }
                 });
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
-                    showError("❌ Error: " + ex.getMessage());
+                    showError(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -553,7 +536,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    electionInfoArea.setText("❌ Error: " + ex.getMessage());
+                    electionInfoArea.setText(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -570,7 +553,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    electionInfoArea.setText("❌ Error: " + ex.getMessage());
+                    electionInfoArea.setText(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -588,7 +571,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    resultsArea.setText("❌ Error: " + ex.getMessage());
+                    resultsArea.setText(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -608,16 +591,16 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                     hideProgress();
                     resultsArea.setText(formatElectionResult(result, "CONFIGURACIÓN MESA"));
                     if (result.isSuccess()) {
-                        showSuccess("✅ " + result.getMessage());
+                        showSuccess(" " + result.getMessage());
                     } else {
-                        showError("❌ " + result.getMessage());
+                        showError(" " + result.getMessage());
                     }
                 });
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
-                    showError("❌ Error: " + ex.getMessage());
+                    showError(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -637,16 +620,16 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                     hideProgress();
                     resultsArea.setText(formatElectionResult(result, "CONFIGURACIÓN DEPARTAMENTO"));
                     if (result.isSuccess()) {
-                        showSuccess("✅ " + result.getMessage());
+                        showSuccess(" " + result.getMessage());
                     } else {
-                        showError("❌ " + result.getMessage());
+                        showError(" " + result.getMessage());
                     }
                 });
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
-                    showError("❌ Error: " + ex.getMessage());
+                    showError(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -664,7 +647,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    resultsArea.setText("❌ Error: " + ex.getMessage());
+                    resultsArea.setText(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -698,7 +681,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    resultsArea.setText("❌ Error: " + ex.getMessage());
+                    resultsArea.setText(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -715,7 +698,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    resultsArea.setText("❌ Error: " + ex.getMessage());
+                    resultsArea.setText(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -733,7 +716,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    resultsArea.setText("❌ Error: " + ex.getMessage());
+                    resultsArea.setText(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -749,18 +732,18 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
                     if (result.isSuccess()) {
-                        showSuccess("🗳️ Votación iniciada exitosamente");
-                        connectionStatusLabel.setText("🟢 Votación Activa");
+                        showSuccess(" Votación iniciada exitosamente");
+                        connectionStatusLabel.setText(" Votación Activa");
                         connectionStatusLabel.setForeground(SUCCESS_COLOR);
                     } else {
-                        showError("❌ " + result.getMessage());
+                        showError(" " + result.getMessage());
                     }
                 });
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
-                    showError("❌ Error: " + ex.getMessage());
+                    showError(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -777,17 +760,17 @@ public class ServerUI extends JFrame implements ServerUIInterface {
                     hideProgress();
                     if (result.isSuccess()) {
                         showSuccess("🔒 Votación detenida exitosamente");
-                        connectionStatusLabel.setText("🔴 Votación Cerrada");
+                        connectionStatusLabel.setText(" Votación Cerrada");
                         connectionStatusLabel.setForeground(ERROR_COLOR);
                     } else {
-                        showError("❌ " + result.getMessage());
+                        showError(" " + result.getMessage());
                     }
                 });
 
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
                     hideProgress();
-                    showError("❌ Error: " + ex.getMessage());
+                    showError(" Error: " + ex.getMessage());
                 });
             }
         });
@@ -870,14 +853,13 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         });
     }
 
-    // =================== 🔧 MÉTODOS HELPER ===================
 
     private void initializeUI() {
-        systemLogArea.append("🏛️ ========== SISTEMA ELECTORAL INICIALIZADO ==========\n");
-        systemLogArea.append("📅 Fecha: " + new Date() + "\n");
-        systemLogArea.append("✅ Todas las funcionalidades mostradas están IMPLEMENTADAS\n");
-        systemLogArea.append("🔧 Solo se muestran métodos que funcionan en el controller\n");
-        systemLogArea.append("================================================\n\n");
+        systemLogArea.append("  SISTEMA ELECTORAL INICIALIZADO \n");
+        systemLogArea.append(" Fecha: " + new Date() + "\n");
+        systemLogArea.append(" Todas las funcionalidades mostradas están IMPLEMENTADAS\n");
+        systemLogArea.append(" Solo se muestran métodos que funcionan en el controller\n");
+        systemLogArea.append("--------------------\n\n");
 
         // Cargar información inicial
         showElectionInfo();
@@ -886,10 +868,10 @@ public class ServerUI extends JFrame implements ServerUIInterface {
     private String formatElectionResult(ElectionResult result, String title) {
         StringBuilder formatted = new StringBuilder();
 
-        formatted.append("📊 ========== ").append(title).append(" ==========\n");
-        formatted.append("📅 Fecha: ").append(new Date()).append("\n");
-        formatted.append("✅ Estado: ").append(result.isSuccess() ? "ÉXITO" : "ERROR").append("\n");
-        formatted.append("💬 Mensaje: ").append(result.getMessage()).append("\n");
+        formatted.append(" ========== ").append(title).append(" ==========\n");
+        formatted.append(" Fecha: ").append(new Date()).append("\n");
+        formatted.append(" Estado: ").append(result.isSuccess() ? "ÉXITO" : "ERROR").append("\n");
+        formatted.append(" Mensaje: ").append(result.getMessage()).append("\n");
 
         if (result.getData() != null && !result.getData().isEmpty()) {
             formatted.append("\n📋 Datos:\n");
@@ -898,7 +880,7 @@ public class ServerUI extends JFrame implements ServerUIInterface {
             }
         }
 
-        formatted.append("================================================\n");
+        formatted.append("-----------------\n");
 
         return formatted.toString();
     }
@@ -916,12 +898,12 @@ public class ServerUI extends JFrame implements ServerUIInterface {
     }
 
     private void showSuccess(String message) {
-        statusLabel.setText("🟢 " + message);
+        statusLabel.setText(" " + message);
         statusLabel.setForeground(SUCCESS_COLOR);
     }
 
     private void showError(String message) {
-        statusLabel.setText("🔴 " + message);
+        statusLabel.setText(" " + message);
         statusLabel.setForeground(ERROR_COLOR);
     }
 
@@ -930,11 +912,10 @@ public class ServerUI extends JFrame implements ServerUIInterface {
         statusLabel.setForeground(WARNING_COLOR);
     }
 
-    // =================== 📋 MÉTODOS DE INTERFAZ ===================
 
     @Override
     public void showVoteInfo(String voteInfo) {
-        voteLogArea.append("🗳️ [" + new SimpleDateFormat("HH:mm:ss").format(new Date()) + "] " + voteInfo + "\n");
+        voteLogArea.append(" [" + new SimpleDateFormat("HH:mm:ss").format(new Date()) + "] " + voteInfo + "\n");
         voteLogArea.setCaretPosition(voteLogArea.getDocument().getLength());
     }
 
@@ -945,10 +926,9 @@ public class ServerUI extends JFrame implements ServerUIInterface {
 
     @Override
     public void updateStatus(String status) {
-        statusLabel.setText("📊 " + status);
+        statusLabel.setText(" " + status);
     }
 
-    // =================== 🚀 MÉTODO ESTÁTICO ===================
 
     public static void launchUI(ServerControllerImpl controller) {
         SwingUtilities.invokeLater(() -> {

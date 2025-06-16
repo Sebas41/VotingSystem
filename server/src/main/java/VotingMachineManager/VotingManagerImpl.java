@@ -28,7 +28,6 @@ public class VotingManagerImpl implements ConfigurationService {
         logger.info("VotingManagerImpl initialized for Ice communication with string formatting");
     }
 
-    // =================== MÉTODOS ICE EXISTENTES ===================
 
     @Override
     public String getConfiguration(int mesaId, int electionId, Current current) {
@@ -119,54 +118,45 @@ public class VotingManagerImpl implements ConfigurationService {
         return isElectionReadyForConfiguration(electionId);
     }
 
-    // =================== MÉTODOS DE GENERACIÓN DE CONFIGURACIÓN ===================
 
     public String generateMachineConfigurationString(int mesaId, int electionId) {
         logger.info("Generating machine configuration string for mesa {} and election {}", mesaId, electionId);
 
         try {
-            // 1. Get mesa information
             Map<String, Object> mesaInfoMap = connectionDB.getMesaConfiguration(mesaId);
             if (mesaInfoMap == null) {
                 logger.error("Mesa {} not found", mesaId);
                 return createErrorString("Mesa not found");
             }
 
-            // 2. Get election information
+
             Map<String, Object> electionInfoMap = connectionDB.getElectionInfo(electionId);
             if (electionInfoMap == null) {
                 logger.error("Election {} not found", electionId);
                 return createErrorString("Election not found");
             }
 
-            // 3. Get candidates for this election
             List<Map<String, Object>> candidatesMap = connectionDB.getCandidatesByElection(electionId);
 
-            // 4. Get assigned citizens for this mesa
+
             List<Map<String, Object>> citizensMap = connectionDB.getCitizensByMesa(mesaId);
 
-            // Formato: MESA_INFO#ELECTION_INFO#CANDIDATES#CITIZENS#METADATA
+
             StringBuilder config = new StringBuilder();
 
-            // 1. Mesa info: mesaId-mesaConsecutive-puestoId-puestoNombre-puestoDireccion-municipioId-municipioNombre-departamentoId-departamentoNombre-totalCiudadanos
             config.append(formatMesaInfoString(mesaInfoMap)).append(RECORD_SEPARATOR);
 
-            // ✅ 2. Election info: id-nombre-estado-fechaInicio-fechaFin-jornadaInicio-jornadaFin
             config.append(formatElectionInfoString(electionInfoMap)).append(RECORD_SEPARATOR);
 
-            // 3. Candidates: candidate1|candidate2|candidate3
             config.append(formatCandidatesArray(candidatesMap)).append(RECORD_SEPARATOR);
 
-            // 4. Citizens: citizen1|citizen2|citizen3
             config.append(formatCitizensArray(citizensMap)).append(RECORD_SEPARATOR);
 
-            // 5. Metadata: packageVersion-timestamp
             config.append(PACKAGE_VERSION).append(FIELD_SEPARATOR).append(System.currentTimeMillis());
 
             logger.info("Machine configuration string generated for mesa {} - {} citizens, {} candidates",
                     mesaId, citizensMap.size(), candidatesMap.size());
 
-            // ✅ NUEVO: Log adicional para horarios de jornada
             logger.info("Election {} includes voting schedule restrictions", electionId);
 
             return config.toString();
@@ -330,7 +320,6 @@ public class VotingManagerImpl implements ConfigurationService {
         }
     }
 
-    // =================== MÉTODOS HELPER PARA FORMATEAR STRINGS ===================
 
     private String createErrorString(String message) {
         return "ERROR" + FIELD_SEPARATOR + message + FIELD_SEPARATOR + System.currentTimeMillis();
@@ -353,15 +342,12 @@ public class VotingManagerImpl implements ConfigurationService {
     }
 
     private String formatElectionInfoString(Map<String, Object> electionInfoMap) {
-        // ✅ IMPORTACIÓN CORREGIDA: usar java.sql.Timestamp
         java.sql.Timestamp fechaInicio = (java.sql.Timestamp) electionInfoMap.get("fecha_inicio");
         java.sql.Timestamp fechaFin = (java.sql.Timestamp) electionInfoMap.get("fecha_fin");
 
-        // ✅ CONSTANTES PARA HORARIOS DE JORNADA
         final int JORNADA_HORA_INICIO = 8;   // 8:00 AM
         final int JORNADA_HORA_FIN = 18;     // 6:00 PM
 
-        // ✅ CALCULAR HORARIOS FIJOS DE JORNADA
         Calendar cal = Calendar.getInstance();
         cal.setTime(fechaInicio); // ✅ Usar directamente el Timestamp
 
@@ -375,20 +361,18 @@ public class VotingManagerImpl implements ConfigurationService {
         cal.set(Calendar.HOUR_OF_DAY, JORNADA_HORA_FIN);
         long jornadaFin = cal.getTimeInMillis();
 
-        // ✅ LOGGING PARA DEBUG
         logger.debug("🗳️ Horarios de jornada calculados para elección {}:", electionInfoMap.get("id"));
         logger.debug("   - Inicio: {} ({})", new Date(jornadaInicio), jornadaInicio);
         logger.debug("   - Fin: {} ({})", new Date(jornadaFin), jornadaFin);
 
-        // ✅ FORMATO EXTENDIDO: id-nombre-estado-fechaInicio-fechaFin-jornadaInicio-jornadaFin
         return String.join(FIELD_SEPARATOR,
                 String.valueOf(electionInfoMap.get("id")),
                 String.valueOf(electionInfoMap.get("nombre")),
                 String.valueOf(electionInfoMap.get("estado")),
                 String.valueOf(fechaInicio.getTime()),
                 String.valueOf(fechaFin.getTime()),
-                String.valueOf(jornadaInicio),    // ✅ NUEVO: Hora inicio jornada
-                String.valueOf(jornadaFin)        // ✅ NUEVO: Hora fin jornada
+                String.valueOf(jornadaInicio),
+                String.valueOf(jornadaFin)
         );
     }
 
@@ -419,7 +403,6 @@ public class VotingManagerImpl implements ConfigurationService {
         return String.join(ARRAY_SEPARATOR, formattedCitizens);
     }
 
-    // =================== MÉTODOS HELPER INTERNOS (NO @Override) ===================
 
     public boolean validateMesaConfiguration(int mesaId, int electionId) {
         try {
@@ -471,11 +454,7 @@ public class VotingManagerImpl implements ConfigurationService {
         }
     }
 
-    // =================== ✅ NUEVOS MÉTODOS PARA MANEJO DE ESTADO ===================
 
-    /**
-     * ✅ MÉTODO HELPER: Obtiene todas las IDs de mesa del sistema
-     */
     public List<Integer> getAllMesaIds() {
         try {
             return connectionDB.getAllMesaIds();
@@ -485,9 +464,7 @@ public class VotingManagerImpl implements ConfigurationService {
         }
     }
 
-    /**
-     * ✅ NUEVO: Obtiene mesas por departamento
-     */
+
     public List<Integer> getMesaIdsByDepartment(int departmentId) {
         try {
             return connectionDB.getMesaIdsByDepartment(departmentId);
@@ -497,9 +474,7 @@ public class VotingManagerImpl implements ConfigurationService {
         }
     }
 
-    /**
-     * ✅ NUEVO: Obtiene mesas por puesto de votación
-     */
+
     public List<Integer> getMesaIdsByPuesto(int puestoId) {
         try {
             List<Integer> mesaIds = new ArrayList<>();
@@ -522,9 +497,7 @@ public class VotingManagerImpl implements ConfigurationService {
         }
     }
 
-    /**
-     * ✅ NUEVO: Validar estado de elección
-     */
+
     public boolean isValidElectionStatus(String status) {
         return status != null && (
                 status.equals("PRE") ||
@@ -533,9 +506,7 @@ public class VotingManagerImpl implements ConfigurationService {
         );
     }
 
-    /**
-     * ✅ NUEVO: Obtener información completa de una elección
-     */
+
     public Map<String, Object> getElectionDetails(int electionId) {
         try {
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(electionId);
@@ -560,9 +531,7 @@ public class VotingManagerImpl implements ConfigurationService {
         }
     }
 
-    /**
-     * ✅ NUEVO: Estadísticas del sistema
-     */
+
     public Map<String, Object> getSystemStatistics() {
         try {
             Map<String, Object> stats = new HashMap<>();
@@ -588,9 +557,7 @@ public class VotingManagerImpl implements ConfigurationService {
         }
     }
 
-    /**
-     * ✅ NUEVO: Diagnóstico de configuración
-     */
+
     public Map<String, Object> runConfigurationDiagnostic(int electionId) {
         Map<String, Object> diagnostic = new HashMap<>();
 
