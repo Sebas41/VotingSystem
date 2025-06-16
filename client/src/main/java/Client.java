@@ -75,12 +75,7 @@ public class Client {
 
     private static void iniciarModoNormal() {
         try {
-            new Thread(() -> {
-                System.out.println("Iniciando ReliableServer...");
-                ReliableServer.main(new String[0]);
-            }).start();
 
-            Thread.sleep(3000);
 
             System.out.println("Iniciando estación de votación...");
 
