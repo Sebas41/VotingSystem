@@ -77,8 +77,8 @@ public class VoteNotifierImpl implements VoteNotifier {
         List<VoteObserverPrx> electionObservers = observers.get(electionId);
 
         if (electionObservers == null || electionObservers.isEmpty()) {
-            logger.debug("📭 No hay observers registrados para elección {}", electionId);
-            System.out.println("📭 No hay proxys para notificar (elección " + electionId + ")");
+            logger.debug(" No hay observers registrados para elección {}", electionId);
+            System.out.println(" No hay proxys para notificar (elección " + electionId + ")");
             return;
         }
 
