@@ -69,7 +69,6 @@ public class ConnectionDB implements ConnectionDBinterface {
         return dataSource.getConnection();
     }
 
-    // =================== EXISTING METHODS - YOUR ORIGINAL FUNCTIONALITY ===================
 
     @Override
     public void storeElection(int id, String name, Date start, Date end, String status) {
@@ -221,7 +220,6 @@ public class ConnectionDB implements ConnectionDBinterface {
         }
     }
 
-    // =================== NEW METHODS FOR VOTING MACHINE CONFIGURATION ===================
 
     @Override
     public List<Map<String, Object>> getCitizensByMesa(int mesaId) {
@@ -677,7 +675,6 @@ public class ConnectionDB implements ConnectionDBinterface {
         }
     }
 
-    // =================== MONITORING AND PERFORMANCE METHODS ===================
 
     @Override
     public String getPoolStats() {
@@ -762,7 +759,6 @@ public class ConnectionDB implements ConnectionDBinterface {
 
 
 
-    // =================== NEW METHODS FOR REPORTS MODULE ===================
 // Add these methods to your ConnectionDB.java class
 
     @Override

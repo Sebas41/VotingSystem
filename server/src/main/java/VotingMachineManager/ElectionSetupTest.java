@@ -75,7 +75,7 @@ public class ElectionSetupTest {
             Date endDate = cal.getTime();
 
             // ✅ INFORMACIÓN PARA DEBUG
-            System.out.println("   📅 Configurando elección para HOY:");
+            System.out.println("    Configurando elección para HOY:");
             System.out.println("     - Inicio elección: " + startDate);
             System.out.println("     - Fin elección: " + endDate);
             System.out.println("     - Jornada será: 08:00 - 18:00 (calculado por servidor)");
@@ -87,7 +87,7 @@ public class ElectionSetupTest {
 
             // ✅ VERIFICAR HORARIOS GENERADOS
             if (electionInfo != null) {
-                System.out.println("   ✅ Elección creada exitosamente");
+                System.out.println("    Elección creada exitosamente");
                 System.out.println("     - El servidor calculará jornada: 08:00 - 18:00");
                 System.out.println("     - Estado actual: ACTIVE");
             }
@@ -165,7 +165,7 @@ public class ElectionSetupTest {
         System.out.println("\n7. Recommendations:");
 
         if (!dataComplete) {
-            System.out.println("   ❌ Election data is incomplete. Issues found:");
+            System.out.println("    Election data is incomplete. Issues found:");
 
             if (electionInfo == null) {
                 System.out.println("     - Election " + testElectionId + " not found");
@@ -180,14 +180,14 @@ public class ElectionSetupTest {
                 System.out.println("     - No citizens in system");
             }
 
-            System.out.println("\n   📋 To fix these issues:");
+            System.out.println("\n    To fix these issues:");
             System.out.println("     1. Run your data population scripts");
             System.out.println("     2. Ensure vista_configuracion_mesa view exists");
             System.out.println("     3. Verify all foreign key relationships");
 
         } else {
-            System.out.println("   ✅ Election data is complete!");
-            System.out.println("   🚀 Ready to run VotingMachineManager tests");
+            System.out.println("   Election data is complete!");
+            System.out.println("    Ready to run VotingMachineManager tests");
         }
 
         // Step 8: Create SQL script for missing view (if needed)
