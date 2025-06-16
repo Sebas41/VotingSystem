@@ -6,6 +6,7 @@ import Elections.ElectionInterface;
 import Elections.models.Candidate;
 import Elections.models.ELECTION_STATUS;
 import ServerUI.ServerUI;
+import configuration.ConfigurationSender;
 import model.ReliableMessage;
 
 import java.text.SimpleDateFormat;
@@ -24,11 +25,74 @@ public class ServerControllerImpl implements ServerControllerInterface {
     private ElectionInterface election;
     private ConnectionDB connectionDB;
     private static VoteNotifierImpl voteNotifier;
+    private ConfigurationSender configurationSender;
 
     public ServerControllerImpl() {
         this.connectionDB = new ConnectionDB();
         this.election = new ElectionImpl(0, new Date(), new Date(), "");
         cargarDatosPrueba();  // Aquí inicializamos datos de ejemplo
+    }
+
+    public boolean changeElectionStatusInAllMachines(ELECTION_STATUS newStatus) {
+        try {
+            System.out.println("🚀 Iniciando cambio de estado global a: " + newStatus);
+
+            // 1. Cambiar estado local en el servidor
+            election.changeElectionStatus(newStatus);
+            System.out.println("✅ Estado local actualizado a: " + newStatus);
+
+            // 2. Cambiar estado en todas las mesas remotas
+            if (configurationSender != null) {
+                boolean success = configurationSender.changeElectionStatusForAllMachines(
+                        election.getElectionId(),
+                        newStatus.name()
+                );
+
+                if (success) {
+                    System.out.println("🎉 Estado cambiado exitosamente en todas las mesas");
+                    return true;
+                } else {
+                    System.out.println("⚠️ Cambio de estado completado con algunos errores");
+                    return false;
+                }
+            } else {
+                System.out.println("❌ ConfigurationSender no está disponible");
+                return false;
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Error cambiando estado global: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean startElectionInAllMachines() {
+        System.out.println("🗳️ Iniciando elección en todas las mesas...");
+        return changeElectionStatusInAllMachines(ELECTION_STATUS.DURING);
+    }
+
+    /**
+     * ✅ MÉTODO DE CONVENIENCIA: Cerrar elección en todas las mesas
+     */
+    public boolean closeElectionInAllMachines() {
+        System.out.println("🔒 Cerrando elección en todas las mesas...");
+        return changeElectionStatusInAllMachines(ELECTION_STATUS.CLOSED);
+    }
+
+    /**
+     * ✅ MÉTODO DE CONVENIENCIA: Resetear elección a PRE en todas las mesas
+     */
+    public boolean resetElectionInAllMachines() {
+        System.out.println("⏪ Reseteando elección a estado PRE en todas las mesas...");
+        return changeElectionStatusInAllMachines(ELECTION_STATUS.PRE);
+    }
+
+
+
+    public void setConfigurationSender(ConfigurationSender configurationSender) {
+        this.configurationSender = configurationSender;
+        System.out.println("🔗 ServerController conectado con ConfigurationSender");
     }
 
     public static void setVoteNotifier(VoteNotifierImpl notifier) {

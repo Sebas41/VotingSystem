@@ -128,5 +128,11 @@ task verifyReliableServer {
     }
 }
 
+// Agregar al final del archivo server/build.gradle:
+task simpleTest(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+    main = 'test.SimpleElectionTest'
+    dependsOn testClasses
+}
 // Asegurar verificación antes de compilar
 compileJava.dependsOn verifyReliableServer

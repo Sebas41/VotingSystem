@@ -23,6 +23,8 @@ public interface ConfigurationReceiver extends com.zeroc.Ice.Object
 
     String getConfigurationStatus(int mesaId, com.zeroc.Ice.Current current);
 
+    boolean updateElectionStatus(int electionId, String status, com.zeroc.Ice.Current current);
+
     /** @hidden */
     static final String[] _iceIds =
     {
@@ -112,6 +114,29 @@ public interface ConfigurationReceiver extends com.zeroc.Ice.Object
         return inS.setResult(ostr);
     }
 
+    /**
+     * @hidden
+     * @param obj -
+     * @param inS -
+     * @param current -
+     * @return -
+    **/
+    static java.util.concurrent.CompletionStage<com.zeroc.Ice.OutputStream> _iceD_updateElectionStatus(ConfigurationReceiver obj, final com.zeroc.IceInternal.Incoming inS, com.zeroc.Ice.Current current)
+    {
+        com.zeroc.Ice.Object._iceCheckMode(null, current.mode);
+        com.zeroc.Ice.InputStream istr = inS.startReadParams();
+        int iceP_electionId;
+        String iceP_status;
+        iceP_electionId = istr.readInt();
+        iceP_status = istr.readString();
+        inS.endReadParams();
+        boolean ret = obj.updateElectionStatus(iceP_electionId, iceP_status, current);
+        com.zeroc.Ice.OutputStream ostr = inS.startWriteParams();
+        ostr.writeBool(ret);
+        inS.endWriteParams(ostr);
+        return inS.setResult(ostr);
+    }
+
     /** @hidden */
     final static String[] _iceOps =
     {
@@ -121,7 +146,8 @@ public interface ConfigurationReceiver extends com.zeroc.Ice.Object
         "ice_isA",
         "ice_ping",
         "isReady",
-        "updateConfiguration"
+        "updateConfiguration",
+        "updateElectionStatus"
     };
 
     /** @hidden */
@@ -164,6 +190,10 @@ public interface ConfigurationReceiver extends com.zeroc.Ice.Object
             case 6:
             {
                 return _iceD_updateConfiguration(this, in, current);
+            }
+            case 7:
+            {
+                return _iceD_updateElectionStatus(this, in, current);
             }
         }
 
