@@ -279,7 +279,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                             candidate.getPoliticalParty(), electionId);
                     newCandidatesCount++;
                 } catch (Exception e) {
-                    logger.warn("⚠️ Error persistiendo candidato {}: {}", candidate.getName(), e.getMessage());
+                    logger.warn(" Error persistiendo candidato {}: {}", candidate.getName(), e.getMessage());
                 }
             }
 
@@ -357,7 +357,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     // Pequeña pausa para no saturar la red
                     Thread.sleep(100);
                 } catch (Exception e) {
-                    logger.warn("⚠️ Error configurando mesa {}: {}", mesaId, e.getMessage());
+                    logger.warn(" Error configurando mesa {}: {}", mesaId, e.getMessage());
                 }
             }
 
@@ -437,7 +437,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
     public ElectionResult registerVote(ReliableMessage voteMessage) {
         try {
             Vote vote = voteMessage.getMessage();
-            logger.info("🗳️ Registrando voto desde máquina: {}", vote.getMachineId());
+            logger.info(" Registrando voto desde máquina: {}", vote.getMachineId());
 
             // Validar que la elección está activa
             if (!currentElection.isElectionActive()) {
@@ -458,7 +458,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
                     String voteInfo = formatVoteNotification(candidateName, vote);
                     voteNotifier.notifyVoteReceived(voteInfo, vote.getElection());
                 } catch (Exception e) {
-                    logger.warn("⚠️ Error enviando notificación de voto: {}", e.getMessage());
+                    logger.warn(" Error enviando notificación de voto: {}", e.getMessage());
                 }
             }
 
@@ -532,7 +532,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
 
     public ElectionResult getDepartmentReport(int departmentId, int electionId) {
         try {
-            logger.info("🏛️ Generando reporte de departamento: {} para elección: {}", departmentId, electionId);
+            logger.info(" Generando reporte de departamento: {} para elección: {}", departmentId, electionId);
 
             String reportData = reportsManager.generateDepartmentReportString(departmentId, electionId);
 
@@ -720,7 +720,7 @@ public class ServerControllerImpl implements ServerControllerInterface {
             Map<String, Object> electionInfo = connectionDB.getElectionInfo(1);
 
             if (electionInfo == null) {
-                logger.info("🧪 Inicializando datos de prueba...");
+                logger.info(" Inicializando datos de prueba...");
 
                 // Crear elección de prueba para HOY
                 Calendar cal = Calendar.getInstance();
