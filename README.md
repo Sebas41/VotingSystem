@@ -1,12 +1,12 @@
-# 🗳️ VotingSystem – Sistema de Votación Distribuido
+#  VotingSystem – Sistema de Votación Distribuido
 
-## 👥 Equipo de Desarrollo
+## Equipo de Desarrollo
 - **Luis Manuel Rojas Correa**
 - **Ricardo Andrés Chamorro**
 - **Oscar Stiven Muñoz**
 - **Sebastian Erazo Ochoa**
 
-## 📘 Contexto
+## Contexto
 
 En el marco del sistema de votaciones desarrollado para la **Registraduría Nacional**, la empresa **XYZ** ha encomendado la implementación de los **módulos responsables de transmitir y recibir los votos** generados en cada estación de votación, con destino al servidor central encargado de su consolidación y almacenamiento.
 
@@ -20,7 +20,7 @@ Para cumplir con estos requisitos, se diseñó e implementó una **solución rob
 Mediante mecanismos de **almacenamiento local, reintentos automáticos y confirmación de recepción**, el sistema asegura una comunicación confiable entre los nodos distribuidos, cumpliendo con principios sólidos de diseño de sistemas distribuidos seguros.
 
 
-## 🧱 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```bash
 VotingSystem/
@@ -33,7 +33,7 @@ VotingSystem/
 ├── *.ice                  # Archivos de definición de interfaces ICE
 ``` 
 
-## 🧩 Arquitectura y Funcionamiento
+## Arquitectura y Funcionamiento
 
 El flujo de votación se realiza en tres capas:
 
@@ -51,11 +51,11 @@ El flujo de votación se realiza en tres capas:
 
 ---
 
-## 🔄 Patrón Reliable Messaging
+## Patrón Reliable Messaging
 
 El módulo `reliableServer` implementa el patrón de **Reliable Messaging** con los siguientes componentes:
 
-### 🧠 Estrategia implementada
+### Estrategia implementada
 
 1. **El cliente envía el voto al proxy confiable (`RMSourcePrx`)**
 2. **Si el servidor está inactivo, el voto se guarda localmente en disco**
@@ -63,7 +63,7 @@ El módulo `reliableServer` implementa el patrón de **Reliable Messaging** con 
 4. **Cuando el servidor recibe el voto, responde con una confirmación (`ack`)**
 5. **El cliente elimina de su almacenamiento el voto confirmado**
 
-### 🧱 Clases principales del patrón
+### Clases principales del patrón
 
 | Clase                         | Rol                                                                 |
 |------------------------------|----------------------------------------------------------------------|
@@ -75,7 +75,7 @@ El módulo `reliableServer` implementa el patrón de **Reliable Messaging** con 
 | `ReliableServer`             | Orquesta toda la lógica: inicia proxies, adaptadores y el hilo RM.   |
 
 
-## 🛠️ Ejecución del proyecto
+## Ejecución del proyecto
 
 ### 1. Compilar el proyecto
 
