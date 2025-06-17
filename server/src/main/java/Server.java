@@ -98,6 +98,11 @@ public class Server {
                 System.out.println("Advertencias en inicialización: " + systemStatus.getMessage());
             }
 
+            // =================== CONFIGURACIÓN AUTOMÁTICA AL INICIO ===================
+            System.out.println("\n=================== CONFIGURANDO MESAS AUTOMÁTICAMENTE ===================");
+            initializeAllMachinesAutomatically();
+            System.out.println("===============================================================================");
+
             System.out.println("\nIniciando pruebas automáticas en 10 segundos...");
             System.out.println("Para pruebas completas, ejecuta el cliente: java -jar client/build/libs/client.jar");
 
@@ -189,6 +194,109 @@ public class Server {
     }
 
     // =================== MÉTODOS GENERALIZADOS PARA TODAS LAS MESAS ===================
+
+    /**
+     * Inicializa automáticamente todas las máquinas al arrancar el servidor
+     */
+    private static void initializeAllMachinesAutomatically() {
+        System.out.println(" Iniciando configuración automática de todas las mesas...");
+
+        if (configurationSender == null) {
+            System.out.println(" ConfigurationSender no disponible - saltando configuración automática");
+            return;
+        }
+
+        List<Integer> activeMesas = getActiveMesaIds();
+        if (activeMesas.isEmpty()) {
+            System.out.println("  No hay mesas activas registradas - saltando configuración automática");
+            return;
+        }
+
+        System.out.println("📋 Mesas detectadas: " + activeMesas);
+        System.out.println("📤 Enviando configuraciones...");
+
+        // Paso 1: Enviar configuraciones a todas las mesas
+        int configSuccessCount = 0;
+        for (Integer mesaId : activeMesas) {
+            try {
+                System.out.print("   Configurando mesa " + mesaId + "... ");
+                ElectionResult result = electoralController.sendConfigurationToMesa(mesaId, 1);
+
+                if (result.isSuccess()) {
+                    System.out.println(" OK");
+                    configSuccessCount++;
+                } else {
+                    System.out.println(" ERROR: " + result.getMessage());
+                }
+
+                // Pausa entre configuraciones
+                Thread.sleep(1000);
+
+            } catch (Exception | InterruptedException e) {
+                System.out.println(" EXCEPCIÓN: " + e.getMessage());
+            }
+        }
+
+        System.out.println(" Configuraciones enviadas: " + configSuccessCount + "/" + activeMesas.size());
+
+        if (configSuccessCount > 0) {
+            // Paso 2: Iniciar elecciones (estado DURING)
+            System.out.println(" Iniciando elecciones en mesas configuradas...");
+
+            try {
+                Thread.sleep(2000); // Pausa para que las mesas procesen la configuración
+
+                boolean startResult = configurationSender.startElectionInAllMachines(1);
+                if (startResult) {
+                    System.out.println(" Elecciones iniciadas exitosamente (estado: DURING)");
+                    System.out.println("🏁 Todas las mesas están listas para recibir votos 24/7");
+                } else {
+                    System.out.println("  Error iniciando elecciones - algunas mesas pueden no estar en estado DURING");
+                }
+
+            } catch (InterruptedException e) {
+                System.out.println(" Proceso interrumpido");
+                Thread.currentThread().interrupt();
+            }
+        } else {
+            System.out.println(" No se pudieron configurar mesas - saltando inicio de elecciones");
+        }
+
+        System.out.println("🎉 Proceso de configuración automática completado");
+    }
+
+    /**
+     * Método público para reinicializar todas las máquinas manualmente
+     */
+    public static boolean initializeAllMachinesManually() {
+        System.out.println(" Reinicializando todas las máquinas manualmente...");
+
+        if (configurationSender == null) {
+            System.out.println(" ConfigurationSender no disponible");
+            return false;
+        }
+
+        List<Integer> activeMesas = getActiveMesaIds();
+        if (activeMesas.isEmpty()) {
+            System.out.println("  No hay mesas activas registradas");
+            return false;
+        }
+
+        // Resetear primero
+        System.out.println(" Reseteando mesas...");
+        boolean resetResult = configurationSender.resetElectionInAllMachines(1);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Reconfigurar e iniciar
+        initializeAllMachinesAutomatically();
+
+        return true;
+    }
 
     /**
      * Prueba conectividad con todas las mesas registradas y activas
@@ -368,10 +476,10 @@ public class Server {
                 return;
             }
 
-            // Prueba de conectividad generalizada
-            System.out.println("\n--- Prueba de conectividad con mesas registradas ---");
-            boolean connectivity = testConnectivityAllMesas();
-            System.out.println("Resultado general: " + (connectivity ? "ALGUNAS CONECTADAS" : "NINGUNA CONECTADA"));
+            // Verificar el estado actual de las mesas (sin enviar configuraciones)
+            System.out.println("\n--- Verificación de estado actual de mesas ---");
+            boolean connectivity = verifyMesasStatus();
+            System.out.println("Estado general: " + (connectivity ? "MESAS CONECTADAS" : "PROBLEMAS DE CONECTIVIDAD"));
 
             // Diagnóstico del sistema
             System.out.println("\n--- Diagnóstico del sistema ---");
@@ -389,50 +497,68 @@ public class Server {
                 System.out.println("  Métricas disponibles en systemStatus.getData()");
             }
 
-            // Pruebas de cambio de estado (solo si hay conectividad)
+            System.out.println("\n--- Resumen del estado ---");
             if (connectivity) {
-                System.out.println("\n--- Pruebas de cambio de estado en mesas conectadas ---");
-
-                boolean startResult = testStartElectionAllMachines();
-                System.out.println("Iniciar elección: " + (startResult ? "✓ ÉXITO" : "✗ ERROR"));
-                Thread.sleep(3000);
-
-                boolean stopResult = testCloseElectionAllMachines();
-                System.out.println("Cerrar elección: " + (stopResult ? "✓ ÉXITO" : "✗ ERROR"));
-                Thread.sleep(3000);
-
-                boolean resetResult = testResetElectionAllMachines();
-                System.out.println("Reset elección: " + (resetResult ? "✓ ÉXITO" : "✗ ERROR"));
-
-                // Resumen
-                int successCount = (startResult ? 1 : 0) + (stopResult ? 1 : 0) + (resetResult ? 1 : 0);
-                System.out.println("\nResumen cambios de estado: " + successCount + "/3 pruebas exitosas");
-
-                if (successCount == 3) {
-                    System.out.println("✓ Comunicación servidor-cliente funcionando perfectamente");
-                } else if (successCount > 0) {
-                    System.out.println("⚠ Funcionamiento parcial - revisar logs de mesas");
-                } else {
-                    System.out.println("✗ Comunicación fallida - verificar clientes");
-                }
+                System.out.println(" Sistema listo para recibir votos");
+                System.out.println("  Las mesas están en estado DURING (votación activa 24/7)");
+                System.out.println(" Para cambiar estado manualmente, usa:");
+                System.out.println("   - Server.testCloseElectionAllMachines() // Cerrar votación");
+                System.out.println("   - Server.testResetElectionAllMachines()  // Resetear");
+                System.out.println("   - Server.initializeAllMachinesManually() // Reinicializar todo");
             } else {
-                System.out.println("\n⚠ No se ejecutaron pruebas de cambio de estado (sin conectividad)");
+                System.out.println("  Algunas mesas tienen problemas de conectividad");
+                System.out.println("🔧 Ejecuta Server.initializeAllMachinesManually() para reintentar");
             }
 
-        } catch (InterruptedException e) {
-            System.out.println("✗ Pruebas interrumpidas");
-            Thread.currentThread().interrupt();
         } catch (Exception e) {
             System.err.println("✗ Error en pruebas automáticas: " + e.getMessage());
             e.printStackTrace();
         } finally {
             System.out.println("\n=================== PRUEBAS AUTOMÁTICAS COMPLETADAS ===================");
-            System.out.println("Para más pruebas manuales, usa los métodos estáticos del Server:");
-            System.out.println("  - Server.testConnectivityAllMesas()");
-            System.out.println("  - Server.testStartElectionAllMachines()");
-            System.out.println("  - Server.getSystemStatus()");
+            System.out.println(" Estado actual: Mesas en modo DURING (listas para votar 24/7)");
+            System.out.println("📚 Métodos disponibles:");
+            System.out.println("  - Server.verifyMesasStatus()              // Ver estado actual");
+            System.out.println("  - Server.testCloseElectionAllMachines()   // Cerrar elecciones");
+            System.out.println("  - Server.testResetElectionAllMachines()   // Resetear mesas");
+            System.out.println("  - Server.initializeAllMachinesManually()  // Reinicializar todo");
             System.out.println("=================================================================");
         }
+    }
+
+    /**
+     * Verifica el estado de las mesas sin enviar configuraciones
+     */
+    public static boolean verifyMesasStatus() {
+        if (configurationSender == null) {
+            System.out.println("ConfigurationSender no disponible");
+            return false;
+        }
+
+        List<Integer> activeMesas = getActiveMesaIds();
+        if (activeMesas.isEmpty()) {
+            System.out.println("No hay mesas activas registradas");
+            return false;
+        }
+
+        int connectedCount = 0;
+        System.out.println("Verificando estado de " + activeMesas.size() + " mesas:");
+
+        for (Integer mesaId : activeMesas) {
+            try {
+                // Verificar conectividad básica sin enviar configuración completa
+                if (configurationSender.isMesaRegistered(mesaId)) {
+                    System.out.println("✓ Mesa " + mesaId + " registrada y activa");
+                    connectedCount++;
+                } else {
+                    System.out.println("✗ Mesa " + mesaId + " no disponible");
+                }
+            } catch (Exception e) {
+                System.out.println("✗ Mesa " + mesaId + " error: " + e.getMessage());
+            }
+        }
+
+        System.out.println("Estado: " + connectedCount + "/" + activeMesas.size() + " mesas accesibles");
+        return connectedCount > 0;
     }
 
     public static boolean startElectionInAllMachines() {
@@ -463,9 +589,10 @@ public class Server {
             int mesaCount = getActiveMesaCount();
             List<Integer> mesaIds = getActiveMesaIds();
 
-            System.out.println("📊 Estadísticas de mesas:");
+            System.out.println(" Estadísticas de mesas:");
             System.out.println("  - Total mesas activas: " + mesaCount);
             System.out.println("  - IDs registrados: " + mesaIds);
+            System.out.println(" Horario de votación: 24 horas (00:00 - 24:00)");
 
         } else {
             System.out.println("✗ Sistema con problemas: " + status.getMessage());

@@ -345,8 +345,8 @@ public class VotingManagerImpl implements ConfigurationService {
         java.sql.Timestamp fechaInicio = (java.sql.Timestamp) electionInfoMap.get("fecha_inicio");
         java.sql.Timestamp fechaFin = (java.sql.Timestamp) electionInfoMap.get("fecha_fin");
 
-        final int JORNADA_HORA_INICIO = 8;   // 8:00 AM
-        final int JORNADA_HORA_FIN = 18;     // 6:00 PM
+        final int JORNADA_HORA_INICIO = 0;   // 8:00 AM
+        final int JORNADA_HORA_FIN = 24;     // 6:00 PM
 
         Calendar cal = Calendar.getInstance();
         cal.setTime(fechaInicio);
